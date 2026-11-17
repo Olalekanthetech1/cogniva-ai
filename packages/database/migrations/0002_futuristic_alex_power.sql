@@ -134,6 +134,8 @@ CREATE TABLE "tutor_sessions" (
 	CONSTRAINT "tutor_sessions_version_positive_check" CHECK ("tutor_sessions"."version" > 0)
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX "learning_plan_concepts_revision_id_unique" ON "learning_plan_concepts" USING btree ("revision_id","id");--> statement-breakpoint
+CREATE UNIQUE INDEX "learning_plan_units_revision_id_unique" ON "learning_plan_units" USING btree ("revision_id","id");--> statement-breakpoint
 ALTER TABLE "learning_plan_concept_relations" ADD CONSTRAINT "learning_plan_concept_relations_source_revision_fk" FOREIGN KEY ("revision_id","source_concept_id") REFERENCES "public"."learning_plan_concepts"("revision_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "learning_plan_concept_relations" ADD CONSTRAINT "learning_plan_concept_relations_target_revision_fk" FOREIGN KEY ("revision_id","target_concept_id") REFERENCES "public"."learning_plan_concepts"("revision_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "learning_plan_concepts" ADD CONSTRAINT "learning_plan_concepts_revision_id_learning_plan_revisions_id_fk" FOREIGN KEY ("revision_id") REFERENCES "public"."learning_plan_revisions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -150,7 +152,6 @@ ALTER TABLE "tutor_sessions" ADD CONSTRAINT "tutor_sessions_learning_plan_unit_i
 CREATE UNIQUE INDEX "learning_plan_concept_relations_unique" ON "learning_plan_concept_relations" USING btree ("revision_id","source_concept_id","target_concept_id","relation_type");--> statement-breakpoint
 CREATE INDEX "learning_plan_concept_relations_revision_status_idx" ON "learning_plan_concept_relations" USING btree ("revision_id","review_status");--> statement-breakpoint
 CREATE UNIQUE INDEX "learning_plan_concepts_revision_position_unique" ON "learning_plan_concepts" USING btree ("revision_id","position");--> statement-breakpoint
-CREATE UNIQUE INDEX "learning_plan_concepts_revision_id_unique" ON "learning_plan_concepts" USING btree ("revision_id","id");--> statement-breakpoint
 CREATE INDEX "learning_plan_concepts_revision_idx" ON "learning_plan_concepts" USING btree ("revision_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "learning_plan_objectives_unit_position_unique" ON "learning_plan_objectives" USING btree ("unit_id","position");--> statement-breakpoint
 CREATE INDEX "learning_plan_objectives_unit_idx" ON "learning_plan_objectives" USING btree ("unit_id");--> statement-breakpoint
@@ -160,7 +161,6 @@ CREATE UNIQUE INDEX "learning_plan_unit_concepts_unit_concept_unique" ON "learni
 CREATE UNIQUE INDEX "learning_plan_unit_concepts_unit_position_unique" ON "learning_plan_unit_concepts" USING btree ("unit_id","position");--> statement-breakpoint
 CREATE INDEX "learning_plan_unit_concepts_concept_idx" ON "learning_plan_unit_concepts" USING btree ("concept_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "learning_plan_units_revision_position_unique" ON "learning_plan_units" USING btree ("revision_id","position");--> statement-breakpoint
-CREATE UNIQUE INDEX "learning_plan_units_revision_id_unique" ON "learning_plan_units" USING btree ("revision_id","id");--> statement-breakpoint
 CREATE INDEX "learning_plan_units_revision_idx" ON "learning_plan_units" USING btree ("revision_id");--> statement-breakpoint
 CREATE INDEX "learning_plans_student_status_updated_idx" ON "learning_plans" USING btree ("student_id","status","updated_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "tutor_messages_session_sequence_unique" ON "tutor_messages" USING btree ("session_id","sequence_number");--> statement-breakpoint
