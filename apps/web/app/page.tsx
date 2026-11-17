@@ -32,15 +32,23 @@ export default function HomePage() {
           <span className="brand-name">cogniva</span>
         </Link>
 
-        <a
-          className="repository-link"
-          href="https://github.com/Olalekanthetech1/cogniva-ai"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Follow development
-          <span aria-hidden="true">↗</span>
-        </a>
+        <nav className="topbar-actions" aria-label="Account navigation">
+          <Link className="sign-in-link" href="/login">
+            Sign in
+          </Link>
+          <Link className="get-started-link" href="/register">
+            Get started
+          </Link>
+          <a
+            className="repository-link"
+            href="https://github.com/Olalekanthetech1/cogniva-ai"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Follow development
+            <span aria-hidden="true">↗</span>
+          </a>
+        </nav>
       </header>
 
       <section className="hero" aria-labelledby="hero-title">
