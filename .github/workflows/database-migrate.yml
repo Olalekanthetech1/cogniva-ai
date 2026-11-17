@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm_production:
-        description: "Select APPLY only when you intend to change Cogniva's Neon production database."
+        description: "Select APPLY only after reviewing the committed migration SQL and intending to change Cogniva's Neon production database."
         required: true
         type: choice
         options:
@@ -13,7 +13,7 @@ on:
         default: "NO"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: cogniva-neon-production-migrations
@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           if [[ "$CONFIRM_PRODUCTION" != "APPLY" ]]; then
-            echo "::error::Production migration not confirmed. Select APPLY in the workflow input dropdown."
+            echo "::error::Production migration not confirmed. Select APPLY only after reviewing the committed migration SQL."
             exit 1
           fi
 
@@ -63,22 +63,7 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Generate migrations from the committed Drizzle schema
-        run: pnpm db:generate
-
-      - name: Commit generated lockfile and migration history
-        run: |
-          git add pnpm-lock.yaml packages/database/migrations
-          if ! git diff --cached --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore(database): generate Neon schema migration"
-            git push origin HEAD:main
-          else
-            echo "No new migration files or lockfile changes to commit."
-          fi
-
-      - name: Apply pending migrations to Neon
+      - name: Apply committed pending migrations to Neon
         env:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
         run: pnpm db:migrate
