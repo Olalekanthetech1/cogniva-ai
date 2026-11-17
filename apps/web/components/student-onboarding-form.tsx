@@ -333,7 +333,7 @@ export function StudentOnboardingForm({ mode = "onboarding" }: { mode?: Mode }) 
               {notListed && (
                 <div className="institution-not-listed">
                   <label className="onboarding-field" htmlFor="self-reported-institution">
-                    <span>Enter your institution's name</span>
+                    <span>Enter your institution&apos;s name</span>
                     <input
                       id="self-reported-institution"
                       autoComplete="organization"
