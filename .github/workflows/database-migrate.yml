@@ -1,0 +1,71 @@
+name: Apply Neon database migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: "Type APPLY to generate and apply pending migrations to Cogniva's Neon production database."
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cogniva-neon-production-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: ${{ inputs.confirm_production == 'APPLY' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.1.1
+        with:
+          version: 12.21.0
+          run_install: false
+
+      - name: Confirm migration credential is configured
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+        run: |
+          if [ -z "$DATABASE_MIGRATION_URL" ]; then
+            echo "::error::Add DATABASE_MIGRATION_URL under repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Install workspace dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate migrations from the committed Drizzle schema
+        run: pnpm db:generate
+
+      - name: Commit generated lockfile and migration history
+        run: |
+          git add pnpm-lock.yaml packages/database/migrations
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore(database): generate Neon schema migration"
+            git push origin HEAD:main
+          else
+            echo "No new migration files or lockfile changes to commit."
+          fi
+
+      - name: Apply pending migrations to Neon
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+        run: pnpm db:migrate
