@@ -1,6 +1,6 @@
 # Cogniva — API Contract Baseline
 
-**Status:** Proposed contract; endpoints are not yet implemented.
+**Status:** Baseline contract. Better Auth is mounted at `/api/auth/*`; the Phase 1 student profile and read-only academic catalogue endpoints listed below are implemented.
 
 ## 1. Conventions
 
@@ -26,29 +26,25 @@ Error:
 
 These are illustrative contracts, not live responses or seeded records.
 
-## 3. Identity
+## 3. Identity and student profile
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/logout`
-- `POST /api/v1/auth/verify-email`
-- `POST /api/v1/auth/password-reset`
-- `GET /api/v1/users/me`
-- `PATCH /api/v1/users/me`
+Better Auth owns registration, email verification, sign-in, sign-out, session retrieval, and password-reset operations under `/api/auth/*`. The student profile is a separate Cogniva-owned record.
 
-Select the authentication provider/session strategy before implementation.
+Implemented:
+- `GET /api/v1/student/profile` — returns the signed-in student's profile, or `data: null` when no profile has been saved.
+- `PUT /api/v1/student/profile` — creates or replaces the signed-in student's academic profile; validates catalogue IDs and institution/faculty/department ancestry.
+
+The profile endpoint derives the owner from the authenticated session. It does not accept a user ID from the client. Academic affiliation is optional; a student can save programme/year details or skip setup.
 
 ## 4. Academic discovery
 
-- `GET /api/v1/institutions`
-- `GET /api/v1/faculties`
-- `GET /api/v1/departments`
-- `GET /api/v1/subjects`
-- `GET /api/v1/courses`
-- `GET /api/v1/topics`
-- `GET /api/v1/knowledge-components`
+Implemented authenticated, read-only catalogue routes:
+- `GET /api/v1/academic/institutions` — optional bounded `q` name search.
+- `GET /api/v1/academic/faculties?institutionId=<uuid>`.
+- `GET /api/v1/academic/departments?facultyId=<uuid>`.
+- `GET /api/v1/academic/subjects`.
 
-All curriculum metadata must be database-driven and configurable. Do not fabricate institution or course data.
+Course, topic, curriculum-version, and knowledge-component discovery routes remain planned. Catalogue content is database-driven. The deployed catalogue currently has no institution/faculty/department/subject/course seed records; empty results are reported as empty, never replaced with sample data.
 
 ## 5. Sessions and tutoring
 
