@@ -242,7 +242,7 @@ Immediately after the optional institution question is completed or skipped, dir
 
 **What would you like to learn?**
 
-A learner should be able to start with a question, a problem, or a topic. Upload and subject-exploration actions should appear only when their corresponding capability and data source are implemented and available.
+A learner should be able to start with a question, a problem, or a topic. Keep subject/topic discovery in the Learn destination rather than duplicating it on Home. Upload should appear as an active action only when its end-to-end capability and data source are implemented and available.
 
 Course outlines and Knowledge Components may be proposed from actual student-provided content or a verified source. Proposals must be labelled as proposals and remain reviewable and editable by the learner. Never present a generated outline as an official institution curriculum without supporting evidence.
 
