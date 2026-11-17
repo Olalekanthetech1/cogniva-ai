@@ -367,7 +367,7 @@ export function StudentOnboardingForm({ mode = "onboarding" }: { mode?: Mode }) 
                   onClick={() => void complete("skip")}
                   type="button"
                 >
-                  Skip for now
+                  {isProfile ? "Remove institution" : "Skip for now"}
                 </button>
               </div>
             </form>
