@@ -11,10 +11,8 @@ const timestampWithTimezone = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
 
 /**
- * Better Auth core tables.
- *
- * Keep the logical property names (emailVerified, userId, etc.) expected by
- * Better Auth. Physical PostgreSQL column names use snake_case.
+ * Better Auth core tables plus the additive fields required by its Admin
+ * plugin. Keep the logical property names expected by Better Auth.
  */
 export const user = pgTable(
   "user",
@@ -24,6 +22,10 @@ export const user = pgTable(
     email: text("email").notNull(),
     emailVerified: boolean("email_verified").notNull().default(false),
     image: text("image"),
+    role: text("role").notNull().default("user"),
+    banned: boolean("banned").notNull().default(false),
+    banReason: text("ban_reason"),
+    banExpires: timestampWithTimezone("ban_expires"),
     createdAt: timestampWithTimezone("created_at").notNull().defaultNow(),
     updatedAt: timestampWithTimezone("updated_at")
       .notNull()
@@ -32,7 +34,8 @@ export const user = pgTable(
   },
   (table) => [
     uniqueIndex("user_email_unique").on(table.email),
-    index("user_created_at_idx").on(table.createdAt)
+    index("user_created_at_idx").on(table.createdAt),
+    index("user_role_idx").on(table.role)
   ]
 );
 
@@ -47,6 +50,7 @@ export const session = pgTable(
     expiresAt: timestampWithTimezone("expires_at").notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
+    impersonatedBy: text("impersonated_by"),
     createdAt: timestampWithTimezone("created_at").notNull().defaultNow(),
     updatedAt: timestampWithTimezone("updated_at")
       .notNull()

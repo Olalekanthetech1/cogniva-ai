@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { admin } from "better-auth/plugins";
 import { createDatabase } from "@cogniva/database";
 import {
   account,
@@ -38,6 +39,15 @@ function buildAuth(
       requireEmailVerification: true,
       minPasswordLength: 12,
       maxPasswordLength: 128,
+      customSyntheticUser: ({ coreFields, additionalFields, id }) => ({
+        ...coreFields,
+        role: "user",
+        banned: false,
+        banReason: null,
+        banExpires: null,
+        ...additionalFields,
+        id
+      }),
       sendResetPassword: async ({ user: authUser, url }) => {
         await sendAuthEmail({
           to: authUser.email,
@@ -70,7 +80,13 @@ function buildAuth(
     session: {
       expiresIn: 60 * 60 * 24 * 30,
       updateAge: 60 * 60 * 24
-    }
+    },
+    plugins: [
+      admin({
+        defaultRole: "user",
+        adminRoles: ["admin"]
+      })
+    ]
   });
 }
 
