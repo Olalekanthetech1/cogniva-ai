@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       confirm_production:
-        description: "Type APPLY to generate and apply pending migrations to Cogniva's Neon production database."
+        description: "Select APPLY only when you intend to change Cogniva's Neon production database."
         required: true
-        type: string
+        type: choice
+        options:
+          - "NO"
+          - "APPLY"
+        default: "NO"
 
 permissions:
   contents: write
@@ -17,11 +21,20 @@ concurrency:
 
 jobs:
   migrate:
-    if: ${{ inputs.confirm_production == 'APPLY' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
+      - name: Require explicit production confirmation
+        env:
+          CONFIRM_PRODUCTION: ${{ github.event.inputs.confirm_production }}
+        shell: bash
+        run: |
+          if [[ "$CONFIRM_PRODUCTION" != "APPLY" ]]; then
+            echo "::error::Production migration not confirmed. Select APPLY in the workflow input dropdown."
+            exit 1
+          fi
+
       - name: Check out main
         uses: actions/checkout@v7.0.1
         with:
