@@ -208,19 +208,43 @@ Introduce a source registry and record-level source assertions before enabling b
 
 The implementation must review the provider's licence and terms before storing or redistributing source data. Publicly searchable information is not automatically free to bulk copy or redistribute.
 
-## 5. Student-facing onboarding
+## 5. Student-facing onboarding and learning entry
 
-The current screen is an interim profile form. The global design should be progressively disclosed rather than asking every student for a full academic hierarchy at registration.
+The current multi-field onboarding form is an interim implementation, not the intended first-run experience. Cogniva should minimise registration friction and let students begin learning before asking for a complete academic profile.
 
-Recommended steps:
+### 5.1 One optional institution question
 
-1. **Learning context** — country/jurisdiction where the student studies (optional), preferred language and time zone.
-2. **Institution** — search the global institution catalogue; show country and source/recognition state to disambiguate matches. Allow "not listed" without claiming verification.
-3. **Programme** — search the institution's verified programmes, or enter a self-described programme when no authoritative record is available.
-4. **Academic stage** — ask for the local label and numeric progression index separately. Show locally appropriate choices only when the system is known; do not generate a universal 1–12 list.
-5. **Current learning** — optionally select a course or enter a learning goal/upload a course outline. This must be skippable.
+After account creation and required email verification, show one optional question:
 
-Do not require faculty or department selection where the institution's structure is unavailable or does not use those units. Do not force a country-specific path based solely on IP address.
+**Which institution do you attend?**
+
+- Provide a searchable global institution selector.
+- Display the institution's country beside each result to disambiguate similar names.
+- Search only against records actually available from the catalogue; an empty or unavailable catalogue must be shown honestly.
+- Allow the student to say **My institution isn't listed** and optionally enter its name as self-reported information.
+- Allow **I'm an independent learner** or **Skip for now**.
+- Do not require a separate country form at this stage. Do not infer the student's country from IP address, device locale or institution name.
+- Do not request faculty, department, programme, qualification, academic stage, semester or credit system during first-run onboarding.
+
+A catalogue match may be shown as verified only when the institution identity and the relevant verification evidence support that status. A user-entered institution name is self-reported and unverified; it must not be inserted into the verified catalogue automatically.
+
+The institution question is for personalisation, not access control. All paths lead to the same learning home. An independent learner or a student whose institution is absent must have the same ability to start a learning session.
+
+### 5.2 Progressive academic context
+
+Ask for additional academic details only when they materially improve a task. For example, a student may later attach a course outline, choose a programme, or add a local year-of-study label in Profile or while organising a course.
+
+Keep the underlying global data model capable of representing country/jurisdiction, programme, qualification, local academic stage, academic period, language and time zone. These are optional context fields, not mandatory registration steps. Preserve the distinction between a local label such as 200 Level and an internationally mapped qualification level.
+
+### 5.3 Move directly into learning
+
+Immediately after the optional institution question is completed or skipped, direct the learner to the Home experience defined in [PRODUCT_EXPERIENCE.md](PRODUCT_EXPERIENCE.md). The primary entry point is:
+
+**What would you like to learn?**
+
+A learner should be able to start with a question, a problem, or a topic. Upload and subject-exploration actions should appear only when their corresponding capability and data source are implemented and available.
+
+Course outlines and Knowledge Components may be proposed from actual student-provided content or a verified source. Proposals must be labelled as proposals and remain reviewable and editable by the learner. Never present a generated outline as an official institution curriculum without supporting evidence.
 
 ## 6. Cogniva Knowledge Components and adaptive learning
 
