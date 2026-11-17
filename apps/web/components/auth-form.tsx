@@ -113,7 +113,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 for a verification link.
               </p>
               <p className="auth-result-note">
-                During this early test, Resend's shared sender can deliver only
+                During this early test, Resend&apos;s shared sender can deliver only
                 to the email address associated with your Resend account.
                 Other recipients require a verified sending domain.
               </p>
@@ -181,7 +181,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   {isRegister && (
                     <small>
                       Use at least 12 characters. Avoid reusing another
-                      account's password.
+                      account&apos;s password.
                     </small>
                   )}
                 </label>
