@@ -2,3 +2,8 @@ packages:
   - "apps/*"
   - "packages/*"
   - "workers/*"
+
+# pnpm 12 blocks dependency lifecycle scripts unless explicitly reviewed.
+# esbuild is required by the Next.js/SWC tooling and is the only approved build.
+allowBuilds:
+  esbuild: true
