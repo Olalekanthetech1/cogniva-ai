@@ -8,7 +8,7 @@
 - [x] Add the Next.js App Router web shell.
 - [x] Add Node/pnpm toolchain, lint, TypeScript checks, and GitHub Actions CI.
 - [x] Verify a successful production build in CI.
-- [ ] Commit the generated `pnpm-lock.yaml` so installs can use frozen-lockfile mode.
+- [x] Commit the generated `pnpm-lock.yaml` so installs can use frozen-lockfile mode.
 
 **Exit:** application shell, quality checks, and reproducible dependency lockfile are in place.
 
@@ -19,10 +19,12 @@
 - [x] Define optional student profile and dynamic academic catalogue schema.
 - [x] Add migration generation/application commands.
 - [x] Require email verification and fail closed when auth infrastructure is not configured.
-- [ ] Configure a real PostgreSQL database and verified transactional email sender.
-- [ ] Generate/review/apply the first migration against the selected database.
-- [ ] Verify registration, email verification, sign-in, sign-out, session retrieval, and password reset end-to-end.
-- [ ] Add authenticated profile and academic catalogue APIs with ownership/visibility checks.
+- [x] Configure the Neon PostgreSQL database and transactional email sender used by the deployed environment.
+- [x] Generate, review, and apply the initial migration against the production database.
+- [x] Verify registration, email verification, sign-in, and authenticated session retrieval end-to-end.
+- [ ] Verify sign-out and password reset end-to-end.
+- [x] Implement authenticated student-profile and read-only academic catalogue APIs with account ownership and academic hierarchy checks.
+- [ ] Add automated integration tests for authentication boundaries, profile ownership, and invalid academic hierarchy submissions.
 
 **Exit:** live identity and persistence flows work against a real database; academic metadata is dynamic and optional; CI tests cover access boundaries.
 
