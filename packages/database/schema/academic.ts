@@ -269,7 +269,9 @@ export const studentProfiles = pgTable(
     updatedAt: timestampWithTimezone("updated_at")
       .notNull()
       .defaultNow()
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => new Date()),
+    selfReportedInstitution: varchar("self_reported_institution", { length: 200 }),
+    onboardingCompletedAt: timestampWithTimezone("onboarding_completed_at")
   },
   (table) => [
     uniqueIndex("student_profiles_user_id_unique").on(table.userId),
