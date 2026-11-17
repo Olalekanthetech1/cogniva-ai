@@ -78,4 +78,5 @@ Do not run migrations against production without reviewing the generated SQL and
 - [Database design](docs/DATABASE.md)
 - [API conventions](docs/API.md)
 - [ZeroMock policy](docs/ZERO_MOCK.md)
+- [Global academic architecture](docs/GLOBAL_ACADEMIC_ARCHITECTURE.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
