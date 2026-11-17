@@ -18,7 +18,7 @@ export default async function ProfilePage() {
   return (
     <div className="workspace-shell">
       <WorkspaceNavigation active="profile" />
-      <main className="workspace-main workspace-profile-main">
+      <div className="workspace-main workspace-profile-main">
         <StudentOnboardingForm mode="profile" />
       </main>
     </div>
