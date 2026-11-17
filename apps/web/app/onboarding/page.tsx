@@ -1,24 +1,29 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { studentProfiles } from "@cogniva/database";
 import { StudentOnboardingForm } from "@/components/student-onboarding-form";
-import { getAuth } from "@/lib/auth";
+import { getSignedInStudent, getStudentDatabase } from "@/lib/student-data";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Academic profile",
-  description: "Set up the academic context for your Cogniva learning profile."
+  title: "Choose your institution",
+  description: "Optionally add your institution to personalise your Cogniva learning experience."
 };
 
 export default async function OnboardingPage() {
-  const session = await getAuth().api.getSession({
-    headers: await headers()
-  });
+  const student = await getSignedInStudent();
+  if (!student) redirect("/login");
 
-  if (!session?.user) {
-    redirect("/login");
-  }
+  const db = getStudentDatabase();
+  const [profile] = await db
+    .select({ onboardingCompletedAt: studentProfiles.onboardingCompletedAt })
+    .from(studentProfiles)
+    .where(eq(studentProfiles.userId, student.id))
+    .limit(1);
+
+  if (profile?.onboardingCompletedAt) redirect("/dashboard");
 
   return <StudentOnboardingForm />;
 }
