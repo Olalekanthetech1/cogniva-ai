@@ -64,11 +64,11 @@ This schema does not introduce canonical global `knowledge_components`, curricul
 
 ## 7. Migration and release order
 
-1. Review the Drizzle schema and generated SQL migration.
-2. Confirm the migration contains only the intended additive enum/table/index/constraint additions; no destructive operations or changes to existing profile/catalogue records.
-3. Run CI and inspect the SQL and journal/snapshot changes.
-4. Apply the migration to Neon through the explicit production workflow.
-5. Verify the workflow result and database readiness.
+1. Review the Drizzle schema and run CI.
+2. Run **Generate Neon database migrations** with `GENERATE`; this generates and commits SQL plus journal/snapshot changes without connecting to Neon.
+3. Inspect the exact generated SQL and confirm it contains only intended additive enum/table/index/constraint additions, with no destructive operations or changes to existing profile/catalogue records.
+4. Only after review, run **Apply Neon database migrations** with `APPLY`; this workflow applies already-committed SQL and does not generate migrations.
+5. Verify the apply workflow result and database readiness.
 6. Deploy application routes/pages that use the new tables only after the migration has succeeded.
 7. Verify ownership boundaries, plan revision persistence, message ordering, and session concurrency.
 
