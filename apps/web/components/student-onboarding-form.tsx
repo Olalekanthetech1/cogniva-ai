@@ -102,12 +102,7 @@ export function StudentOnboardingForm({ mode = "onboarding" }: { mode?: Mode }) 
 
   useEffect(() => {
     const query = search.trim();
-    if (selected || notListed || query.length < 2) {
-      setResults([]);
-      setSearching(false);
-      setSearchError("");
-      return;
-    }
+    if (selected || notListed || query.length < 2) return;
 
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
@@ -159,6 +154,8 @@ export function StudentOnboardingForm({ mode = "onboarding" }: { mode?: Mode }) 
     setNotListed(false);
     setSelfReportedName("");
     setResults([]);
+    setSearching(false);
+    setSearchError("");
     setError("");
   }
 
@@ -167,6 +164,8 @@ export function StudentOnboardingForm({ mode = "onboarding" }: { mode?: Mode }) 
     setNotListed(true);
     setSelfReportedName(search.trim());
     setResults([]);
+    setSearching(false);
+    setSearchError("");
     setError("");
   }
 
@@ -223,7 +222,7 @@ export function StudentOnboardingForm({ mode = "onboarding" }: { mode?: Mode }) 
     }
     if (notListed) {
       if (selfReportedName.trim().length < 2) {
-        setError("Enter your institution's name, or choose Skip for now.");
+        setError("Enter your institution&apos;s name, or choose Skip for now.");
         return;
       }
       void complete("not_listed");
@@ -273,8 +272,14 @@ export function StudentOnboardingForm({ mode = "onboarding" }: { mode?: Mode }) 
                       autoComplete="off"
                       maxLength={80}
                       onChange={(event) => {
-                        setSearch(event.target.value);
+                        const value = event.target.value;
+                        setSearch(value);
                         setError("");
+                        setSearchError("");
+                        if (value.trim().length < 2) {
+                          setResults([]);
+                          setSearching(false);
+                        }
                       }}
                       placeholder="Type your university or college name"
                       value={search}
@@ -337,7 +342,7 @@ export function StudentOnboardingForm({ mode = "onboarding" }: { mode?: Mode }) 
                       placeholder="Institution name"
                       value={selfReportedName}
                     />
-                    <small>This is saved as self-reported information. It will not be added to Cogniva's verified catalogue automatically.</small>
+                    <small>This is saved as self-reported information. It will not be added to Cogniva&apos;s verified catalogue automatically.</small>
                   </label>
                   <button className="institution-text-button" onClick={() => {
                     setNotListed(false);
