@@ -386,7 +386,7 @@ export function StudentOnboardingForm() {
               </label>
 
               <label className="onboarding-field">
-                <span>Current year of study</span>
+                <span>Current level</span>
                 <select
                   onChange={(event) => {
                     setYearOfStudy(event.target.value);
@@ -395,13 +395,11 @@ export function StudentOnboardingForm() {
                   value={yearOfStudy}
                 >
                   <option value="">Select your current level</option>
-                  {Array.from({ length: 12 }, (_, index) => index + 1).map(
-                    (year) => (
-                      <option key={year} value={year}>
-                        {year} level
-                      </option>
-                    )
-                  )}
+                  {[100, 200, 300, 400, 500, 600].map((level) => (
+                    <option key={level} value={level / 100}>
+                      {level} Level
+                    </option>
+                  ))}
                 </select>
               </label>
 
