@@ -28,6 +28,22 @@
 
 **Exit:** live identity and persistence flows work against a real database; academic metadata is dynamic and optional; CI tests cover access boundaries.
 
+## Phase 1.1 — Global academic interoperability
+
+This design step precedes further academic-catalogue implementation. See [GLOBAL_ACADEMIC_ARCHITECTURE.md](GLOBAL_ACADEMIC_ARCHITECTURE.md).
+
+- [ ] Approve the global academic domain model and distinguish institution identity, recognition, programme, course, curriculum version, local academic stage, ISCED mapping, and Knowledge Components.
+- [ ] Audit the live schema and applied migration; produce an additive migration and rollback plan before changing production tables.
+- [ ] Define country/jurisdiction, qualification-framework, ISCED-P/ISCED-A, and ISCED-F mappings without treating local labels as universal.
+- [ ] Define institution identifiers, flexible institution-unit hierarchy, recognition evidence, and source provenance.
+- [ ] Define programmes, programme versions, academic periods, course requirements, and versioned course syllabi.
+- [ ] Define global source adapters and terms/usage checks for ISO, UNESCO, ROR, OpenAlex, WHED/IAU, regulators, and official institution sources.
+- [ ] Define the Cogniva Knowledge Component graph and course-to-KC mapping contract independently of the university catalogue.
+- [ ] Redesign student onboarding to support verified institution, institution not listed, and independent learner paths.
+- [ ] Add integration tests for source provenance, verification-state boundaries, and cross-jurisdiction academic relationships.
+
+**Exit:** Cogniva's data model supports different education systems without country-specific assumptions; every catalogue claim has traceable provenance and a clear verification state; students can learn without a listed institution; the KC model can connect concepts across different local curricula.
+
 ## Phase 2 — Universal tutor foundation
 
 - [ ] Implement session/problem/message persistence.
@@ -65,14 +81,19 @@
 
 **Exit:** every enabled capability has tests, documented limitations, and evidence-based support claims.
 
-## Phase 6 — Learning intelligence
+## Phase 6 — Learning intelligence and adaptive practice
 
-- [ ] Define knowledge components and prerequisites.
-- [ ] Record assessment/attempt evidence.
-- [ ] Implement mastery estimates with uncertainty.
-- [ ] Recommend targeted practice.
+This is Cogniva's native CampusLearn/Sizzle-inspired learning capability; it is not an integration dependency on CampusLearn.
 
-**Exit:** progress explains the evidence supporting each estimate.
+- [ ] Implement the Cogniva Knowledge Component graph and prerequisite relationships.
+- [ ] Map course/syllabus versions to Knowledge Components with provenance, mapping confidence, and review status.
+- [ ] Record diagnostic assessment, practice attempts, and evaluation evidence.
+- [ ] Select targeted practice based on the student's demonstrated gaps and prerequisite readiness.
+- [ ] Implement mastery estimates with uncertainty, evidence windows, and model/version provenance.
+- [ ] Recommend advancement, reinforcement, or prerequisite review with an explanation.
+- [ ] Evaluate adaptive sequencing and learning outcomes against reviewed tasks and real student attempts.
+
+**Exit:** every adaptive recommendation is traceable to a Knowledge Component mapping and learning evidence; mastery displays its uncertainty and supporting evidence; the engine works with institution-based and independent learning contexts.
 
 ## Phase 7 — Academic resources
 
