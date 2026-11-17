@@ -150,10 +150,6 @@ export const learningPlanRevisions = pgTable(
       table.learningPlanId,
       table.revisionNumber
     ),
-    uniqueIndex("learning_plan_revisions_id_revision_unique").on(
-      table.revisionNumber,
-      table.id
-    ),
     index("learning_plan_revisions_plan_status_idx").on(
       table.learningPlanId,
       table.status
