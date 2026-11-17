@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const principles = [
   {
     number: "01",
@@ -23,12 +25,12 @@ export default function HomePage() {
   return (
     <main className="site-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Cogniva home">
+        <Link className="brand" href="/" aria-label="Cogniva home">
           <span className="brand-mark" aria-hidden="true">
             c
           </span>
           <span className="brand-name">cogniva</span>
-        </a>
+        </Link>
 
         <a
           className="repository-link"
@@ -59,9 +61,7 @@ export default function HomePage() {
             ask better questions, and develop understanding that lasts.
           </p>
 
-          <p className="hero-note">
-            One step at a time. At your pace.
-          </p>
+          <p className="hero-note">One step at a time. At your pace.</p>
         </div>
 
         <aside className="development-card" aria-label="Development status">
@@ -69,7 +69,9 @@ export default function HomePage() {
             <span className="card-icon" aria-hidden="true">
               C
             </span>
-            <span className="card-label">COGNIVA / BUILD LOG</span>
+            <span className="card-label">
+              COGNIVA / DEVELOPMENT STATUS
+            </span>
           </div>
 
           <p className="card-status">Currently in development</p>
@@ -79,9 +81,7 @@ export default function HomePage() {
             learning before opening the tutoring workspace.
           </p>
 
-          <div className="progress-track" aria-hidden="true">
-            <span />
-          </div>
+          <div className="card-divider" aria-hidden="true" />
           <div className="card-foot">
             <span>Foundation phase</span>
             <span>Phase 0</span>
