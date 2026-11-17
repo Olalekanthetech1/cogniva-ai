@@ -117,8 +117,6 @@ export const courses = pgTable(
     institutionId: uuid("institution_id").references(() => institutions.id, {
       onDelete: "set null"
     }),
-    selfReportedInstitution: varchar("self_reported_institution", { length: 200 }),
-    onboardingCompletedAt: timestampWithTimezone("onboarding_completed_at"),
     departmentId: uuid("department_id").references(() => departments.id, {
       onDelete: "set null"
     }),
