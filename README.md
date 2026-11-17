@@ -24,7 +24,7 @@ Cogniva is intended for undergraduate university students across academic discip
 
 ## Engineering status
 
-The repository is in Phase 0 (engineering foundation). The web application shell and CI checks are being established. Architecture documents describe intended contracts and implementation phases; they do not imply that database, authentication, AI tutoring, document processing, or verification features are already implemented.
+The web application foundation is implemented and its CI lint, TypeScript, and production-build checks pass. Phase 1 now introduces the PostgreSQL schema, Drizzle data layer, and Better Auth integration. A live database and email sender must be configured before registration or migrations can run. AI tutoring, document processing, and subject verification are not yet implemented.
 
 ## Prerequisites
 
@@ -52,11 +52,24 @@ pnpm build
 pnpm start
 ```
 
-The first dependency installation generates `pnpm-lock.yaml`. Commit that generated lockfile after installation so subsequent CI runs can use frozen-lockfile installs.
+## Phase 1 database setup
+
+1. Copy `.env.example` to `.env.local`.
+2. Create a PostgreSQL database and set `DATABASE_URL`. For a provider with separate pooled and direct connection URLs, set `DATABASE_MIGRATION_URL` to the direct URL for migrations.
+3. Set `BETTER_AUTH_URL` and generate a secret with at least 32 characters of high-entropy random data. Do not commit it.
+4. Configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` using a verified sender. Cogniva keeps registration unavailable until email verification can actually be delivered.
+5. Generate and review a migration, then apply it:
+
+```bash
+pnpm db:generate
+pnpm db:migrate
+```
+
+Do not run migrations against production without reviewing the generated SQL and taking an appropriate backup.
 
 ## Health check
 
-The web server exposes `GET /api/health` as an application liveness endpoint. It confirms that the web process is responding; it does not claim that database or AI dependencies are healthy.
+`GET /api/health` is an application liveness endpoint. It confirms that the web process is responding; it does not claim that the database, authentication email, or AI providers are healthy.
 
 ## Documentation
 

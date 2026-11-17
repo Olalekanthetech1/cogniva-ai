@@ -1,64 +1,80 @@
 # Cogniva — Database Design Baseline
 
-**Status:** Logical schema proposal only; not an executable migration or deployed database.
+**Status:** Drizzle schema and connection layer implemented; live database not connected.
 
-## 1. Principles
+## 1. Decisions
 
-Use PostgreSQL as the transactional source of truth, UUID primary keys, UTC timestamps, foreign keys, explicit indexes/unique constraints, and transactions for related state mutations. Drizzle ORM is the proposed typed access layer; SQL migrations remain version-controlled. JSONB is suitable for bounded, versioned structured payloads, not for the entire conversation or all learning state.
+- PostgreSQL is the transactional source of truth.
+- Drizzle ORM provides typed schema and query access.
+- The `@cogniva/database` workspace package owns schema, connection construction, and migrations.
+- The connection factory accepts a URL explicitly and does not open a connection merely by importing the package.
+- A separate migration URL may be used for a direct PostgreSQL connection when the application uses a pooled URL.
+- Better Auth owns user identity, credentials, verification records, and sessions; Cogniva academic/profile data remains in separate application tables.
 
-## 2. Logical entity groups
+Drizzle supports PostgreSQL through its `postgres.js` and `node-postgres` drivers. The selected `postgres.js` driver is compatible with managed PostgreSQL providers; a provider-specific driver can be introduced later if a deployment target requires it.
 
-**Identity and academic context**
-- `users`, `student_profiles`
-- `institutions`, `faculties`, `departments`
-- `subjects`, `courses`, `topics`, `course_topics`, `curriculum_versions`
+## 2. Implemented schema groups
 
-**Knowledge and mastery**
-- `knowledge_components`, `knowledge_prerequisites`, `mastery_records`
+### Better Auth identity
+- `user`: display name, unique email, verification state, profile image, timestamps.
+- `session`: session token, expiry, user association, optional device metadata.
+- `account`: authentication provider/account link and credential/token fields.
+- `verification`: email and other verification challenges with expiry.
 
-**Tutoring**
-- `learning_sessions`, `problems`, `solution_steps`
-- `conversation_messages`, `student_attempts`, `error_records`
-- `solution_verifications`
+The physical columns use snake_case while the Drizzle property names preserve Better Auth's expected schema contract. Authentication IDs remain text because Better Auth generates them.
 
-**Documents and sources**
-- `uploaded_documents`, `document_chunks`, `academic_sources`
+### Academic catalogue
+- `institutions`
+- `faculties`
+- `departments`
+- `subjects`
+- `courses`
+- `topics`
+- `curriculum_versions`
+- `course_topics`
 
-**AI operations and evaluations**
-- `ai_providers`, `ai_models`, `ai_requests`
-- `prompt_versions`, `evaluation_runs`
+There are no seeded or fabricated university, course, or subject catalogue records. Catalogue entries must be sourced or explicitly created as real data.
 
-**Operational support, when needed**
-- usage ledger, audit log, idempotency records, outbox events, feedback, and feature configuration.
+### Student profile
+- `student_profiles`: one-to-one user profile with optional institution/faculty/department context, programme, year of study, locale, time zone, and learning preferences.
 
-## 3. Ownership and relationships
+Academic affiliation is optional. A student can use Cogniva without selecting a university or course.
 
-A user owns their sessions, attempts, profile, and uploaded documents. A session belongs to one user and can reference its active problem, current step, and state version. Steps have an ordering key unique within their problem. Attempts preserve the original student submission. Verifications point to the exact claim/input, method/version, result, and limitations. Mastery references both a student and a knowledge component and retains supporting assessment evidence. Document chunks retain page/section/offset provenance. Idempotency keys are unique within a defined user and operation scope.
+## 3. Constraints and data integrity
 
-Enforce ownership in server-side queries or database policies; never trust a client-supplied user ID alone.
+- UUIDs are used for Cogniva-owned catalogue/profile records; Better Auth IDs remain text.
+- Ownership is enforced by foreign keys and must also be checked in every server-side query.
+- Deleting a user cascades through their session, account, and profile data.
+- Deleting a taxonomy parent is restricted or cascaded according to the relationship's meaning.
+- Unique indexes protect institution slugs, faculty/department scopes, curriculum versions, and course-topic ordering.
+- Level/year and topic-position constraints are represented in the schema.
+- Timestamps use timezone-aware PostgreSQL columns and UTC application dates.
+- JSONB is limited to bounded student preference data; messages and attempts will remain first-class relational entities when implemented.
 
-## 4. Transactions and concurrency
+## 4. Connection and migration workflow
 
-1. Persist an attempt before starting a slow evaluation.
-2. Use unique idempotency constraints to prevent duplicate attempts on retry.
-3. Use a session state version or equivalent optimistic concurrency token.
-4. Atomically persist step transitions, status, and their durable messages.
-5. Never keep a transaction open while waiting for an external provider.
-6. If evaluation fails, preserve the attempt and record retryable/terminal failure.
-7. If verification fails, preserve the failed/unavailable outcome.
+The database package exposes `createDatabase(databaseUrl)`. Importing it does not access process environment variables or create a live connection. The web auth module only creates its database connection when the auth API is invoked and the required environment is present.
 
-## 5. JSONB and vector handling
+With `DATABASE_URL` and optionally `DATABASE_MIGRATION_URL` configured:
 
-Validate every structured JSONB payload against a versioned schema. Keep relationally constrained/searchable data in relational columns. Determine vector dimension from the exact embedding model chosen; never guess it. Deleting a source must address derived chunks, vectors, caches, and indexes.
+1. Run `pnpm db:generate`.
+2. Review the generated SQL in `packages/database/migrations`.
+3. Run `pnpm db:migrate` against the intended database.
 
-## 6. Migration order
+Migrations have not been generated or applied in this repository because no live database connection has been supplied. The schema is type-checked in CI; it is not yet evidence of a deployed database.
 
-Create identity and academic taxonomy first; then session/problem/message entities; then steps, attempts, and verification; then documents, AI telemetry, and mastery. If sessions reference problems/current steps, add those foreign keys after the referenced tables to avoid migration cycles.
+## 5. Authentication configuration
+
+Better Auth is mounted at `/api/auth/*`. Email/password registration requires email verification. The verification and password-reset mail callbacks use Resend via `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
+
+The auth route reports a 503 configuration error when database, auth URL/secret, or email sender settings are absent. It does not silently create a local database or pretend verification emails were sent.
+
+The Better Auth secret must be at least 32 characters of high-entropy random data. Keep all connection strings, auth secrets, and email keys in local environment files or deployment secret settings, never Git.
+
+## 6. Next data entities
+
+After the tutoring workflow is implemented, add session/problem/message/step/attempt/verification entities. Document entities and vector columns come later, after selecting an embedding model and its actual vector dimension. Do not reserve guessed vector sizes.
 
 ## 7. Retention and deletion
 
-Define retention before public launch. A deletion request must account for relational rows, original objects, extracted text, embeddings, search indexes, caches, analytics identifiers, and queued jobs. Retain only data required by documented legal/operational needs.
-
-## 8. Implementation gate
-
-Confirm authentication, ownership/tenant model, database host, embedding model, object storage, and retention requirements before writing production migrations. This document is a logical model, not a final schema.
+Before public launch, define retention and deletion across relational rows, uploaded source objects, extracted text, embeddings, search indexes, caches, analytics identifiers, and queued jobs.

@@ -1,55 +1,93 @@
 # Cogniva — Implementation Plan
 
-**Status:** Roadmap only. The existence of a phase in this file does not mean it is complete.
+**Status:** Sequenced roadmap; completion is based on tested behaviour, not document presence.
 
 ## Phase 0 — Repository and engineering foundation
-Establish monorepo, package boundaries, supported runtime/tooling, formatting/type/test conventions, secure environment configuration, CI, web shell, health checks, and setup documentation.
 
-**Exit:** reproducible install/build; lint, typecheck, and tests run in CI; no secrets committed.
+- [x] Establish monorepo layout, documentation, and ZeroMock policy.
+- [x] Add the Next.js App Router web shell.
+- [x] Add Node/pnpm toolchain, lint, TypeScript checks, and GitHub Actions CI.
+- [x] Verify a successful production build in CI.
+- [ ] Commit the generated `pnpm-lock.yaml` so installs can use frozen-lockfile mode.
+
+**Exit:** application shell, quality checks, and reproducible dependency lockfile are in place.
 
 ## Phase 1 — Identity, persistence, and academic foundation
-Select authentication/session strategy; implement PostgreSQL, Drizzle, migrations, ownership boundaries, optional dynamic academic taxonomy, and idempotency/audit foundations.
 
-**Exit:** authenticated users, isolated records, repeatable migrations, database-driven curriculum structures.
+- [x] Add PostgreSQL/Drizzle database workspace and explicit connection factory.
+- [x] Define Better Auth identity tables and authentication integration.
+- [x] Define optional student profile and dynamic academic catalogue schema.
+- [x] Add migration generation/application commands.
+- [x] Require email verification and fail closed when auth infrastructure is not configured.
+- [ ] Configure a real PostgreSQL database and verified transactional email sender.
+- [ ] Generate/review/apply the first migration against the selected database.
+- [ ] Verify registration, email verification, sign-in, sign-out, session retrieval, and password reset end-to-end.
+- [ ] Add authenticated profile and academic catalogue APIs with ownership/visibility checks.
+
+**Exit:** live identity and persistence flows work against a real database; academic metadata is dynamic and optional; CI tests cover access boundaries.
 
 ## Phase 2 — Universal tutor foundation
-Implement session/problem/message persistence, tutoring state machine, Socratic action contracts, structured AI outputs, prompt versions, initial provider adapter, and truthful failure handling.
 
-**Exit:** text tutoring works end-to-end; clarification does not advance; failed calls do not complete steps.
+- [ ] Implement session/problem/message persistence.
+- [ ] Implement tutoring state machine and concurrency rules.
+- [ ] Implement one-step Socratic interaction contracts.
+- [ ] Add prompt versions, provider adapter, and structured output validation.
+- [ ] Implement `WHY_THIS_STEP`, progressive hints, and explicit continuation semantics.
+
+**Exit:** text-based tutoring works end-to-end; clarification does not advance; failed calls do not mark steps complete.
 
 ## Phase 3 — Multimodal problem input
-Add private image upload, extraction, structured interpretation, ambiguity detection, student confirmation, and provenance. Add PDF support only after image/text reliability is demonstrated.
 
-**Exit:** uncertain symbols are shown for confirmation; tutor uses confirmed transcription.
+- [ ] Add private image upload and structured extraction.
+- [ ] Add ambiguity detection and student confirmation.
+- [ ] Preserve source input, confirmed transcription, and provenance.
+- [ ] Add PDF support after image/text reliability is demonstrated.
+
+**Exit:** uncertain symbols are shown for confirmation; the tutor uses confirmed transcription.
 
 ## Phase 4 — Guided learning and feedback
-Persist attempts before evaluation; add error analysis, correction guidance, supported answer checking, summaries, alternatives, and session recovery.
 
-**Exit:** complete mathematics vertical slice including wrong attempt, correction, and resume.
+- [ ] Persist student attempts before evaluation.
+- [ ] Add constructive error classification and correction guidance.
+- [ ] Add supported answer checking with explicit verification provenance.
+- [ ] Add summaries, examples, alternatives, and session recovery.
+
+**Exit:** full mathematics vertical slice passes, including incorrect attempt, correction, and resume.
 
 ## Phase 5 — Subject reasoning and verification
-Define subject adapter/capability registry; implement mathematical verification first; add physics, chemistry, computer science, economics, and general modules incrementally. Sandbox code execution with explicit time/memory/network limits. Benchmark before advertising capability.
 
-**Exit:** every enabled capability has tests, limits, and support claims grounded in evidence.
+- [ ] Define subject adapter and capability registry.
+- [ ] Implement supported mathematical verification.
+- [ ] Add other subjects incrementally and benchmark each capability.
+- [ ] Sandbox code execution with explicit time, memory, and network limits.
+
+**Exit:** every enabled capability has tests, documented limitations, and evidence-based support claims.
 
 ## Phase 6 — Learning intelligence
-Define knowledge components/prerequisites; record attempt/assessment evidence; implement mastery estimates with uncertainty; recommend targeted practice.
+
+- [ ] Define knowledge components and prerequisites.
+- [ ] Record assessment/attempt evidence.
+- [ ] Implement mastery estimates with uncertainty.
+- [ ] Recommend targeted practice.
 
 **Exit:** progress explains the evidence supporting each estimate.
 
 ## Phase 7 — Academic resources
-Add secure document processing, extraction, chunking, embeddings, retrieval, source citations, durable retries, and deletion of original/derived data.
 
-**Exit:** answers distinguish document-grounded claims from general knowledge and preserve source locations.
+- [ ] Add secure document processing, extraction, chunking, embeddings, and retrieval.
+- [ ] Cite uploaded document page/section/chunk locations.
+- [ ] Add durable processing jobs and deletion of original/derived data.
+
+**Exit:** answers distinguish document-grounded claims from general knowledge.
 
 ## Phase 8 — Product readiness
-Complete accessibility, mobile, security, privacy, reliability, AI evaluations, rate limits, usage controls, backups, operational dashboards, and closed beta. Decide billing/institutional features separately.
 
-**Exit:** release thresholds, support process, and operational controls are met.
+- [ ] Complete accessibility, mobile, security, privacy, and reliability review.
+- [ ] Run end-to-end and AI evaluation suites.
+- [ ] Add rate limits, usage controls, backups, and operational dashboards.
+- [ ] Conduct closed beta and resolve evidence-backed defects.
 
-## First implementation target
-
-Prioritise Phase 0, then one complete text-based Socratic mathematics path. Add image interpretation once the stepwise state machine is stable. This sequence validates the core product while retaining the wider all-subject direction.
+**Exit:** release thresholds and support procedures are met.
 
 ## Definition of Done
 

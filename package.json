@@ -13,7 +13,10 @@
     "build": "pnpm --filter @cogniva/web build",
     "start": "pnpm --filter @cogniva/web start",
     "lint": "pnpm --filter @cogniva/web lint",
-    "typecheck": "pnpm --filter @cogniva/web typecheck",
-    "check": "pnpm lint && pnpm typecheck"
+    "typecheck": "pnpm --filter @cogniva/web typecheck && pnpm --filter @cogniva/database typecheck",
+    "check": "pnpm lint && pnpm typecheck",
+    "db:generate": "pnpm --filter @cogniva/database generate",
+    "db:migrate": "pnpm --filter @cogniva/database migrate",
+    "db:studio": "pnpm --filter @cogniva/database studio"
   }
 }
