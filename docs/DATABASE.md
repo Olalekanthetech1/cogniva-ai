@@ -65,12 +65,14 @@ The database package exposes `createDatabase(databaseUrl)`. Importing it does no
 With `DATABASE_URL` and optionally `DATABASE_MIGRATION_URL` configured:
 
 1. Update and type-check the Drizzle schema on a feature branch.
-2. Merge the reviewed schema change to `main).
-3. Run the explicit Neon migration workflow with `APPLY` only after reviewing the generated SQL and confirming the target database.
-4. Verify the workflow result and production readiness.
-5. Deploy application code that depends on the new schema only after the migration succeeds.
+2. Merge the reviewed schema change to `main`.
+3. Run **Generate Neon database migrations** with `GENERATE`. It generates and commits SQL plus Drizzle migration history to `main`; it does not connect to Neon.
+4. Inspect every generated SQL statement and the associated journal/snapshot changes. Confirm that the migration is additive and contains no unintended destructive changes.
+5. Only after that review, run **Apply Neon database migrations** with `APPLY`. This separate workflow applies already-committed pending migrations and does not generate or modify schema files.
+6. Verify the workflow result and production readiness.
+7. Deploy application code that depends on the new schema only after the migration succeeds.
 
-The production migration workflow generates migration SQL from the committed schema, commits the generated SQL and Drizzle migration history to `main`, and then applies pending migrations. Do not run it as a generic CI test: it changes the production database.
+Generation and production application are separate, manually confirmed workflows. The generation workflow does not require production database credentials; the application workflow requires `DATABASE_MIGRATION_URL` and explicit confirmation.
 
 ## 5. Proposed Learning Workspace schema
 
