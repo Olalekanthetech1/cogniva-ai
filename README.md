@@ -2,7 +2,7 @@
 
 **Understand More. Think Better.**
 
-Cogniva is an AI-powered university learning companion designed to help students build understanding through guided reasoning, interactive explanations, and evidence-aware learning support.
+Cogniva is a global, AI-powered learning companion designed to help students build understanding through guided reasoning, interactive explanations, and evidence-aware learning support. Institution and academic context are optional personalisation, not prerequisites for learning.
 
 ## Product principles
 
@@ -79,4 +79,5 @@ Do not run migrations against production without reviewing the generated SQL and
 - [API conventions](docs/API.md)
 - [ZeroMock policy](docs/ZERO_MOCK.md)
 - [Global academic architecture](docs/GLOBAL_ACADEMIC_ARCHITECTURE.md)
+- [Mobile and web product experience](docs/PRODUCT_EXPERIENCE.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
