@@ -61,15 +61,20 @@ This implementation step replaces the interim multi-field onboarding form and in
 
 **Exit:** every signed-in student can choose an institution, self-report one not listed, or skip and reach Home; institution self-reports never pollute the global catalogue; the Home shell and Learn/Profile routes work on mobile and desktop; unfinished capabilities are explicitly unavailable rather than simulated.
 
-## Phase 2 — Universal tutor foundation
+## Phase 2 — Learning Workspace and first Socratic tutoring vertical slice
 
-- [ ] Implement session/problem/message persistence.
-- [ ] Implement tutoring state machine and concurrency rules.
-- [ ] Implement one-step Socratic interaction contracts.
-- [ ] Add prompt versions, provider adapter, and structured output validation.
-- [ ] Implement `WHY_THIS_STEP`, progressive hints, and explicit continuation semantics.
+See [PHASE_2_LEARNING_WORKSPACE.md](PHASE_2_LEARNING_WORKSPACE.md) for the accepted product, data, provider, security, and acceptance contracts.
 
-**Exit:** text-based tutoring works end-to-end; clarification does not advance; failed calls do not mark steps complete.
+- [ ] Audit the live database schema and migration history; choose and configure one initial text AI provider before enabling AI features.
+- [ ] Add reviewed, additive persistence for student-owned learning plans, ordered units, plan-scoped concepts/skills, tutoring sessions, and messages.
+- [ ] Implement structured, versioned plan generation from actual learner topic input; validate provider output before saving it as a proposal.
+- [ ] Let learners edit, reorder, remove, and approve proposed plans; preserve edits and previous revisions.
+- [ ] Implement resumable text-first Socratic sessions from a plan unit or direct question/problem.
+- [ ] Enforce one-step tutoring, clarification-without-advancement, progressive hints, and explicit continuation.
+- [ ] Connect Home, Learn, plan review, and Tutor to real persisted student-owned records.
+- [ ] Test provider/database failures, schema validation, idempotency, concurrency, ownership, and responsive behaviour.
+
+**Exit:** a learner can start without an institution, generate and edit a personal learning plan, begin a text tutoring session, and resume genuine saved work; all AI outputs and failure states are truthful; no official curricula, canonical global KCs, mastery scores, or recommendations are fabricated.
 
 ## Phase 3 — Multimodal problem input
 
@@ -102,8 +107,8 @@ This implementation step replaces the interim multi-field onboarding form and in
 
 This is Cogniva's native CampusLearn/Sizzle-inspired learning capability; it is not an integration dependency on CampusLearn.
 
-- [ ] Implement the Cogniva Knowledge Component graph and prerequisite relationships.
-- [ ] Map course/syllabus versions to Knowledge Components with provenance, mapping confidence, and review status.
+- [ ] Implement the canonical Cogniva Knowledge Component graph and prerequisite relationships.
+- [ ] Map course/syllabus versions and reviewed learning-plan concepts to Knowledge Components with provenance, mapping confidence, and review status.
 - [ ] Record diagnostic assessment, practice attempts, and evaluation evidence.
 - [ ] Select targeted practice based on the student's demonstrated gaps and prerequisite readiness.
 - [ ] Implement mastery estimates with uncertainty, evidence windows, and model/version provenance.
@@ -118,7 +123,7 @@ This is Cogniva's native CampusLearn/Sizzle-inspired learning capability; it is 
 - [ ] Cite uploaded document page/section/chunk locations.
 - [ ] Add durable processing jobs and deletion of original/derived data.
 
-**Exit:** answers distinguish document-grounded claims from general knowledge.
+**Exit:** answers distinguish document-grounded claims from general subject knowledge.
 
 ## Phase 8 — Product readiness
 
