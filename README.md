@@ -29,7 +29,7 @@ The repository is in Phase 0 (engineering foundation). The web application shell
 ## Prerequisites
 
 - Node.js 24.x
-- pnpm 12.19.0 (pinned in the root `package.json`)
+- pnpm 12.21.0 (pinned in the root `package.json`)
 
 ## Local development
 
