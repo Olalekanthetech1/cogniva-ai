@@ -3,7 +3,6 @@
   --ink: #20231f;
   --muted: #686d65;
   --paper: #f7f7f4;
-  --surface: #ffffff;
   --line: #e6e8e1;
   --accent: #526b4e;
   --accent-dark: #3d553b;
@@ -189,7 +188,7 @@ a:focus-visible {
   color: var(--muted);
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: 1.35px;
+  letter-spacing: 1.1px;
 }
 
 .card-status {
@@ -217,19 +216,8 @@ a:focus-visible {
   line-height: 1.75;
 }
 
-.progress-track {
-  height: 5px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: #edf0e9;
-}
-
-.progress-track span {
-  display: block;
-  width: 18%;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent);
+.card-divider {
+  border-top: 1px solid var(--line);
 }
 
 .card-foot {
