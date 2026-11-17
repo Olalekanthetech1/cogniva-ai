@@ -57,7 +57,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       const { error } = await authClient.signIn.email({
         email: normalizedEmail,
         password,
-        callbackURL: "/"
+        callbackURL: "/onboarding"
       });
 
       if (error) {
@@ -69,7 +69,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         return;
       }
 
-      router.replace("/");
+      router.replace("/onboarding");
       router.refresh();
     } catch {
       setFormError(
