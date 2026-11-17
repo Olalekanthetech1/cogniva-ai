@@ -20,7 +20,7 @@ export default async function ProfilePage() {
       <WorkspaceNavigation active="profile" />
       <div className="workspace-main workspace-profile-main">
         <StudentOnboardingForm mode="profile" />
-      </main>
+      </div>
     </div>
   );
 }
