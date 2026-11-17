@@ -1,6 +1,6 @@
 # Cogniva — Database Design Baseline
 
-**Status:** Drizzle schema and connection layer implemented; live database not connected.
+**Status:** Drizzle schema and connection layer implemented; initial migrations applied to Neon and the deployed application has verified database connectivity.
 
 ## 1. Decisions
 
@@ -52,6 +52,8 @@ Academic affiliation is optional. A student can use Cogniva without selecting a 
 - JSONB is limited to bounded student preference data; messages and attempts will remain first-class relational entities when implemented.
 
 ## 4. Connection and migration workflow
+
+The initial production migration was applied successfully. The Render readiness endpoint has also returned `status: ready` with `checks.database: available`. Student profile and read-only catalogue routes now use the pooled application database connection.
 
 The database package exposes `createDatabase(databaseUrl)`. Importing it does not access process environment variables or create a live connection. The web auth module only creates its database connection when the auth API is invoked and the required environment is present.
 
