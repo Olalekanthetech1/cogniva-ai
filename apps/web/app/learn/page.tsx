@@ -32,7 +32,7 @@ export default async function LearnPage() {
         <header className="workspace-page-heading">
           <p className="workspace-eyebrow">COGNIVA / LEARN</p>
           <h1>Explore learning.</h1>
-          <p>Browse subject areas available in Cogniva's current catalogue.</p>
+          <p>Browse subject areas available in Cogniva&apos;s current catalogue.</p>
         </header>
         {availableSubjects.length > 0 ? (
           <section className="workspace-subject-grid" aria-label="Available subjects">

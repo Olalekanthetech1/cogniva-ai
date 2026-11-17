@@ -36,7 +36,7 @@ The physical columns use snake_case while the Drizzle property names preserve Be
 There are no seeded or fabricated university, course, or subject catalogue records. Catalogue entries must be sourced or explicitly created as real data.
 
 ### Student profile
-- `student_profiles`: one-to-one user profile with optional institution/faculty/department context, programme, year of study, locale, time zone, and learning preferences.
+- `student_profiles`: one-to-one user profile with optional catalogue institution or self-reported institution, onboarding completion timestamp, optional legacy faculty/department context, programme, year of study, locale, time zone, and learning preferences.
 
 Academic affiliation is optional. A student can use Cogniva without selecting a university or course.
 
@@ -53,7 +53,7 @@ Academic affiliation is optional. A student can use Cogniva without selecting a 
 
 ## 4. Connection and migration workflow
 
-The initial production migration was applied successfully. The Render readiness endpoint has also returned `status: ready` with `checks.database: available`. Student profile and read-only catalogue routes now use the pooled application database connection.
+The initial production migration was applied successfully. The Render readiness endpoint has also returned `status: ready` with `checks.database: available`. Student profile and read-only catalogue routes now use the pooled application database connection. The additive `0001_student_onboarding_state` migration adds only `self_reported_institution` and `onboarding_completed_at`, plus a check preventing a catalogue institution and self-reported institution from being stored simultaneously. It preserves existing profile fields. Apply this follow-on migration successfully before deploying application code that reads or writes the new columns.
 
 The database package exposes `createDatabase(databaseUrl)`. Importing it does not access process environment variables or create a live connection. The web auth module only creates its database connection when the auth API is invoked and the required environment is present.
 

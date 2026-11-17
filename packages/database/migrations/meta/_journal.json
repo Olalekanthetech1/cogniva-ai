@@ -8,6 +8,13 @@
       "when": 1794932320152,
       "tag": "0000_dapper_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794941000000,
+      "tag": "0001_student_onboarding_state",
+      "breakpoints": true
     }
   ]
 }

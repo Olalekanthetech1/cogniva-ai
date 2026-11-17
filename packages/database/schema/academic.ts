@@ -267,7 +267,9 @@ export const studentProfiles = pgTable(
     updatedAt: timestampWithTimezone("updated_at")
       .notNull()
       .defaultNow()
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => new Date()),
+    selfReportedInstitution: varchar("self_reported_institution", { length: 200 }),
+    onboardingCompletedAt: timestampWithTimezone("onboarding_completed_at")
   },
   (table) => [
     uniqueIndex("student_profiles_user_id_unique").on(table.userId),
@@ -276,6 +278,10 @@ export const studentProfiles = pgTable(
     check(
       "student_profiles_year_of_study_check",
       sql`${table.yearOfStudy} is null or (${table.yearOfStudy} >= 1 and ${table.yearOfStudy} <= 12)`
+    ),
+    check(
+      "student_profiles_institution_choice_check",
+      sql`${table.institutionId} is null or ${table.selfReportedInstitution} is null`
     )
   ]
 );

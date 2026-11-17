@@ -30,24 +30,36 @@
 
 ## Phase 1.1 — Global academic interoperability
 
-This design step precedes further academic-catalogue implementation. See [GLOBAL_ACADEMIC_ARCHITECTURE.md](GLOBAL_ACADEMIC_ARCHITECTURE.md).
+This design step precedes further academic-catalogue implementation. See [GLOBAL_ACADEMIC_ARCHITECTURE.md](GLOBAL_ACADEMIC_ARCHITECTURE.md) and [PRODUCT_EXPERIENCE.md](PRODUCT_EXPERIENCE.md).
 
-- [ ] Approve the global academic domain model and distinguish institution identity, recognition, programme, course, curriculum version, local academic stage, ISCED mapping, and Knowledge Components.
+- [x] Approve the global academic domain model and distinguish institution identity, recognition, programme, course, curriculum version, local academic stage, ISCED mapping, and Knowledge Components.
 - [ ] Audit the live schema and applied migration; produce an additive migration and rollback plan before changing production tables.
 - [ ] Define country/jurisdiction, qualification-framework, ISCED-P/ISCED-A, and ISCED-F mappings without treating local labels as universal.
 - [ ] Define institution identifiers, flexible institution-unit hierarchy, recognition evidence, and source provenance.
 - [ ] Define programmes, programme versions, academic periods, course requirements, and versioned course syllabi.
 - [ ] Define global source adapters and terms/usage checks for ISO, UNESCO, ROR, OpenAlex, WHED/IAU, regulators, and official institution sources.
 - [ ] Define the Cogniva Knowledge Component graph and course-to-KC mapping contract independently of the university catalogue.
-- [ ] Approve the mobile-first and responsive desktop information architecture in [PRODUCT_EXPERIENCE.md](PRODUCT_EXPERIENCE.md).
-- [ ] Replace the multi-field first-run profile form with one optional institution selector; support a catalogue match, self-reported institution-not-listed path, and skip/independent-learner path, then route every path directly to Home.
-- [ ] Defer faculty, department, programme, qualification, academic stage and academic-period questions until they materially help a learning task or the learner edits Profile.
-- [ ] Implement adaptive Home states for new and returning learners, using only authenticated, persisted data and truthful empty/error states.
-- [ ] Keep subject/topic discovery in Learn, retain Tutor as a dedicated navigation destination, and expose courses/skills from real student records.
-- [ ] Add a recommended next step only after it can be explained from recorded attempts, reviewed Knowledge Component mappings and a versioned mastery estimate.
+- [x] Approve the mobile-first and responsive desktop information architecture in [PRODUCT_EXPERIENCE.md](PRODUCT_EXPERIENCE.md).
+- [x] Approve optional institution-only onboarding with self-reported and independent-learner paths.
 - [ ] Add integration tests for source provenance, verification-state boundaries, and cross-jurisdiction academic relationships.
 
 **Exit:** Cogniva's data model supports different education systems without country-specific assumptions; every catalogue claim has traceable provenance and a clear verification state; students can learn without a listed institution; the KC model can connect concepts across different local curricula.
+
+## Phase 1.2 — Optional onboarding and adaptive Home
+
+This implementation step replaces the interim multi-field onboarding form and introduces the authenticated student workspace.
+
+- [ ] Add an additive migration for onboarding completion and self-reported institution data; preserve all existing profile values.
+- [ ] Add an authenticated onboarding endpoint supporting catalogue selection, self-reported institution-not-listed, and skip.
+- [ ] Replace first-run onboarding with one optional institution question and global search results that show source-provided country metadata.
+- [ ] Route completed students to an authenticated Home dashboard and incomplete students to onboarding.
+- [ ] Implement responsive Home with a primary learning entry area and truthful capability availability.
+- [ ] Add a real catalogue-backed Learn view and a working Profile institution editor.
+- [ ] Display Tutor and Progress as unavailable until the respective session and evidence models exist; do not simulate functionality.
+- [ ] Add automated tests for onboarding choices, account ownership, institution validation, and completion routing.
+- [ ] Apply the reviewed migration to production before deploying application code that uses its new columns.
+
+**Exit:** every signed-in student can choose an institution, self-report one not listed, or skip and reach Home; institution self-reports never pollute the global catalogue; the Home shell and Learn/Profile routes work on mobile and desktop; unfinished capabilities are explicitly unavailable rather than simulated.
 
 ## Phase 2 — Universal tutor foundation
 
