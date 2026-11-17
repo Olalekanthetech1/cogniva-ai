@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { studentProfiles } from "@cogniva/database";
+import { institutions, studentProfiles } from "@cogniva/database";
 import { getSignedInStudent, getStudentDatabase } from "@/lib/student-data";
 
 export async function requireCompletedStudent() {
@@ -12,9 +12,12 @@ export async function requireCompletedStudent() {
     .select({
       onboardingCompletedAt: studentProfiles.onboardingCompletedAt,
       institutionId: studentProfiles.institutionId,
-      selfReportedInstitution: studentProfiles.selfReportedInstitution
+      selfReportedInstitution: studentProfiles.selfReportedInstitution,
+      institutionName: institutions.name,
+      countryCode: institutions.countryCode
     })
     .from(studentProfiles)
+    .leftJoin(institutions, eq(studentProfiles.institutionId, institutions.id))
     .where(eq(studentProfiles.userId, student.id))
     .limit(1);
 
