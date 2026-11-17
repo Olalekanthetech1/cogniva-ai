@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { SignOutButton } from "@/components/sign-out-button";
 
 type CatalogueOption = {
   id: string;
@@ -262,7 +263,10 @@ export function StudentOnboardingForm() {
           </span>
           <span className="brand-name">cogniva</span>
         </Link>
-        <span className="onboarding-step">STUDENT SETUP · 1 OF 1</span>
+        <div className="onboarding-topbar-actions">
+          <span className="onboarding-step">STUDENT SETUP · 1 OF 1</span>
+          <SignOutButton />
+        </div>
       </header>
 
       <section className="onboarding-content" aria-labelledby="onboarding-title">
