@@ -46,6 +46,15 @@ Implemented authenticated, read-only catalogue routes:
 
 Course, topic, curriculum-version, and knowledge-component discovery routes remain planned. Catalogue content is database-driven. The deployed catalogue currently has no institution/faculty/department/subject/course seed records; empty results are reported as empty, never replaced with sample data.
 
+### Optional institution onboarding
+
+Implemented in this change:
+- `POST /api/v1/student/onboarding` accepts exactly one of three choices: `{ choice: "catalogue", institutionId }`, `{ choice: "not_listed", institutionName }`, or `{ choice: "skip" }`.
+- The owner is derived from the authenticated Better Auth session. Catalogue IDs are checked against the current institution table. Self-reported names are stored only on that student's profile and are never added to the global catalogue.
+- The profile response includes `selfReportedInstitution` and `onboardingCompletedAt`. An absent completion timestamp means the first-run choice has not been completed.
+- Choosing Skip completes onboarding without requiring institution data. It clears institution selection while preserving programme/year fields; a changed catalogue institution clears faculty/department links that would no longer be valid.
+- Institution search returns `countryCode` so the UI can disambiguate records. Cogniva does not infer country or recognition status when the source has not supplied it.
+
 ## 5. Sessions and tutoring
 
 - `POST /api/v1/sessions`
