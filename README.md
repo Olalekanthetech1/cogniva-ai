@@ -24,11 +24,39 @@ Cogniva is intended for undergraduate university students across academic discip
 
 ## Engineering status
 
-This repository is at the foundation/scaffolding stage. The architecture documents describe intended contracts and implementation phases; they do not imply that the corresponding features, integrations, providers, or infrastructure are already implemented.
+The repository is in Phase 0 (engineering foundation). The web application shell and CI checks are being established. Architecture documents describe intended contracts and implementation phases; they do not imply that database, authentication, AI tutoring, document processing, or verification features are already implemented.
 
-## Development
+## Prerequisites
 
-The repository is configured as a pnpm workspace. Application-specific installation and run commands will be documented after the web application package and its tooling are added.
+- Node.js 24.x
+- pnpm 12.19.0 (pinned in the root `package.json`)
+
+## Local development
+
+From the repository root:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+Useful commands:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm check
+pnpm build
+pnpm start
+```
+
+The first dependency installation generates `pnpm-lock.yaml`. Commit that generated lockfile after installation so subsequent CI runs can use frozen-lockfile installs.
+
+## Health check
+
+The web server exposes `GET /api/health` as an application liveness endpoint. It confirms that the web process is responding; it does not claim that database or AI dependencies are healthy.
 
 ## Documentation
 

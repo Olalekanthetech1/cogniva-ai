@@ -1,0 +1,359 @@
+:root {
+  color-scheme: light;
+  --ink: #20231f;
+  --muted: #686d65;
+  --paper: #f7f7f4;
+  --surface: #ffffff;
+  --line: #e6e8e1;
+  --accent: #526b4e;
+  --accent-dark: #3d553b;
+  --accent-soft: #eaf0e6;
+  --serif: Georgia, "Times New Roman", serif;
+  --sans: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 85% 12%, rgba(220, 231, 211, 0.45), transparent 34rem),
+    var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+a:focus-visible {
+  outline: 3px solid #829b78;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.site-shell {
+  width: min(1120px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.topbar {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+}
+
+.brand-mark,
+.card-icon {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 11px;
+  background: var(--accent);
+  color: white;
+  font-family: var(--serif);
+  font-size: 25px;
+  line-height: 1;
+}
+
+.brand-name {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.9px;
+}
+
+.repository-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.repository-link:hover {
+  color: var(--accent-dark);
+}
+
+.repository-link span {
+  font-size: 17px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.75fr);
+  align-items: center;
+  gap: clamp(42px, 8vw, 112px);
+  padding: clamp(76px, 10vw, 124px) 0 104px;
+}
+
+.hero-copy {
+  max-width: 680px;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 25px;
+  color: var(--accent-dark);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7a9a70;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.hero h1 {
+  max-width: 680px;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(48px, 6.5vw, 76px);
+  font-weight: 500;
+  letter-spacing: -3.8px;
+  line-height: 1.04;
+}
+
+.hero h1 span {
+  display: block;
+  color: var(--accent);
+}
+
+.hero-description {
+  max-width: 540px;
+  margin: 27px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+.hero-note {
+  margin: 23px 0 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 18px;
+  font-style: italic;
+}
+
+.development-card {
+  padding: 27px;
+  border: 1px solid #e1e5dc;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 55px rgba(45, 60, 40, 0.06);
+}
+
+.card-topline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  font-size: 19px;
+}
+
+.card-label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.35px;
+}
+
+.card-status {
+  margin: 28px 0 11px;
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.development-card h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 29px;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+}
+
+.card-description {
+  margin: 14px 0 27px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.progress-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #edf0e9;
+}
+
+.progress-track span {
+  display: block;
+  width: 18%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.card-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.principles {
+  padding: 0 0 92px;
+}
+
+.section-heading {
+  margin-bottom: 27px;
+}
+
+.section-heading .eyebrow {
+  margin-bottom: 12px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(29px, 4vw, 39px);
+  font-weight: 500;
+  letter-spacing: -1.2px;
+}
+
+.principle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.principle-card {
+  min-height: 190px;
+  padding: 23px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.principle-number {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.principle-card h3 {
+  margin: 20px 0 9px;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+}
+
+.principle-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 0 30px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .site-shell {
+    width: min(100% - 36px, 560px);
+  }
+
+  .topbar {
+    min-height: 74px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 43px;
+    padding: 76px 0 78px;
+  }
+
+  .hero h1 {
+    font-size: clamp(48px, 12vw, 66px);
+    letter-spacing: -2.8px;
+  }
+
+  .hero-description {
+    font-size: 15px;
+  }
+
+  .development-card {
+    max-width: 480px;
+  }
+
+  .principle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .principle-card {
+    min-height: 0;
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
