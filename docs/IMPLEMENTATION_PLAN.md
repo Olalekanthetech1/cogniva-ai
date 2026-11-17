@@ -42,7 +42,9 @@ This design step precedes further academic-catalogue implementation. See [GLOBAL
 - [ ] Approve the mobile-first and responsive desktop information architecture in [PRODUCT_EXPERIENCE.md](PRODUCT_EXPERIENCE.md).
 - [ ] Replace the multi-field first-run profile form with one optional institution selector; support a catalogue match, self-reported institution-not-listed path, and skip/independent-learner path, then route every path directly to Home.
 - [ ] Defer faculty, department, programme, qualification, academic stage and academic-period questions until they materially help a learning task or the learner edits Profile.
-- [ ] Ensure Home, Continue learning and learning-area components read only authenticated, persisted data and have truthful empty/error states.
+- [ ] Implement adaptive Home states for new and returning learners, using only authenticated, persisted data and truthful empty/error states.
+- [ ] Keep subject/topic discovery in Learn, retain Tutor as a dedicated navigation destination, and expose courses/skills from real student records.
+- [ ] Add a recommended next step only after it can be explained from recorded attempts, reviewed Knowledge Component mappings and a versioned mastery estimate.
 - [ ] Add integration tests for source provenance, verification-state boundaries, and cross-jurisdiction academic relationships.
 
 **Exit:** Cogniva's data model supports different education systems without country-specific assumptions; every catalogue claim has traceable provenance and a clear verification state; students can learn without a listed institution; the KC model can connect concepts across different local curricula.
