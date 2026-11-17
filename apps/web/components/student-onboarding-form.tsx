@@ -386,7 +386,7 @@ export function StudentOnboardingForm() {
               </label>
 
               <label className="onboarding-field">
-                <span>Current undergraduate level</span>
+                <span>Current level</span>
                 <select
                   onChange={(event) => {
                     setYearOfStudy(event.target.value);
@@ -401,9 +401,6 @@ export function StudentOnboardingForm() {
                     </option>
                   ))}
                 </select>
-                <small>
-                  Your level is stored as its academic year number for compatibility.
-                </small>
               </label>
 
               {catalogueError && (
