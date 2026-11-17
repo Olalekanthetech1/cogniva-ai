@@ -91,8 +91,8 @@ export default function HomePage() {
 
           <div className="card-divider" aria-hidden="true" />
           <div className="card-foot">
-            <span>Foundation phase</span>
-            <span>Phase 0</span>
+            <span>Identity & academic setup</span>
+            <span>Phase 1</span>
           </div>
         </aside>
       </section>
