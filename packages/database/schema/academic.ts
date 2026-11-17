@@ -117,6 +117,8 @@ export const courses = pgTable(
     institutionId: uuid("institution_id").references(() => institutions.id, {
       onDelete: "set null"
     }),
+    selfReportedInstitution: varchar("self_reported_institution", { length: 200 }),
+    onboardingCompletedAt: timestampWithTimezone("onboarding_completed_at"),
     departmentId: uuid("department_id").references(() => departments.id, {
       onDelete: "set null"
     }),
@@ -276,6 +278,10 @@ export const studentProfiles = pgTable(
     check(
       "student_profiles_year_of_study_check",
       sql`${table.yearOfStudy} is null or (${table.yearOfStudy} >= 1 and ${table.yearOfStudy} <= 12)`
+    ),
+    check(
+      "student_profiles_institution_choice_check",
+      sql`${table.institutionId} is null or ${table.selfReportedInstitution} is null`
     )
   ]
 );
