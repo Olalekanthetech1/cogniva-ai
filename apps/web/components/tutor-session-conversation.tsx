@@ -11,6 +11,14 @@ type TutorMessage = {
   createdAt: string;
 };
 
+type TutorAttempt = {
+  id: string;
+  messageId: string;
+  attemptNumber: number;
+  evaluationStatus: string;
+  submittedAt: string;
+};
+
 type TutorSession = {
   id: string;
   intent: string;
@@ -22,6 +30,7 @@ type TutorSession = {
   updatedAt: string;
   completedAt: string | null;
   messages: TutorMessage[];
+  attempts: TutorAttempt[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -36,7 +45,11 @@ function readApiError(payload: unknown, fallback: string): string {
 }
 
 function parseTutorSession(value: unknown): TutorSession | null {
-  if (!isRecord(value) || !Array.isArray(value.messages)) return null;
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.messages) ||
+    !Array.isArray(value.attempts)
+  ) return null;
 
   const messages = value.messages.filter((item): item is TutorMessage => {
     if (!isRecord(item)) return false;
@@ -50,6 +63,19 @@ function parseTutorSession(value: unknown): TutorSession | null {
   });
 
   if (messages.length !== value.messages.length) return null;
+
+  const attempts = value.attempts.filter((item): item is TutorAttempt => {
+    if (!isRecord(item)) return false;
+    return (
+      typeof item.id === "string" &&
+      typeof item.messageId === "string" &&
+      typeof item.attemptNumber === "number" &&
+      typeof item.evaluationStatus === "string" &&
+      typeof item.submittedAt === "string"
+    );
+  });
+
+  if (attempts.length !== value.attempts.length) return null;
 
   if (
     typeof value.id !== "string" ||
@@ -74,7 +100,8 @@ function parseTutorSession(value: unknown): TutorSession | null {
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
     completedAt: typeof value.completedAt === "string" ? value.completedAt : null,
-    messages
+    messages,
+    attempts
   };
 }
 
@@ -95,6 +122,23 @@ async function fetchTutorSession(sessionId: string): Promise<TutorSession> {
   return data;
 }
 
+function formatAttemptStatus(status: string): string {
+  switch (status) {
+    case "not_evaluated":
+      return "Not evaluated yet";
+    case "pending":
+      return "Evaluation pending";
+    case "evaluated":
+      return "Evaluated";
+    case "unavailable":
+      return "Evaluation unavailable";
+    case "failed":
+      return "Evaluation failed";
+    default:
+      return "Evaluation status unknown";
+  }
+}
+
 function formatIntent(intent: string): string {
   switch (intent) {
     case "understand_concept":
@@ -113,6 +157,7 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draft, setDraft] = useState("");
+  const [messageType, setMessageType] = useState<"attempt" | "question">("attempt");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -150,7 +195,7 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
       const response = await fetch("/api/v1/tutor/sessions/" + sessionId + "/respond", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(message ? { message } : {})
+        body: JSON.stringify(message ? { message, messageType } : {})
       });
       const payload: unknown = await response.json().catch(() => null);
 
@@ -230,7 +275,9 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
       </header>
 
       <div className="tutor-message-list" aria-live="polite">
-        {session.messages.map((message) => (
+        {session.messages.map((message) => {
+          const attempt = session.attempts.find((item) => item.messageId === message.id);
+          return (
           <article
             className={"tutor-message " + (message.role === "student" ? "is-student" : "is-tutor")}
             key={message.id}
@@ -239,6 +286,11 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
               {message.role === "student" ? "You" : "Cogniva"}
             </p>
             <p className="tutor-message-content">{message.content}</p>
+            {attempt && (
+              <p className="tutor-attempt-status">
+                Attempt #{attempt.attemptNumber} · {formatAttemptStatus(attempt.evaluationStatus)}
+              </p>
+            )}
             <time dateTime={message.createdAt}>
               {new Date(message.createdAt).toLocaleTimeString([], {
                 hour: "numeric",
@@ -246,7 +298,8 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
               })}
             </time>
           </article>
-        ))}
+          );
+        })}
       </div>
 
       {error && <p className="tutor-error" role="alert">{error}</p>}
@@ -269,11 +322,24 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
       ) : canSendMessage ? (
         <form className="tutor-reply-form" onSubmit={handleSubmit}>
           <label className="tutor-form-field">
+            <span>What are you sending?</span>
+            <select
+              value={messageType}
+              onChange={(event) => setMessageType(event.target.value as "attempt" | "question")}
+              disabled={isSubmitting}
+            >
+              <option value="attempt">My answer or working (attempt)</option>
+              <option value="question">A follow-up question</option>
+            </select>
+          </label>
+          <label className="tutor-form-field">
             <span>Your turn</span>
             <textarea
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Share your reasoning or ask a follow-up..."
+              placeholder={messageType === "attempt"
+                ? "Show your answer, working or reasoning..."
+                : "Ask your follow-up question..."}
               maxLength={4000}
               rows={3}
               required
@@ -285,7 +351,11 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
             type="submit"
             disabled={isSubmitting || !draft.trim()}
           >
-            {isSubmitting ? "Sending..." : "Send response"}
+            {isSubmitting
+              ? "Sending..."
+              : messageType === "attempt"
+                ? "Submit attempt"
+                : "Send follow-up"}
           </button>
         </form>
       ) : (
