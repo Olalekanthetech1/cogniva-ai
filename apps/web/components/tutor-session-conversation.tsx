@@ -295,7 +295,7 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
       )}
 
       <p className="tutor-form-note">
-        Cogniva's replies guide your reasoning. A conversation by itself does not establish demonstrated mastery.
+        Cogniva&apos;s replies guide your reasoning. A conversation by itself does not establish demonstrated mastery.
       </p>
     </section>
   );
