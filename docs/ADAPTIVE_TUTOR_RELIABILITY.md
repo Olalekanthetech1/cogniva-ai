@@ -1,6 +1,6 @@
 # Adaptive tutor reliability layer
 
-**Status:** Implemented in the tutor response path; awaiting CI review and production verification.
+**Status:** Implemented in the tutor response path; awaiting CI review.
 
 ## Turn-aware teaching
 
@@ -23,6 +23,17 @@ The parser does not use eval or execute learner text. It enforces expression len
 
 When exactly one explicit numeric mismatch is found in a generated tutor response, Cogniva can replace that response with an arithmetic-only correction. When a learner challenges prior work, the deterministic path is used only if recent tutor history contains exactly one distinct unresolved numeric claim. Ambiguous multi-claim history is left to the configured tutor rather than selecting an arbitrary calculation. Ordinary mentions of an answer, or simply reporting a learner answer, do not by themselves trigger deterministic correction. The response metadata records whether the answer came from the configured provider or the bounded arithmetic checker. A deterministic arithmetic result does not verify units, physical interpretation, or the surrounding explanation.
 
+## Bounded answer evaluation and real-pair consistency
+
+A plain numeric learner attempt is evaluated only when the immediately preceding tutor message contains a supported explicit arithmetic prompt, or when the tutor asks for a recognized sum-square or discriminant result and the conversation contains one unambiguous pair of constraints:
+
+- \(x^2 + y^2 = A\)
+- \(xy = B\)
+
+For that specific constraint form, the verifier derives \((x-y)^2 = A - 2B\) and checks whether a real pair is possible. In a force-magnitude context, it also requires a nonnegative product. If the learner's single numeric answer matches the supported target, Cogniva acknowledges it and advances instead of asking for the same calculation again. If the supported constraints prove impossible, Cogniva explains the contradiction rather than generating force values.
+
+The checker fails closed when a required equation is missing, multiple conflicting values are present, the learner submits an ambiguous multi-number response, or the notation is outside the supported form. It does not parse arbitrary symbolic algebra, solve general systems, or grade multi-step working. Its deterministic feedback does not mark an attempt as mastered or change mastery/progress records.
+
 ## Evidence boundary
 
 This is not a general theorem prover, symbolic algebra system, or subject-wide fact checker. It deliberately ignores unsupported notation and expressions it cannot parse. It does not independently verify non-numeric scientific, historical, or factual claims. For those, the adaptive prompt requires the tutor to distinguish supported reasoning from uncertainty rather than claiming verification it has not performed.
@@ -31,4 +42,4 @@ No provider routing preference, database schema, mastery status, learner progres
 
 ## Regression coverage
 
-The native Node test suite includes regression cases from a real learner session alongside independent arithmetic, trigonometric, precedence, rounding, ambiguity, false-positive challenge, and unsupported-expression cases. These tests exercise the declared grammar; they do not establish general mathematical reasoning capability.
+The native Node test suite includes regression cases from a real learner session alongside independent arithmetic, trigonometric, precedence, rounding, numeric-answer prompt matching, sum-square/product feasibility, discriminant evaluation, ambiguous constraint rejection, false-positive challenge, and unsupported-expression cases. These tests exercise the declared grammar; they do not establish general mathematical reasoning capability.
