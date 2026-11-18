@@ -23,6 +23,7 @@ export type LearningPlanOutput = {
 };
 
 export class LearningPlanOutputValidationError extends Error {
+  constructor(code: string, message: string);
   readonly code: string;
 }
 

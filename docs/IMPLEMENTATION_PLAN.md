@@ -80,7 +80,7 @@ See [PHASE_2_LEARNING_WORKSPACE.md](PHASE_2_LEARNING_WORKSPACE.md) for the accep
 
 ## Admin Foundation — AI Configuration
 
-This slice extends the deployed `/admin` control centre. It stores routing preferences and reports credential presence; it does not integrate or activate any model.
+This area now includes persisted task/provider/model preferences, audit events, server-side credential-presence reporting, provider-neutral Gemini/Groq/Mistral text adapters, fixed-prompt administrator connection tests, and the persisted administrator benchmark workflow. The text runtime is integrated into the Socratic tutor and personal learning-plan generation routes when each task has a saved provider/model preference and matching server credential. No comparative provider benchmark has been completed, no model has been selected as a winner, and runtime availability is not the same as pedagogical validation. Production schema/deployment state must be verified separately rather than inferred from repository files.
 
 - [ ] Add reviewed, additive persistence for task/provider/model preferences and administrative audit events.
 - [ ] Add an admin-only API that returns provider credential-presence booleans, never secret values.

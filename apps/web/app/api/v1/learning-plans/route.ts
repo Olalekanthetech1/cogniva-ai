@@ -140,9 +140,10 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const db = getStudentDatabase();
+  let db: ReturnType<typeof getStudentDatabase>;
   let planId: string;
   try {
+    db = getStudentDatabase();
     const [plan] = await db
       .insert(learningPlans)
       .values({
