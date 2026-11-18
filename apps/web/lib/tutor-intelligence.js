@@ -183,6 +183,20 @@ function decimalPlaces(value) {
  * Extract only explicit numeric equalities/approximations that the bounded
  * arithmetic parser can evaluate. Unsupported notation is deliberately ignored.
  */
+function normalizeExplicitExpression(source) {
+  const expression = String(source ?? "").trim();
+  const separator = expression.indexOf(":");
+
+  if (separator > 0 && separator <= 24) {
+    const label = expression.slice(0, separator).trim();
+    if (/^(hint|calculation|expression|result|check)$/i.test(label)) {
+      return expression.slice(separator + 1).trim();
+    }
+  }
+
+  return expression;
+}
+
 export function findNumericClaims(text) {
   if (typeof text !== "string" || !text.trim()) return [];
 
@@ -192,48 +206,37 @@ export function findNumericClaims(text) {
   const seen = new Set();
 
   for (const match of text.matchAll(pattern)) {
-    const expression = match[1].trim().replace(/^[\s:;,]+/, "");
+    const expression = normalizeExplicitExpression(match[1]);
     const operator = match[2];
     const claimedText = match[3];
-    let verifiedExpression = expression;
-    let computedValue = evaluateNumericExpression(verifiedExpression);
-    if (computedValue === null) {
-      // Tutor prose often prefixes equations with labels such as "Hint:".
-      // Try complete suffixes only; never evaluate arbitrary natural language.
-      for (let start = 1; start < expression.length; start += 1) {
-        const candidate = expression.slice(start).trim();
-        if (!/^[\d√(+\-]|^(sqrt|sin|cos|tan)\b/i.test(candidate)) continue;
-        const candidateValue = evaluateNumericExpression(candidate);
-        if (candidateValue !== null) {
-          verifiedExpression = candidate;
-          computedValue = candidateValue;
-          break;
-        }
-      }
-    }
+    const computedValue = evaluateNumericExpression(expression);
+
+    // Fail closed: evaluate the complete expression, never a parseable suffix
+    // salvaged from surrounding natural-language prose.
     if (computedValue === null) continue;
 
     const claimedValue = normalizeNumber(claimedText);
     if (!Number.isFinite(claimedValue)) continue;
 
     const places = decimalPlaces(claimedText);
-    const tolerance = Math.max(1e-9, 0.5 * Math.pow(10, -places));
+    const expectedText = computedValue.toFixed(places);
+    const roundedExpectedValue = Number(expectedText);
     const difference = Math.abs(computedValue - claimedValue);
-    const isCorrect = difference <= tolerance + Math.abs(computedValue) * 1e-12;
+    const isCorrect = roundedExpectedValue === claimedValue;
 
-    const key = verifiedExpression + operator + claimedText;
+    const key = expression + operator + claimedText;
     if (seen.has(key)) continue;
     seen.add(key);
 
     findings.push({
-      expression: verifiedExpression,
+      expression,
       operator,
       claimedText,
       claimedValue,
       computedValue,
       difference,
       decimalPlaces: places,
-      expectedText: computedValue.toFixed(places > 0 ? places : 2),
+      expectedText,
       isCorrect
     });
   }
@@ -263,7 +266,7 @@ function extractLearnerProposedValues(text) {
 }
 
 function isCorrectionChallenge(text) {
-  return /\b(incorrect|wrong|error|not correct|isn't correct|is not correct|your hint|your calculation|your answer|calculator gives|calculator shows|i disagree|that can't be right|doesn't seem right|does not seem right)\b/i.test(text);
+  return /\b(incorrect|wrong|error|not correct|isn't correct|is not correct|i disagree|that can't be right|doesn't seem right|does not seem right|doesn't match|does not match)\b/i.test(String(text ?? ""));
 }
 
 function isDirectAnswerRequest(text) {
@@ -307,26 +310,33 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   const previousTutorMessages = latestStudentIndex >= 0
     ? safeMessages.slice(0, latestStudentIndex).filter((message) => message?.role === "tutor")
     : [];
-  let latestTutorClaim = null;
+  const unresolvedClaims = new Map();
   const tutorHistoryStart = Math.max(0, previousTutorMessages.length - 6);
-  for (let index = previousTutorMessages.length - 1; index >= tutorHistoryStart; index -= 1) {
+
+  for (let index = tutorHistoryStart; index < previousTutorMessages.length; index += 1) {
     const claims = findNumericClaims(String(previousTutorMessages[index].content ?? ""));
-    const candidate = claims.at(-1);
-    if (!candidate) continue;
 
-    const acknowledgedLater = previousTutorMessages.slice(index + 1).some((message) => {
-      const laterText = String(message.content ?? "");
-      const repeatsVerifiedValue = laterText.includes(candidate.expectedText);
-      const acknowledgesCorrection = laterText.includes(candidate.claimedText) ||
-        /\b(previous|earlier|rechecked|recalculated|correction|corrected|mistake|incorrect|wrong)\b/i.test(laterText);
-      return repeatsVerifiedValue && acknowledgesCorrection;
-    });
+    for (const candidate of claims) {
+      const acknowledgedLater = previousTutorMessages.slice(index + 1).some((message) => {
+        const laterText = String(message.content ?? "");
+        const repeatsVerifiedValue = laterText.includes(candidate.expectedText);
+        const acknowledgesCorrection = laterText.includes(candidate.claimedText) ||
+          /\b(previous|earlier|rechecked|recalculated|correction|corrected|mistake|incorrect|wrong)\b/i.test(laterText);
+        return repeatsVerifiedValue && acknowledgesCorrection;
+      });
 
-    if (!acknowledgedLater) {
-      latestTutorClaim = candidate;
-      break;
+      if (!acknowledgedLater) {
+        const key = candidate.expression + candidate.operator + candidate.claimedText;
+        unresolvedClaims.set(key, candidate);
+      }
     }
   }
+
+  // Only auto-check a challenge when recent tutor history contains one
+  // distinct unresolved numeric claim. Multiple claims are ambiguous.
+  const latestTutorClaim = unresolvedClaims.size === 1
+    ? unresolvedClaims.values().next().value
+    : null;
 
   const learnerNumericMismatches = findIncorrectNumericClaims(latestStudentMessage);
   const learnerProposedValues = extractLearnerProposedValues(latestStudentMessage);
@@ -338,18 +348,15 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   const learnerValueMatches = latestTutorClaim
     ? learnerProposedValues.some((value) => {
         const places = latestTutorClaim.decimalPlaces;
-        const tolerance = Math.max(1e-9, 0.5 * Math.pow(10, -places));
-        return Math.abs(value - latestTutorClaim.computedValue) <= tolerance +
-          Math.abs(latestTutorClaim.computedValue) * 1e-12;
+        return Number(value.toFixed(places)) === Number(latestTutorClaim.expectedText);
       })
     : false;
-  const learnerValueDiffers = Boolean(latestTutorClaim) &&
-    learnerProposedValues.length > 0 && !learnerValueMatches;
-
   const correctionChallenge = isCorrectionChallenge(latestStudentMessage);
+  const learnerValueDiffers = correctionChallenge && Boolean(latestTutorClaim) &&
+    learnerProposedValues.length > 0 && !learnerValueMatches;
   const directAnswerRequest = isDirectAnswerRequest(latestStudentMessage);
   let learnerIntent = "follow_up";
-  if (correctionChallenge || learnerValueMatches) {
+  if (correctionChallenge) {
     learnerIntent = "correction_challenge";
   } else if (directAnswerRequest) {
     learnerIntent = "direct_answer_request";
@@ -369,9 +376,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   }
   const repeatedQuestionCount = Math.max(0, ...questionCounts.values());
 
-  const correctionRequired = Boolean(latestTutorClaim) &&
-    (!latestTutorClaim.isCorrect || learnerIntent === "correction_challenge" ||
-      learnerValueMatches || learnerValueDiffers);
+  const correctionRequired = Boolean(latestTutorClaim) && correctionChallenge;
 
   return {
     learnerIntent,
@@ -455,48 +460,40 @@ export function buildAdaptiveTutorInstructions(analysis) {
   return instructions.join(" ");
 }
 
-function includesUnitNewton(text) {
-  return /\bN\b/.test(String(text ?? ""));
-}
-
-export function buildVerifiedCorrectionResponse({ claim, learnerMessage, contextText }) {
+export function buildVerifiedCorrectionResponse({ claim, learnerMessage }) {
   const expected = claim.expectedText;
-  const unit = includesUnitNewton(learnerMessage) || includesUnitNewton(contextText) ? " N" : "";
   const proposedValues = extractLearnerProposedValues(learnerMessage);
-  const learnerMatches = proposedValues.some((value) => {
-    const tolerance = Math.max(1e-9, 0.5 * Math.pow(10, -claim.decimalPlaces));
-    return Math.abs(value - claim.computedValue) <= tolerance +
-      Math.abs(claim.computedValue) * 1e-12;
-  });
+  const learnerMatches = proposedValues.some((value) =>
+    Number(value.toFixed(claim.decimalPlaces)) === Number(expected)
+  );
   const proposedValue = proposedValues[0];
 
   if (claim.isCorrect) {
     if (proposedValue !== undefined && !learnerMatches) {
-      return "I rechecked the calculation: " + claim.expression +
-        " is approximately " + expected + unit +
-        ", so my previous hint of " + claim.claimedText + unit +
-        " was correct to the displayed precision. The value you reported, " +
-        proposedValue.toFixed(claim.decimalPlaces > 0 ? claim.decimalPlaces : 2) + unit +
-        ", does not match this result. Please compare the expression with the value you entered. Would you like me to show this calculation step by step?";
+      return "I rechecked the numeric expression: " + claim.expression +
+        " rounds to " + expected +
+        ", so the previous tutor value " + claim.claimedText +
+        " agrees at the displayed precision. The value you reported, " +
+        proposedValue.toFixed(claim.decimalPlaces) +
+        ", does not match this calculation. This check verifies arithmetic only; it does not verify units or the physical model. Would you like me to show the arithmetic step by step?";
     }
-    return "I rechecked the calculation: " + claim.expression +
-      " is approximately " + expected + unit +
-      ", so my previous hint of " + claim.claimedText + unit +
-      " was correct to the displayed precision. Would you like me to show this calculation step by step?";
+    return "I rechecked the numeric expression: " + claim.expression +
+      " rounds to " + expected +
+      ", so the previous tutor value " + claim.claimedText +
+      " agrees at the displayed precision. This check verifies arithmetic only; it does not verify units or the physical model. Would you like me to show the arithmetic step by step?";
   }
 
   if (learnerMatches) {
-    return "You're right to challenge my previous hint. I rechecked it: " +
-      claim.expression + " is approximately " + expected + unit +
-      ", not " + claim.claimedText + unit +
-      ". Your answer of " + expected + unit +
-      " is correct to the displayed precision. Shall we continue to the next step?";
+    return "You're right to challenge the previous numeric claim. The bounded arithmetic check evaluates " +
+      claim.expression + " to " + expected +
+      ", not " + claim.claimedText +
+      ". Your reported value matches this arithmetic result at the displayed precision. Units and the physical model still need separate checking. Shall we continue?";
   }
 
-  return "I need to correct my previous hint. " + claim.expression +
-    " evaluates to approximately " + expected + unit +
-    ", not " + claim.claimedText + unit +
-    ". Please use " + expected + unit + " in the next step. Would you like to continue?";
+  return "I need to correct the previous numeric claim. The bounded arithmetic check evaluates " +
+    claim.expression + " to " + expected +
+    ", not " + claim.claimedText +
+    ". This verifies the arithmetic expression only; it does not establish units or the physical model. Would you like to rework the step?";
 }
 
 export function buildNumericOutputCorrectionResponse(claim) {
