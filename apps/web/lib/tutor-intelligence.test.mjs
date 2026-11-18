@@ -38,7 +38,9 @@ test("detects a learner correction and confirms the matching value", () => {
   const analysis = analyzeTutorTurn({
     latestSubmissionType: "attempt",
     messages: [
-      { role: "tutor", content: "Hint: √61,525.12 ≈ 248.04. What does your calculator show?" },
+      { role: "tutor", content: "Hint: √61,525.12 ≈ 248.04." },
+      { role: "student", content: "What does your calculator show?" },
+      { role: "tutor", content: "Recalculate √61,525.12 carefully. What does your calculator show?" },
       { role: "student", content: "My calculator gives 247.03 N. Your hint of 248.04 N is incorrect." }
     ]
   });
