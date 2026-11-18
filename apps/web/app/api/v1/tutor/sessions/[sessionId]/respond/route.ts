@@ -241,6 +241,10 @@ export async function POST(
   }
 
   let submissionType: "attempt" | "question" = "attempt";
+  if (input.messageType !== undefined && input.message === undefined) {
+    return errorResponse("VALIDATION_ERROR", "A message type requires a learner message.", 400);
+  }
+
   if (input.messageType !== undefined) {
     if (input.messageType !== "attempt" && input.messageType !== "question") {
       return errorResponse("VALIDATION_ERROR", "Choose attempt or follow-up question as the message type.", 400);
@@ -271,7 +275,6 @@ export async function POST(
     responseSequenceNumber: number;
     messages: Array<{ role: "student" | "tutor"; content: string }>;
     latestSubmissionType: "attempt" | "question" | "initial_prompt";
-    attemptNumber: number | null;
   };
 
   try {
@@ -323,7 +326,6 @@ export async function POST(
 
       let pendingSubmissionType: "attempt" | "question" | "initial_prompt" =
         lastMessage.sequenceNumber === 1 ? "initial_prompt" : "question";
-      let attemptNumber: number | null = null;
 
       if (!learnerMessage) {
         const [existingAttempt] = await tx
@@ -341,7 +343,6 @@ export async function POST(
 
         if (existingAttempt) {
           pendingSubmissionType = "attempt";
-          attemptNumber = existingAttempt.attemptNumber;
         }
       }
 
@@ -377,7 +378,7 @@ export async function POST(
             .orderBy(desc(tutorAttempts.attemptNumber))
             .limit(1);
 
-          attemptNumber = (lastAttempt?.attemptNumber ?? 0) + 1;
+          const attemptNumber = (lastAttempt?.attemptNumber ?? 0) + 1;
           await tx.insert(tutorAttempts).values({
             sessionId: session.id,
             studentId: student.id,
@@ -425,7 +426,6 @@ export async function POST(
         claimedVersion: updated.version,
         responseSequenceNumber: nextSequenceNumber,
         latestSubmissionType: learnerMessage ? submissionType : pendingSubmissionType,
-        attemptNumber,
         messages: recentMessages.reverse()
       };
     });
