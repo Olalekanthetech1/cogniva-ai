@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
   aiTaskRoutes,
+  tutorAttempts,
   tutorMessages,
   tutorSessions
 } from "@cogniva/database";
@@ -87,6 +88,7 @@ function buildSystemPrompt(): string {
 function buildConversationPrompt(input: {
   intent: string;
   initialPrompt: string;
+  latestSubmissionType: "attempt" | "question" | "retry";
   messages: Array<{ role: "student" | "tutor"; content: string }>;
 }): string {
   let remaining = MAX_CONTEXT_CHARACTERS;
@@ -104,6 +106,10 @@ function buildConversationPrompt(input: {
   return [
     `Learning intent: ${input.intent}`,
     `Original learning request: ${input.initialPrompt}`,
+    `Latest learner turn type: ${input.latestSubmissionType}`,
+    input.latestSubmissionType === "attempt"
+      ? "The learner has explicitly submitted an attempt. Respond constructively to the reasoning or answer, but do not claim independent verification or mastery."
+      : "The learner has submitted a follow-up question or requested a retry. Continue the Socratic dialogue without treating it as a formal assessment.",
     "Recent conversation, in chronological order:",
     ...selected,
     "Now respond to the latest learner message. Do not repeat the conversation or provide a complete worked solution."
@@ -228,8 +234,16 @@ export async function POST(
     return errorResponse("VALIDATION_ERROR", "The request body must be valid JSON.", 400);
   }
 
-  if (Object.keys(input).some((key) => key !== "message")) {
+  if (Object.keys(input).some((key) => key !== "message" && key !== "messageType")) {
     return errorResponse("VALIDATION_ERROR", "The request contains unsupported fields.", 400);
+  }
+
+  let submissionType: "attempt" | "question" = "attempt";
+  if (input.messageType !== undefined) {
+    if (input.messageType !== "attempt" && input.messageType !== "question") {
+      return errorResponse("VALIDATION_ERROR", "Choose attempt or follow-up question as the message type.", 400);
+    }
+    submissionType = input.messageType;
   }
 
   let learnerMessage: string | null = null;
@@ -254,6 +268,8 @@ export async function POST(
     claimedVersion: number;
     responseSequenceNumber: number;
     messages: Array<{ role: "student" | "tutor"; content: string }>;
+    latestSubmissionType: "attempt" | "question" | "retry";
+    attemptNumber: number | null;
   };
 
   try {
@@ -311,13 +327,39 @@ export async function POST(
       }
 
       let nextSequenceNumber = lastMessage.sequenceNumber + 1;
+      let attemptNumber: number | null = null;
       if (learnerMessage) {
-        await tx.insert(tutorMessages).values({
-          sessionId: session.id,
-          role: "student",
-          content: learnerMessage,
-          sequenceNumber: nextSequenceNumber
-        });
+        const [savedLearnerMessage] = await tx
+          .insert(tutorMessages)
+          .values({
+            sessionId: session.id,
+            role: "student",
+            content: learnerMessage,
+            sequenceNumber: nextSequenceNumber
+          })
+          .returning({ id: tutorMessages.id });
+
+        if (!savedLearnerMessage) {
+          throw new Error("Learner message persistence returned no record.");
+        }
+
+        if (submissionType === "attempt") {
+          const [lastAttempt] = await tx
+            .select({ attemptNumber: tutorAttempts.attemptNumber })
+            .from(tutorAttempts)
+            .where(eq(tutorAttempts.sessionId, session.id))
+            .orderBy(desc(tutorAttempts.attemptNumber))
+            .limit(1);
+
+          attemptNumber = (lastAttempt?.attemptNumber ?? 0) + 1;
+          await tx.insert(tutorAttempts).values({
+            sessionId: session.id,
+            studentId: student.id,
+            messageId: savedLearnerMessage.id,
+            attemptNumber
+          });
+        }
+
         nextSequenceNumber += 1;
       }
 
@@ -356,6 +398,8 @@ export async function POST(
         previousState: session.state,
         claimedVersion: updated.version,
         responseSequenceNumber: nextSequenceNumber,
+        latestSubmissionType: learnerMessage ? submissionType : "retry",
+        attemptNumber,
         messages: recentMessages.reverse()
       };
     });
@@ -400,6 +444,7 @@ export async function POST(
       userPrompt: buildConversationPrompt({
         intent: claim.intent,
         initialPrompt: claim.initialPrompt,
+        latestSubmissionType: claim.latestSubmissionType,
         messages: claim.messages
       }),
       maxOutputTokens: MAX_OUTPUT_TOKENS,
