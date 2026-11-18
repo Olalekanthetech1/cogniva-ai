@@ -210,3 +210,68 @@ test("does not infer Newtons or any other physical unit from nearby conversation
   assert.doesNotMatch(response, /\bN\b/);
   assert.match(response, /does not verify units/i);
 });
+
+
+test("covers independent arithmetic, precedence, and negative-number cases", () => {
+  const cases = [
+    ["0.1 + 0.2", 0.30000000000000004],
+    ["2^3^2", 512],
+    ["-3(4 - 7)", 9],
+    ["10 / 4", 2.5],
+    ["(8 + 4) / 3", 4],
+    ["2 * (3 + 5)^2", 128]
+  ];
+
+  for (const [expression, expected] of cases) {
+    const actual = evaluateNumericExpression(expression);
+    assert.notEqual(actual, null, expression + " should be supported");
+    assert.ok(Math.abs(actual - expected) <= 1e-10, expression + " should evaluate correctly");
+  }
+});
+
+test("covers independent square-root and trigonometric cases", () => {
+  const cases = [
+    ["sqrt(0.04)", 0.2],
+    ["√(144)", 12],
+    ["sin(90°)", 1],
+    ["cos(180°)", -1],
+    ["tan(45°)", 1],
+    ["cos(60°)", 0.5]
+  ];
+
+  for (const [expression, expected] of cases) {
+    const actual = evaluateNumericExpression(expression);
+    assert.notEqual(actual, null, expression + " should be supported");
+    assert.ok(Math.abs(actual - expected) <= 1e-10, expression + " should evaluate correctly");
+  }
+});
+
+test("rejects ambiguous angle units and unsupported mathematical notation", () => {
+  for (const expression of [
+    "sin(90)",
+    "cos(1.2)",
+    "log(100)",
+    "ln(e)",
+    "integral(x^2)",
+    "x^2 + 2x + 1"
+  ]) {
+    assert.equal(evaluateNumericExpression(expression), null, expression + " must remain unverified");
+  }
+});
+
+test("rejects division by zero, invalid roots, and out-of-bound results", () => {
+  for (const expression of [
+    "10 / 0",
+    "sqrt(-1)",
+    "(-1)^0.5",
+    "10^1000"
+  ]) {
+    assert.equal(evaluateNumericExpression(expression), null, expression + " must fail closed");
+  }
+});
+
+test("handles exact displayed precision for independent claims", () => {
+  assert.deepEqual(findIncorrectNumericClaims("Result: 0.1 + 0.2 = 0.3"), []);
+  assert.equal(findIncorrectNumericClaims("Result: 2^3^2 = 64")[0]?.expectedText, "512");
+  assert.equal(findIncorrectNumericClaims("Result: sin(90°) = 0.9")[0]?.expectedText, "1");
+});
