@@ -23,7 +23,7 @@ export type AiBenchmarkCase = {
   failureSignals: readonly string[];
 };
 
-export const AI_BENCHMARK_SUITE_VERSION = "cogniva-core-2026-11-18-v2";
+export const AI_BENCHMARK_SUITE_VERSION = "cogniva-core-2026-11-18-v3";
 export const AI_BENCHMARK_PRICING_SNAPSHOT = "usd-2026-11-18-v2";
 
 export const AI_BENCHMARK_CANDIDATES = [
@@ -108,7 +108,7 @@ export const AI_BENCHMARK_CASES = {
         "Available study time: four 30-minute sessions.",
         "The plan must progress from the meaning of a variable and equality, through inverse operations, to checking solutions by substitution."
       ].join(" "),
-      maxOutputTokens: 850,
+      maxOutputTokens: 1400,
       reviewCriteria: learningPlanReviewCriteria,
       expectedSignals: [
         "Starts with variables and the meaning of equality",
@@ -133,7 +133,7 @@ export const AI_BENCHMARK_CASES = {
         "Cover force, cross-sectional area, normal stress, tensile strain, units, and the distinction between stress and strain.",
         "Do not provide instructions for operating laboratory equipment."
       ].join(" "),
-      maxOutputTokens: 850,
+      maxOutputTokens: 1400,
       reviewCriteria: learningPlanReviewCriteria,
       expectedSignals: [
         "Defines normal stress as force per unit area",
@@ -157,7 +157,7 @@ export const AI_BENCHMARK_CASES = {
         "Available study time: three 30-minute sessions.",
         "Cover mean, median, range, variance, standard deviation, and how to describe variation without claiming that descriptive statistics prove causation."
       ].join(" "),
-      maxOutputTokens: 850,
+      maxOutputTokens: 1400,
       reviewCriteria: learningPlanReviewCriteria,
       expectedSignals: [
         "Explains centre and spread as distinct ideas",
