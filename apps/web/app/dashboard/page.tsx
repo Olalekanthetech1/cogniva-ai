@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const { student, profile } = await requireCompletedStudent();
-  const firstName = student.name?.trim().split(/\\s+/)[0] || "learner";
+  const firstName = student.name?.trim().split(/\s+/)[0] || "learner";
   const institution = profile.institutionName ?? profile.selfReportedInstitution;
   const institutionIsSelfReported = Boolean(profile.selfReportedInstitution);
 
