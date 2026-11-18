@@ -69,7 +69,7 @@ test("does not render untrusted raw HTML or remote images", () => {
 });
 
 test("invalid TeX does not break the tutor message", () => {
-  const html = renderMarkdown("Keep explaining: $\\\\notARealCommand{x}$.");
+  const html = renderMarkdown("Keep explaining: $\\notARealCommand{x}$.");
   assert.match(html, /katex-error/);
   assert.match(html, /Keep explaining/);
 });

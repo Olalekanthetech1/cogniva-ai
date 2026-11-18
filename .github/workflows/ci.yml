@@ -54,6 +54,9 @@ jobs:
       - name: Tutor intelligence regression tests
         run: pnpm test:tutor-intelligence
 
+      - name: Tutor Markdown rendering regression tests
+        run: pnpm test:tutor-markdown
+
       - name: Lint
         run: pnpm lint
 
