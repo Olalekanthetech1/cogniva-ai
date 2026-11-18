@@ -118,10 +118,20 @@ function parseExpressionTokens(tokens) {
 
   function parseMultiplicative() {
     let value = parseUnary();
-    while (peek() === "*" || peek() === "/") {
-      const operator = take().value;
-      const right = parseUnary();
-      value = operator === "*" ? value * right : value / right;
+    while (true) {
+      if (peek() === "*" || peek() === "/") {
+        const operator = take().value;
+        const right = parseUnary();
+        value = operator === "*" ? value * right : value / right;
+        continue;
+      }
+
+      // Juxtaposition is common in handwritten mathematics, e.g. 2(120)(140).
+      const next = tokens[index];
+      const beginsPrimary = next?.type === "number" ||
+        ["(", "√", "sqrt", "sin", "cos", "tan"].includes(next?.value);
+      if (!beginsPrimary) break;
+      value *= parseUnary();
     }
     return value;
   }
@@ -168,7 +178,7 @@ function decimalPlaces(value) {
 export function findIncorrectNumericClaims(text) {
   if (typeof text !== "string" || !text.trim()) return [];
 
-  const numberPattern = "[+-]?(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?";
+  const numberPattern = "[+-]?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+)";
   const pattern = new RegExp("([^=\\n]{1,140}?)\\s*(≈|≃|=)\\s*(" + numberPattern + ")", "g");
   const findings = [];
   const seen = new Set();
