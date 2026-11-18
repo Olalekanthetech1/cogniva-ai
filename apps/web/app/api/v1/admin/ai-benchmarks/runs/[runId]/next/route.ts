@@ -175,6 +175,7 @@ export async function POST(
           .set({
             status: "succeeded",
             outputText: response.text,
+            resolvedModel: response.resolvedModel,
             usageInputTokens: response.usage.inputTokens,
             usageOutputTokens: response.usage.outputTokens,
             usageTotalTokens: response.usage.totalTokens,
