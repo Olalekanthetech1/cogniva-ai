@@ -180,7 +180,7 @@ function extractGeminiResponse(
   };
 }
 
-async function readProviderError(response: Response): Promise<never> {
+function readProviderError(response: Response): never {
   const code = response.status;
 
   if (code === 401 || code === 403) {
@@ -313,7 +313,7 @@ export async function generateTextWithProvider(
       signal: controller.signal
     });
 
-    if (!response.ok) await readProviderError(response);
+    if (!response.ok) readProviderError(response);
 
     responseBody = await response.json();
   } catch (error) {
