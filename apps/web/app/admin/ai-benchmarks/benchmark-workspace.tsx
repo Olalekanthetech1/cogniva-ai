@@ -99,6 +99,7 @@ function ReviewForm({
   async function submit() {
     if (!complete || saving || disabled) return;
     setSaving(true);
+    setReviewError(null);
     try {
       await onSave(
         result.id,
@@ -107,6 +108,8 @@ function ReviewForm({
         ),
         notes
       );
+    } catch (reason) {
+      setReviewError(reason instanceof Error ? reason.message : "Review could not be saved.");
     } finally {
       setSaving(false);
     }
@@ -151,6 +154,7 @@ function ReviewForm({
           placeholder="Record factual issues, strengths, or rubric justification."
         />
       </label>
+      {reviewError ? <p className="admin-form-feedback is-error" role="alert">{reviewError}</p> : null}
       {!disabled ? (
         <button
           type="button"
