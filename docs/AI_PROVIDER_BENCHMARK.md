@@ -1,13 +1,13 @@
 # AI provider benchmark protocol
 
-**Protocol version:** `cogniva-core-2026-11-18-v1`  
-**Pricing snapshot:** `usd-2026-11-18-v1`  
+**Protocol version:** `cogniva-core-2026-11-18-v2`  
+**Pricing snapshot:** `usd-2026-11-18-v2`  
 **Reviewed:** 18 November 2026  
-**Status:** Candidate shortlist and fixed evaluation cases defined. No benchmark has been run and no provider has been selected.
+**Status:** Benchmark runner and blinded review workflow implemented on the feature branch. No benchmark has been run and no provider has been selected.
 
 ## Purpose
 
-Compare one currently documented production-capable text model from each configured provider on Cogniva's two first learner-facing tasks:
+Compare one currently documented generally available text model from each configured provider on Cogniva's two first learner-facing tasks:
 
 1. Learning-plan generation.
 2. Socratic tutoring responses.
@@ -22,13 +22,13 @@ These are candidates for testing, not recommendations or winners. Model availabi
 |---|---|---:|---:|---|
 | Gemini | `gemini-3.8-flash` | 0.75 | 3.75 | Introductory API price through 31 December 2026; recheck before any run after that date |
 | Groq | `openai/gpt-oss-120b` | 0.15 | 0.60 | Groq-hosted production model |
-| Mistral | `mistral-large-4-0` | 0.70 | 2.10 | Mistral Large 4 API model |
+| Mistral | `mistral-small-2603` | 0.15 | 0.60 | Mistral Small 4, generally available |
 
 Pricing sources reviewed on 18 November 2026:
 
 - Gemini model and introductory pricing: https://ai.google.dev/gemini-api/docs/latest-model
 - Groq model availability and token rates: https://console.groq.com/docs/model/openai/gpt-oss-120b
-- Mistral Large 4 model ID and token rates: https://docs.mistral.ai/models/mistral-large-4-0
+- Mistral Small 4 model ID and token rates: https://docs.mistral.ai/models/mistral-small-4-0-26-03
 
 These prices are a dated estimate basis, not a quote or invoice. The benchmark report must retain the price snapshot ID with every run. Reconfirm rates, account tier, taxes, cached-token treatment, and any provider-specific billed reasoning tokens before making a cost commitment. If provider usage is missing or incomplete, estimated cost must be shown as unavailable—not zero.
 
@@ -89,6 +89,8 @@ No candidate should be chosen until the following evidence is available for both
 
 Task-specific winners are allowed: the best model for learning-plan generation need not be the best model for Socratic tutoring. Any later production activation requires a separate implementation and approval step.
 
-## Current implementation boundary
+## Runner implementation boundary
 
-This protocol and fixed case set do not themselves execute model calls, save benchmark runs, expose benchmark outputs, or activate learner-facing inference. Those are separate implementation steps. No benchmark result exists until a real provider request has been completed and its evidence has been retained.
+The administrator-only benchmark runner is implemented on the feature branch. It persists each provider/case attempt independently, retains failures, saves blinded human rubric reviews, and reveals identity/performance evidence only after review (or immediately when all requests fail and there is no output to score). The database schema requires a reviewed and separately applied Neon migration before the page can be deployed.
+
+The runner does not execute until all three provider credentials are present in the Render service environment and an administrator explicitly starts a run. It does not activate learner-facing inference. No benchmark result exists until a real provider request has been completed and its evidence has been retained.

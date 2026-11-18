@@ -1,6 +1,6 @@
 # Cogniva AI provider runtime foundation
 
-**Status:** Provider-neutral connection-test adapters are implemented. The versioned benchmark protocol and fixed evaluation cases are defined, but benchmark execution, persisted results, and learner-facing AI are not active.
+**Status:** Provider-neutral connection-test adapters and the administrator-only persisted benchmark runner are implemented on PR #14. The runner is not yet deployed because its Neon schema migration must be generated, reviewed, and applied first. No provider benchmark has been run and learner-facing AI is not active.
 
 ## Supported providers
 
@@ -50,7 +50,7 @@ The benchmark shortlist, dated pricing snapshot, fixed system prompts, and six e
 - `docs/AI_PROVIDER_BENCHMARK.md`
 - `apps/web/lib/ai-benchmark-suite.ts`
 
-The initial candidates are Gemini `gemini-3.8-flash`, Groq `openai/gpt-oss-120b`, and Mistral `mistral-large-4-0`. They are candidates only. No output has been benchmarked and no provider has been selected.
+The initial candidates are Gemini `gemini-3.8-flash`, Groq `openai/gpt-oss-120b`, and Mistral `mistral-small-2603`. Mistral Large 4 was excluded because it is currently documented as Public Preview; Mistral Small 4 is documented as generally available. These are candidates only. No output has been benchmarked and no provider has been selected.
 
 The evaluation set covers learning-plan generation and Socratic tutoring. It includes measurable review criteria and expected/failure signals. The protocol requires identical prompts, retained failures, token/latency evidence, timestamped pricing, and blinded human rubric review. Estimated cost must remain unavailable when usage data is incomplete.
 
@@ -62,10 +62,10 @@ This foundation does **not**:
 - create or continue tutoring sessions;
 - stream model responses to students;
 - select a preferred provider automatically;
-- persist comparative benchmark runs or human reviews;
-- present benchmark results or activate a provider.
+- serve benchmark-generated outputs to learners;
+- activate any provider automatically or route learner requests.
 
-The Admin page labels learner runtime as inactive. Saved task preferences remain configuration data only.
+The Admin page labels learner runtime as inactive. Saved task preferences remain configuration data only. The benchmark workspace is a separate administrator-only tool: it records versioned run evidence and blinded human reviews, and does not serve learner requests. Deployment is gated on the reviewed Neon migration and a separate Render deploy.
 
 ## Benchmark gate
 

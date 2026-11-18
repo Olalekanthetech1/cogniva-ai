@@ -23,8 +23,8 @@ export type AiBenchmarkCase = {
   failureSignals: readonly string[];
 };
 
-export const AI_BENCHMARK_SUITE_VERSION = "cogniva-core-2026-11-18-v1";
-export const AI_BENCHMARK_PRICING_SNAPSHOT = "usd-2026-11-18-v1";
+export const AI_BENCHMARK_SUITE_VERSION = "cogniva-core-2026-11-18-v2";
+export const AI_BENCHMARK_PRICING_SNAPSHOT = "usd-2026-11-18-v2";
 
 export const AI_BENCHMARK_CANDIDATES = [
   {
@@ -50,15 +50,15 @@ export const AI_BENCHMARK_CANDIDATES = [
     pricingSource: "https://console.groq.com/docs/model/openai/gpt-oss-120b"
   },
   {
-    id: "mistral-large-4",
+    id: "mistral-small-4",
     provider: "mistral",
-    label: "Mistral Large 4",
-    model: "mistral-large-4-0",
-    inputUsdPerMillion: 0.7,
-    outputUsdPerMillion: 2.1,
+    label: "Mistral Small 4 (GA)",
+    model: "mistral-small-2603",
+    inputUsdPerMillion: 0.15,
+    outputUsdPerMillion: 0.6,
     pricingReviewedAt: "2026-11-18",
     pricingEffectiveThrough: null,
-    pricingSource: "https://docs.mistral.ai/models/mistral-large-4-0"
+    pricingSource: "https://docs.mistral.ai/models/mistral-small-4-0-26-03"
   }
 ] as const satisfies readonly AiBenchmarkCandidate[];
 

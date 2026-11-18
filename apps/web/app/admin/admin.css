@@ -631,3 +631,373 @@
 .admin-form-feedback.is-warning {
   color: #80643d;
 }
+
+
+.benchmark-boundary {
+  margin-bottom: 14px;
+}
+
+.benchmark-missing {
+  margin-top: 14px;
+}
+
+.benchmark-run-panel {
+  display: grid;
+  gap: 14px;
+  padding: 19px;
+  border: 1px solid #e3e9e4;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.benchmark-run-panel > p {
+  margin: 0;
+  color: #718078;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.benchmark-run-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.benchmark-run-top > div {
+  display: grid;
+  gap: 5px;
+}
+
+.benchmark-run-top strong {
+  color: #26372e;
+  font-size: 14px;
+}
+
+.benchmark-run-top > div > span,
+.benchmark-version {
+  color: #859188;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.benchmark-progress {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #edf1ee;
+}
+
+.benchmark-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #287452;
+  transition: width 180ms ease;
+}
+
+.benchmark-run-metrics {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.benchmark-run-metrics span {
+  color: #68766e;
+  font-size: 11px;
+}
+
+.benchmark-version {
+  margin: 0;
+}
+
+.benchmark-run-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.benchmark-run-actions button,
+.benchmark-review button {
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 0;
+  border-radius: 8px;
+  background: #174936;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.benchmark-run-actions button:disabled,
+.benchmark-review button:disabled {
+  background: #e6ebe7;
+  color: #9aa49e;
+  cursor: not-allowed;
+}
+
+.benchmark-notice,
+.benchmark-review-reminder {
+  margin: 0;
+  color: #596c60;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.benchmark-results {
+  display: grid;
+  gap: 14px;
+}
+
+.benchmark-result-card {
+  display: grid;
+  gap: 15px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e3e9e4;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.benchmark-result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.benchmark-result-header > div {
+  display: grid;
+  gap: 5px;
+}
+
+.benchmark-candidate-label {
+  color: #315642;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+.benchmark-result-header h3 {
+  margin: 0;
+  color: #26372e;
+  font-size: 15px;
+}
+
+.benchmark-result-header p {
+  margin: 0;
+  color: #87928a;
+  font-size: 10px;
+}
+
+.benchmark-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.benchmark-evidence span {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f3f6f3;
+  color: #596a60;
+  font-size: 10px;
+}
+
+.benchmark-check,
+.benchmark-failure,
+.benchmark-pending,
+.benchmark-review-saved {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.benchmark-check.is-valid {
+  color: #236044;
+}
+
+.benchmark-check.is-invalid,
+.benchmark-failure {
+  color: #9b3f36;
+}
+
+.benchmark-pending {
+  color: #7a877f;
+}
+
+.benchmark-output {
+  max-height: 460px;
+  overflow: auto;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #e6ebe7;
+  border-radius: 8px;
+  background: #f8faf8;
+  color: #26372e;
+  font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.benchmark-review {
+  display: grid;
+  gap: 12px;
+  padding-top: 15px;
+  border-top: 1px solid #e8ede9;
+}
+
+.benchmark-review-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.benchmark-review-heading strong {
+  color: #26372e;
+  font-size: 12px;
+}
+
+.benchmark-review-heading span {
+  color: #87928a;
+  font-size: 10px;
+}
+
+.benchmark-score-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  align-items: center;
+  gap: 12px;
+}
+
+.benchmark-score-row > span,
+.benchmark-notes > span {
+  color: #5f6e65;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.benchmark-score-row select,
+.benchmark-notes textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #dce4de;
+  border-radius: 7px;
+  background: #fff;
+  color: #24352c;
+  font: inherit;
+  font-size: 11px;
+}
+
+.benchmark-score-row select {
+  min-height: 38px;
+}
+
+.benchmark-notes {
+  display: grid;
+  gap: 7px;
+}
+
+.benchmark-notes textarea {
+  resize: vertical;
+}
+
+.benchmark-review-saved {
+  color: #236044;
+}
+
+@media (max-width: 720px) {
+  .benchmark-run-top,
+  .benchmark-result-header {
+    flex-direction: column;
+  }
+
+  .benchmark-score-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .benchmark-score-row select {
+    max-width: 170px;
+  }
+}
+
+
+.benchmark-summary-note,
+.benchmark-summary-footnote {
+  color: #718078;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.benchmark-summary-note {
+  margin-bottom: 12px;
+  padding: 13px 15px;
+  border: 1px solid #e3e9e4;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.benchmark-summary-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e3e9e4;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.benchmark-summary-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.benchmark-summary-table th,
+.benchmark-summary-table td {
+  padding: 12px 13px;
+  border-bottom: 1px solid #edf0ed;
+  color: #5e6d63;
+  font-size: 11px;
+  vertical-align: top;
+}
+
+.benchmark-summary-table th {
+  background: #f7f9f7;
+  color: #64736a;
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.benchmark-summary-table td strong,
+.benchmark-summary-table td small {
+  display: block;
+}
+
+.benchmark-summary-table td strong {
+  color: #26372e;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.benchmark-summary-table td small {
+  margin-top: 4px;
+  color: #88938b;
+  font-size: 10px;
+}
+
+.benchmark-summary-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.benchmark-summary-footnote {
+  margin: 9px 0 0;
+}
