@@ -397,7 +397,7 @@ export function AiBenchmarkWorkspace() {
               <span className="benchmark-review-reminder">Score all successful outputs to reveal provider identities.</span>
             ) : null}
             {run?.identitiesRevealed ? (
-              <span className="benchmark-review-reminder">All successful outputs have been reviewed. Provider identities are now revealed.</span>
+              <span className="benchmark-review-reminder">All successful outputs have been reviewed. Provider identities and performance evidence are now revealed.</span>
             ) : null}
           </div>
           {notice ? <p className="benchmark-notice" role="status">{notice}</p> : null}
@@ -431,17 +431,21 @@ export function AiBenchmarkWorkspace() {
 
                 {result.status === "succeeded" ? (
                   <>
-                    <div className="benchmark-evidence">
-                      <span>Latency: {result.latencyMs === null ? "Unavailable" : `${result.latencyMs} ms`}</span>
-                      <span>Input: {result.usage.inputTokens ?? "Unavailable"} tokens</span>
-                      <span>Output: {result.usage.outputTokens ?? "Unavailable"} tokens</span>
-                      <span>Estimated cost: {formatCost(result.estimatedCostUsd)}</span>
-                    </div>
-                    {result.mechanicalCheck ? (
-                      <p className={result.mechanicalCheck.valid ? "benchmark-check is-valid" : "benchmark-check is-invalid"}>
-                        Mechanical format check: {result.mechanicalCheck.valid ? "passed" : "needs human attention"}
-                        {result.mechanicalCheck.issues.length ? ` — ${result.mechanicalCheck.issues.join(" ")}` : ""}
-                      </p>
+                    {run?.identitiesRevealed ? (
+                      <>
+                        <div className="benchmark-evidence">
+                          <span>Latency: {result.latencyMs === null ? "Unavailable" : `${result.latencyMs} ms`}</span>
+                          <span>Input: {result.usage.inputTokens ?? "Unavailable"} tokens</span>
+                          <span>Output: {result.usage.outputTokens ?? "Unavailable"} tokens</span>
+                          <span>Estimated cost: {formatCost(result.estimatedCostUsd)}</span>
+                        </div>
+                        {result.mechanicalCheck ? (
+                          <p className={result.mechanicalCheck.valid ? "benchmark-check is-valid" : "benchmark-check is-invalid"}>
+                            Mechanical format check: {result.mechanicalCheck.valid ? "passed" : "needs human attention"}
+                            {result.mechanicalCheck.issues.length ? ` — ${result.mechanicalCheck.issues.join(" ")}` : ""}
+                          </p>
+                        ) : null}
+                      </>
                     ) : null}
                     <pre className="benchmark-output">{result.outputText}</pre>
                     <ReviewForm
@@ -452,7 +456,7 @@ export function AiBenchmarkWorkspace() {
                   </>
                 ) : result.status === "failed" ? (
                   <p className="benchmark-failure">
-                    Request failed ({result.failureCode ?? "unknown"}). This failure remains part of the benchmark evidence and is not scored as a successful output.
+                    This provider request failed. The failure is retained in the benchmark evidence and is not scored as a successful output.
                   </p>
                 ) : (
                   <p className="benchmark-pending">This case has not completed yet.</p>
