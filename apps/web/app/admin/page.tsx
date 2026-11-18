@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminNavigation } from "@/lib/admin-navigation";
 import { redirect } from "next/navigation";
 import {
   getAdminAccess,
@@ -81,27 +82,7 @@ export default async function AdminPage() {
           <span className="admin-brand-mark">c</span>
           <span>cogniva <small>ADMIN</small></span>
         </Link>
-        <nav className="admin-navigation" aria-label="Administration">
-          <span className="admin-nav-item is-active" aria-current="page">
-            <span aria-hidden="true">▦</span> Overview
-          </span>
-          <span className="admin-nav-item is-unavailable" aria-disabled="true">
-            <span aria-hidden="true">◈</span> AI configuration
-            <small>Not available yet</small>
-          </span>
-          <span className="admin-nav-item is-unavailable" aria-disabled="true">
-            <span aria-hidden="true">✎</span> Prompt management
-            <small>Not available yet</small>
-          </span>
-          <span className="admin-nav-item is-unavailable" aria-disabled="true">
-            <span aria-hidden="true">♙</span> User management
-            <small>Not available yet</small>
-          </span>
-          <span className="admin-nav-item is-unavailable" aria-disabled="true">
-            <span aria-hidden="true">◷</span> Audit logs
-            <small>Not available yet</small>
-          </span>
-        </nav>
+        <AdminNavigation active="overview" />
         <div className="admin-sidebar-footer">
           <span>{access.admin.name}</span>
           <small>{access.admin.email}</small>
