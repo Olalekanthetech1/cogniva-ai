@@ -237,13 +237,6 @@ export function findIncorrectNumericClaims(text) {
   return findNumericClaims(text).filter((claim) => !claim.isCorrect);
 }
 
-function extractNumbers(text) {
-  const pattern = /[+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)/g;
-  return [...String(text ?? "").matchAll(pattern)]
-    .map((match) => normalizeNumber(match[0]))
-    .filter(Number.isFinite);
-}
-
 function extractLearnerProposedValues(text) {
   const number = "([+-]?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+))";
   const patterns = [
@@ -272,12 +265,20 @@ function isDirectAnswerRequest(text) {
 }
 
 function lastQuestion(text) {
-  const questions = String(text ?? "").match(/[^?]*\?/g);
-  if (!questions?.length) return "";
-  return questions[questions.length - 1]
+  const source = String(text ?? "");
+  const questionEnd = source.lastIndexOf("?");
+  if (questionEnd < 0) return "";
+
+  const sentenceStart = Math.max(
+    source.lastIndexOf(".", questionEnd),
+    source.lastIndexOf("!", questionEnd),
+    source.lastIndexOf("?", questionEnd - 1),
+    source.lastIndexOf("\\n", questionEnd)
+  );
+  return source.slice(sentenceStart + 1, questionEnd + 1)
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/[^a-z0-9\\s]/g, " ")
+    .replace(/\\s+/g, " ")
     .trim();
 }
 
@@ -301,7 +302,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   let latestTutorClaim = null;
   const tutorHistoryStart = Math.max(0, previousTutorMessages.length - 6);
   for (let index = previousTutorMessages.length - 1; index >= tutorHistoryStart; index -= 1) {
-    const claims = findIncorrectNumericClaims(String(previousTutorMessages[index].content ?? ""));
+    const claims = findNumericClaims(String(previousTutorMessages[index].content ?? ""));
     const candidate = claims.at(-1);
     if (!candidate) continue;
 
