@@ -76,6 +76,11 @@ export const tutorMessageRole = pgEnum("tutor_message_role", [
   "tutor"
 ]);
 
+export const tutorAttemptEvaluationStatus = pgEnum(
+  "tutor_attempt_evaluation_status",
+  ["not_evaluated", "pending", "evaluated", "unavailable", "failed"]
+);
+
 /**
  * Student-owned learning plan container. A plan is independent of the
  * institution catalogue; generated outlines are stored as numbered revisions.
@@ -438,6 +443,57 @@ export const tutorMessages = pgTable(
     check(
       "tutor_messages_tutor_provenance_check",
       sql`${table.role} <> 'tutor' or (${table.provider} is not null and ${table.model} is not null and ${table.promptVersion} is not null)`
+    )
+  ]
+);
+
+
+/**
+ * A learner explicitly submits an existing student message as an attempt.
+ * The message remains the source text; this row records its assessment
+ * lifecycle without implying that an evaluation has taken place.
+ */
+export const tutorAttempts = pgTable(
+  "tutor_attempts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => tutorSessions.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => tutorMessages.id, { onDelete: "cascade" }),
+    attemptNumber: integer("attempt_number").notNull(),
+    evaluationStatus: tutorAttemptEvaluationStatus("evaluation_status")
+      .notNull()
+      .default("not_evaluated"),
+    submittedAt: timestampWithTimezone("submitted_at").notNull().defaultNow(),
+    evaluatedAt: timestampWithTimezone("evaluated_at")
+  },
+  (table) => [
+    uniqueIndex("tutor_attempts_message_unique").on(table.messageId),
+    uniqueIndex("tutor_attempts_session_number_unique").on(
+      table.sessionId,
+      table.attemptNumber
+    ),
+    index("tutor_attempts_student_submitted_idx").on(
+      table.studentId,
+      table.submittedAt
+    ),
+    index("tutor_attempts_session_submitted_idx").on(
+      table.sessionId,
+      table.submittedAt
+    ),
+    check(
+      "tutor_attempts_number_positive_check",
+      sql`${table.attemptNumber} > 0`
+    ),
+    check(
+      "tutor_attempts_evaluated_timestamp_check",
+      sql`${table.evaluationStatus} <> 'evaluated' or ${table.evaluatedAt} is not null`
     )
   ]
 );
