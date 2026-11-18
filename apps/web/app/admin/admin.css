@@ -928,3 +928,76 @@
     max-width: 170px;
   }
 }
+
+
+.benchmark-summary-note,
+.benchmark-summary-footnote {
+  color: #718078;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.benchmark-summary-note {
+  margin-bottom: 12px;
+  padding: 13px 15px;
+  border: 1px solid #e3e9e4;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.benchmark-summary-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e3e9e4;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.benchmark-summary-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.benchmark-summary-table th,
+.benchmark-summary-table td {
+  padding: 12px 13px;
+  border-bottom: 1px solid #edf0ed;
+  color: #5e6d63;
+  font-size: 11px;
+  vertical-align: top;
+}
+
+.benchmark-summary-table th {
+  background: #f7f9f7;
+  color: #64736a;
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.benchmark-summary-table td strong,
+.benchmark-summary-table td small {
+  display: block;
+}
+
+.benchmark-summary-table td strong {
+  color: #26372e;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.benchmark-summary-table td small {
+  margin-top: 4px;
+  color: #88938b;
+  font-size: 10px;
+}
+
+.benchmark-summary-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.benchmark-summary-footnote {
+  margin: 9px 0 0;
+}
