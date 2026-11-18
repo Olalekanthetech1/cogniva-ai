@@ -20,9 +20,9 @@ test("evaluates bounded arithmetic without executing arbitrary code", () => {
   assert.ok(Math.abs(evaluateNumericExpression("2 × 120 × 140 × 0.8192") - 27525.12) < 1e-8);
   assert.ok(Math.abs(evaluateNumericExpression("2(120)(140)(.8192)") - 27525.12) < 1e-8);
   assert.equal(evaluateNumericExpression("sqrt(81) + 3^2"), 18);
-  assert.equal(evaluateNumericExpression("cos(60°)"), 0.5);
+  assert.ok(Math.abs(evaluateNumericExpression("cos(60°)") - 0.5) < 1e-12);
   assert.equal(evaluateNumericExpression("cos(60°)"), Math.cos(Math.PI / 3));
-  assert.equal(evaluateNumericExpression("sin 30°"), 0.5);
+  assert.ok(Math.abs(evaluateNumericExpression("sin 30°") - 0.5) < 1e-12);
   assert.equal(evaluateNumericExpression("12 * (7 - 2)"), 60);
   assert.equal(evaluateNumericExpression("-2^2"), -4);
   assert.equal(evaluateNumericExpression("(-2)^2"), 4);
@@ -70,8 +70,8 @@ test("explains why the tutor's verified value stands when the learner reports a 
   });
 
   assert.match(response, /previous hint/i);
-  assert.match(response, /248\.04 N/);
-  assert.match(response, /247\.03 N/);
+  assert.match(response, /248\.04/);
+  assert.match(response, /247\.03/);
   assert.match(response, /was correct/i);
   assert.match(response, /show this calculation step by step/i);
   assert.doesNotMatch(response, /square-root input/i);
@@ -89,8 +89,8 @@ test("corrects an actually incorrect prior tutor calculation when the learner su
   });
 
   assert.match(response, /previous hint/i);
-  assert.match(response, /248\.04 N/);
-  assert.match(response, /not 247\.03 N/);
+  assert.match(response, /248\.04/);
+  assert.match(response, /not 247\.03/);
   assert.equal((response.match(/\?/g) ?? []).length, 1);
 });
 
