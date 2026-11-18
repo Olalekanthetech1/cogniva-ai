@@ -20,8 +20,10 @@ test("evaluates bounded arithmetic without executing arbitrary code", () => {
   assert.ok(Math.abs(evaluateNumericExpression("2 × 120 × 140 × 0.8192") - 27525.12) < 1e-8);
   assert.ok(Math.abs(evaluateNumericExpression("2(120)(140)(.8192)") - 27525.12) < 1e-8);
   assert.equal(evaluateNumericExpression("sqrt(81) + 3^2"), 18);
-  assert.equal(evaluateNumericExpression("cos 35°"), Math.cos(35 * Math.PI / 180));
-  assert.equal(evaluateNumericExpression("cos(35°)"), Math.cos(35 * Math.PI / 180));
+  assert.equal(evaluateNumericExpression("cos(60°)"), 0.5);
+  assert.equal(evaluateNumericExpression("cos(60°)"), Math.cos(Math.PI / 3));
+  assert.equal(evaluateNumericExpression("sin 30°"), 0.5);
+  assert.equal(evaluateNumericExpression("12 * (7 - 2)"), 60);
   assert.equal(evaluateNumericExpression("-2^2"), -4);
   assert.equal(evaluateNumericExpression("(-2)^2"), 4);
   assert.equal(evaluateNumericExpression("2^-2"), 0.25);
@@ -138,4 +140,73 @@ test("detects a learner's incorrect arithmetic without rejecting unrelated prose
 test("does not claim independent verification for unsupported expressions", () => {
   assert.deepEqual(findIncorrectNumericClaims("The material is stronger than the previous sample."), []);
   assert.equal(evaluateNumericExpression("stress = force / area"), null);
+});
+
+
+test("fails closed instead of extracting a numeric suffix from prose", () => {
+  assert.deepEqual(
+    findIncorrectNumericClaims("A note mentions 99 before the unsupported expression 3 + 4 = 8."),
+    []
+  );
+});
+
+test("accepts an explicit labelled expression but not arbitrary prose", () => {
+  assert.equal(findNumericClaims("Result: 12 * (7 - 2) = 60")[0]?.isCorrect, true);
+  assert.deepEqual(findNumericClaims("The result is probably 12 * (7 - 2) = 60"), []);
+});
+
+test("uses rounding at displayed precision rather than symmetric half-step tolerance", () => {
+  assert.equal(findNumericClaims("2.5 = 3")[0]?.isCorrect, true);
+  assert.equal(findNumericClaims("2.5 = 2")[0]?.isCorrect, false);
+});
+
+test("does not interpret an ordinary question about the tutor's answer as a correction challenge", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "tutor", content: "The product is 3 * 4 = 12." },
+      { role: "student", content: "What is your answer?" }
+    ]
+  });
+
+  assert.notEqual(analysis.learnerIntent, "correction_challenge");
+  assert.equal(analysis.correctionRequired, false);
+});
+
+test("does not auto-correct when the learner simply reports the same answer", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "The product is 3 * 4 = 12." },
+      { role: "student", content: "My answer is 12." }
+    ]
+  });
+
+  assert.notEqual(analysis.learnerIntent, "correction_challenge");
+  assert.equal(analysis.correctionRequired, false);
+});
+
+test("does not select an arbitrary claim when recent tutor history contains multiple calculations", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "tutor", content: "First, 3 + 4 = 7. As a check, 5 + 5 = 10." },
+      { role: "student", content: "Your answer is wrong." }
+    ]
+  });
+
+  assert.equal(analysis.latestTutorClaim, null);
+  assert.equal(analysis.correctionRequired, false);
+});
+
+test("does not infer Newtons or any other physical unit from nearby conversation text", () => {
+  const [claim] = findNumericClaims("Result: sqrt(16) = 4");
+  const response = buildVerifiedCorrectionResponse({
+    claim,
+    learnerMessage: "My calculator gives 3. Your previous value is wrong.",
+    contextText: "Forces are measured in N."
+  });
+
+  assert.doesNotMatch(response, /\\bN\\b/);
+  assert.match(response, /does not verify units/i);
 });
