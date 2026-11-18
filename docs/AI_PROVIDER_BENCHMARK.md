@@ -3,7 +3,7 @@
 **Protocol version:** `cogniva-core-2026-11-18-v2`  
 **Pricing snapshot:** `usd-2026-11-18-v2`  
 **Reviewed:** 18 November 2026  
-**Status:** Candidate shortlist and fixed evaluation cases defined. No benchmark has been run and no provider has been selected.
+**Status:** Benchmark runner and blinded review workflow implemented on the feature branch. No benchmark has been run and no provider has been selected.
 
 ## Purpose
 
@@ -89,6 +89,8 @@ No candidate should be chosen until the following evidence is available for both
 
 Task-specific winners are allowed: the best model for learning-plan generation need not be the best model for Socratic tutoring. Any later production activation requires a separate implementation and approval step.
 
-## Current implementation boundary
+## Runner implementation boundary
 
-This protocol and fixed case set do not themselves execute model calls, save benchmark runs, expose benchmark outputs, or activate learner-facing inference. Those are separate implementation steps. No benchmark result exists until a real provider request has been completed and its evidence has been retained.
+The administrator-only benchmark runner is implemented on the feature branch. It persists each provider/case attempt independently, retains failures, saves blinded human rubric reviews, and reveals identity/performance evidence only after review (or immediately when all requests fail and there is no output to score). The database schema requires a reviewed and separately applied Neon migration before the page can be deployed.
+
+The runner does not execute until all three provider credentials are present in the Render service environment and an administrator explicitly starts a run. It does not activate learner-facing inference. No benchmark result exists until a real provider request has been completed and its evidence has been retained.
