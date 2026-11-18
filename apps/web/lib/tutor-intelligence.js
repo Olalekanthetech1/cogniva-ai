@@ -491,7 +491,7 @@ function resolveNumericAnswerEvaluation(input) {
   };
 }
 
-function buildNumericAnswerFeedback(evaluation) {
+export function buildNumericAnswerFeedback(evaluation) {
   if (evaluation.isCorrect) {
     return "Correct — " + evaluation.expression + " = " + evaluation.expectedText +
       ". That answers the calculation Cogniva just asked you to do, so we will move forward instead of repeating it. What would you do next with this result?";
@@ -502,7 +502,7 @@ function buildNumericAnswerFeedback(evaluation) {
     ". Recheck the arithmetic and order of operations. What result do you get after recalculating?";
 }
 
-function buildRealPairInconsistencyResponse(pair, answerEvaluation = null) {
+export function buildRealPairInconsistencyResponse(pair, answerEvaluation = null) {
   const first = pair.variables[0];
   const second = pair.variables[1];
   const sumSquares = formatNumericValue(pair.sumSquares);
