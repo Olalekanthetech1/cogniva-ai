@@ -149,22 +149,42 @@ export async function createAiBenchmarkRun(adminUserId: string) {
   return creation;
 }
 
+function reachedOutputTokenLimit(finishReason: string | null): boolean {
+  const normalized = finishReason?.trim().toLowerCase() ?? "";
+  return ["length", "max_tokens", "max_output_tokens", "max_token_limit"].includes(
+    normalized
+  );
+}
+
 export function validateBenchmarkOutput(
   task: AiTaskKey,
-  output: string
+  output: string,
+  finishReason: string | null = null
 ): BenchmarkMechanicalCheck {
   const issues: string[] = [];
+
+  if (reachedOutputTokenLimit(finishReason)) {
+    issues.push(
+      "The provider stopped at its output-token limit; treat this response as potentially truncated."
+    );
+  }
 
   if (task === "learning_plan_generation") {
     let parsed: unknown;
     try {
       parsed = JSON.parse(output);
     } catch {
-      return { valid: false, issues: ["Output is not valid JSON."] };
+      return {
+        valid: false,
+        issues: [...issues, "Output is not valid JSON."]
+      };
     }
 
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      return { valid: false, issues: ["Output must be a JSON object."] };
+      return {
+        valid: false,
+        issues: [...issues, "Output must be a JSON object."]
+      };
     }
 
     const plan = parsed as Record<string, unknown>;

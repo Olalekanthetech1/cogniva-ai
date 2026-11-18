@@ -40,7 +40,9 @@ export class AiProviderRuntimeError extends Error {
   constructor(
     readonly code: AiProviderErrorCode,
     readonly statusCode: 409 | 422 | 429 | 502 | 504,
-    message: string
+    message: string,
+    readonly upstreamStatusCode: number | null = null,
+    readonly providerErrorCode: string | null = null
   ) {
     super(message);
     this.name = "AiProviderRuntimeError";
@@ -72,6 +74,19 @@ function readCount(value: unknown): number | null {
 
 function readText(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+function readSafeProviderErrorCode(value: unknown): string | null {
+  const candidate =
+    typeof value === "string"
+      ? value.trim()
+      : typeof value === "number" && Number.isSafeInteger(value)
+        ? String(value)
+        : "";
+
+  return /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(candidate)
+    ? candidate
+    : null;
 }
 
 function extractOpenAiText(value: unknown): string | null {
@@ -187,14 +202,29 @@ function extractGeminiResponse(
   };
 }
 
-function readProviderError(response: Response): never {
+async function readProviderError(response: Response): Promise<never> {
   const code = response.status;
+  let providerErrorCode: string | null = null;
+
+  try {
+    const body: unknown = await response.clone().json();
+    if (isObject(body) && isObject(body.error)) {
+      providerErrorCode =
+        readSafeProviderErrorCode(body.error.status) ??
+        readSafeProviderErrorCode(body.error.code) ??
+        readSafeProviderErrorCode(body.error.type);
+    }
+  } catch {
+    // Keep the HTTP status even when the provider sends a non-JSON error body.
+  }
 
   if (code === 401 || code === 403) {
     throw new AiProviderRuntimeError(
       "CREDENTIAL_REJECTED",
       502,
-      "The provider rejected the configured credential. Check the key in the server environment."
+      "The provider rejected the configured credential. Check the key in the server environment.",
+      code,
+      providerErrorCode
     );
   }
 
@@ -202,7 +232,9 @@ function readProviderError(response: Response): never {
     throw new AiProviderRuntimeError(
       "MODEL_NOT_FOUND",
       422,
-      "The provider could not find this model ID. Check the exact model ID for the selected provider."
+      "The provider could not find this model ID. Check the exact model ID for the selected provider.",
+      code,
+      providerErrorCode
     );
   }
 
@@ -210,7 +242,9 @@ function readProviderError(response: Response): never {
     throw new AiProviderRuntimeError(
       "RATE_LIMITED",
       429,
-      "The provider rate limit was reached. Check provider quota and try again later."
+      "The provider rate limit was reached. Check provider quota and try again later.",
+      code,
+      providerErrorCode
     );
   }
 
@@ -218,14 +252,18 @@ function readProviderError(response: Response): never {
     throw new AiProviderRuntimeError(
       "UPSTREAM_UNAVAILABLE",
       502,
-      "The AI provider is temporarily unavailable."
+      "The AI provider is temporarily unavailable.",
+      code,
+      providerErrorCode
     );
   }
 
   throw new AiProviderRuntimeError(
     "UPSTREAM_REJECTED",
     502,
-    "The AI provider rejected the connection-test request. Check the model and provider account configuration."
+    "The AI provider rejected the connection-test request. Check the model and provider account configuration.",
+    code,
+    providerErrorCode
   );
 }
 
@@ -238,7 +276,7 @@ function validateInput(input: AiTextGenerationInput): void {
     input.systemPrompt.length < 1 ||
     !Number.isInteger(input.maxOutputTokens) ||
     input.maxOutputTokens < 1 ||
-    input.maxOutputTokens > 1024 ||
+    input.maxOutputTokens > 2048 ||
     !Number.isFinite(input.temperature) ||
     input.temperature < 0 ||
     input.temperature > 1
@@ -321,7 +359,7 @@ export async function generateTextWithProvider(
       signal: controller.signal
     });
 
-    if (!response.ok) readProviderError(response);
+    if (!response.ok) await readProviderError(response);
 
     responseBody = await response.json();
   } catch (error) {

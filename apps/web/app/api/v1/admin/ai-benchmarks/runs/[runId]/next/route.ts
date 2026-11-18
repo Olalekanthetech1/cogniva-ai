@@ -161,7 +161,8 @@ export async function POST(
       } else {
         const mechanicalCheck = validateBenchmarkOutput(
           claimed.task,
-          response.text
+          response.text,
+          response.finishReason
         );
         const estimatedCost = calculateBenchmarkCost(
           claimed.candidateId,
@@ -196,7 +197,15 @@ export async function POST(
           : "BENCHMARK_EXECUTION_FAILED";
       const failureMessage =
         error instanceof AiProviderRuntimeError
-          ? error.message
+          ? [
+              error.message,
+              ...(error.upstreamStatusCode !== null
+                ? [`Upstream HTTP status: ${error.upstreamStatusCode}.`]
+                : []),
+              ...(error.providerErrorCode
+                ? [`Provider error code: ${error.providerErrorCode}.`]
+                : [])
+            ].join(" ")
           : "Cogniva could not complete this provider request.";
 
       await db

@@ -565,6 +565,7 @@ export function AiBenchmarkWorkspace() {
                           <span>Latency: {result.latencyMs === null ? "Unavailable" : `${result.latencyMs} ms`}</span>
                           <span>Input: {result.usage.inputTokens ?? "Unavailable"} tokens</span>
                           <span>Output: {result.usage.outputTokens ?? "Unavailable"} tokens</span>
+                          <span>Finish reason: {result.finishReason ?? "Not reported"}</span>
                           <span>Estimated cost: {formatCost(result.estimatedCostUsd)}</span>
                         </div>
                         {result.mechanicalCheck ? (
