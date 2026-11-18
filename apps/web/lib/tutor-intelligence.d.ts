@@ -18,6 +18,7 @@ export type TutorTurnAnalysis = {
   learnerIntent: "correction_challenge" | "direct_answer_request" | "work_attempt" | "clarification" | "follow_up";
   latestStudentMessage: string;
   latestTutorClaim: NumericClaimMismatch | null;
+  learnerNumericMismatches: NumericClaimMismatch[];
   learnerValueMatches: boolean;
   correctionRequired: boolean;
   repeatedQuestionCount: number;
