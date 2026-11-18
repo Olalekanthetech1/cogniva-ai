@@ -21,7 +21,7 @@ A bounded arithmetic parser checks explicit numeric equalities and approximation
 
 The parser does not use eval or execute learner text. It enforces expression length, token count, and numeric bounds. It applies precision-aware rounding tolerance.
 
-When it detects an incorrect numeric claim in a tutor response, Cogniva replaces that response with a correction based on the computed value before saving it. When a learner challenges an earlier incorrect numeric claim, Cogniva can correct it even if later tutor messages repeated the same question. The response metadata records whether the answer came from the configured provider or the deterministic verifier, plus any upstream provider evidence.
+When it detects an incorrect numeric claim in a tutor response, Cogniva replaces that response with a correction based on the computed value before saving it. When a learner challenges an earlier claim, Cogniva independently checks whether the tutor or learner is correct: it corrects a wrong tutor claim, or explains why a verified tutor result stands when the learner's reported value differs. This check can find an unresolved numeric claim even when later tutor messages repeated the same question. The response metadata records whether the answer came from the configured provider or the deterministic verifier, plus any upstream provider evidence.
 
 ## Evidence boundary
 
