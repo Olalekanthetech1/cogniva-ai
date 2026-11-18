@@ -21,6 +21,10 @@ test("evaluates bounded arithmetic without executing arbitrary code", () => {
   assert.ok(Math.abs(evaluateNumericExpression("2(120)(140)(.8192)") - 27525.12) < 1e-8);
   assert.equal(evaluateNumericExpression("sqrt(81) + 3^2"), 18);
   assert.equal(evaluateNumericExpression("cos 35°"), Math.cos(35 * Math.PI / 180));
+  assert.equal(evaluateNumericExpression("cos(35°)"), Math.cos(35 * Math.PI / 180));
+  assert.equal(evaluateNumericExpression("-2^2"), -4);
+  assert.equal(evaluateNumericExpression("(-2)^2"), 4);
+  assert.equal(evaluateNumericExpression("2^-2"), 0.25);
   assert.equal(evaluateNumericExpression("process.exit()"), null);
   assert.equal(evaluateNumericExpression("1 / 0"), null);
 });
@@ -67,6 +71,8 @@ test("explains why the tutor's verified value stands when the learner reports a 
   assert.match(response, /248\.04 N/);
   assert.match(response, /247\.03 N/);
   assert.match(response, /was correct/i);
+  assert.match(response, /show this calculation step by step/i);
+  assert.doesNotMatch(response, /square-root input/i);
   assert.equal((response.match(/\?/g) ?? []).length, 1);
   assert.ok(response.endsWith("?"));
 });
