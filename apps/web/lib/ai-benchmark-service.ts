@@ -323,13 +323,14 @@ export async function getAiBenchmarkSnapshot(runId: string, reviewerId: string) 
       latencyMs: result.latencyMs,
       finishReason: result.finishReason,
       mechanicalCheck: result.mechanicalCheck,
-      failureCode: result.failureCode,
       reviewCriteria: benchmarkCase?.reviewCriteria ?? [],
       reviewedByMe: Boolean(review),
       myScores: review?.scores ?? null,
       myNotes: review?.notes ?? null,
       ...(identitiesRevealed
         ? {
+            failureCode: result.failureCode,
+            failureMessage: result.failureMessage,
             provider: result.provider,
             model: result.resolvedModel ?? result.model,
             pricing: {
