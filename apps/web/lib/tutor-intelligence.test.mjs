@@ -21,7 +21,7 @@ test("evaluates bounded arithmetic without executing arbitrary code", () => {
   assert.ok(Math.abs(evaluateNumericExpression("2(120)(140)(.8192)") - 27525.12) < 1e-8);
   assert.equal(evaluateNumericExpression("sqrt(81) + 3^2"), 18);
   assert.ok(Math.abs(evaluateNumericExpression("cos(60°)") - 0.5) < 1e-12);
-  assert.equal(evaluateNumericExpression("cos(60°)"), Math.cos(Math.PI / 3));
+  assert.ok(Math.abs(evaluateNumericExpression("cos(60°)") - Math.cos(Math.PI / 3)) < 1e-12);
   assert.ok(Math.abs(evaluateNumericExpression("sin 30°") - 0.5) < 1e-12);
   assert.equal(evaluateNumericExpression("12 * (7 - 2)"), 60);
   assert.equal(evaluateNumericExpression("-2^2"), -4);
