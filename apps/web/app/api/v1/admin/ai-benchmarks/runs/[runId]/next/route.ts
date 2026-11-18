@@ -85,7 +85,7 @@ export async function POST(
     if (run.status !== "running") {
       const progress = await updateAiBenchmarkRunProgress(runId);
       return Response.json(
-        { data: { processed: false, done: progress.done, ...progress } },
+        { data: { processed: false, ...progress } },
         { headers: { "Cache-Control": "no-store" } }
       );
     }
@@ -129,7 +129,6 @@ export async function POST(
           data: {
             processed: false,
             busy: !progress.done,
-            done: progress.done,
             ...progress
           }
         },
@@ -213,7 +212,7 @@ export async function POST(
 
     const progress = await updateAiBenchmarkRunProgress(runId);
     return Response.json(
-      { data: { processed: true, done: progress.done, ...progress } },
+      { data: { processed: true, ...progress } },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch {
