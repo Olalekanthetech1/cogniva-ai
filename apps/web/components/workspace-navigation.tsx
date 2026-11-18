@@ -1,11 +1,11 @@
 import Link from "next/link";
 
-type ActiveDestination = "home" | "learn" | "profile";
+type ActiveDestination = "home" | "learn" | "tutor" | "profile";
 
 const destinations = [
   { key: "home", label: "Home", href: "/dashboard", icon: "⌂" },
   { key: "learn", label: "Learn", href: "/learn", icon: "▤" },
-  { key: "tutor", label: "Tutor", href: null, icon: "◌" },
+  { key: "tutor", label: "Tutor", href: "/tutor", icon: "◌" },
   { key: "progress", label: "Progress", href: null, icon: "▥" },
   { key: "profile", label: "Profile", href: "/profile", icon: "♙" }
 ] as const;
