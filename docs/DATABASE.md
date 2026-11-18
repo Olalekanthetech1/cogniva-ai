@@ -30,6 +30,8 @@ There are no seeded or fabricated university, course, or subject catalogue recor
 
 ### Learning Workspace
 
+The next tutor-evidence increment adds a proposed `tutor_attempts` table. It links an explicitly submitted learner attempt to its student message, session, and owning learner, with a sequential attempt number and an evaluation lifecycle status. The message remains the source text; a newly recorded attempt starts as `not_evaluated`. This schema is not available in Neon until its migration is generated, reviewed, and explicitly applied.
+
 The applied Learning Workspace schema includes student-owned plans and revision history, ordered units/objectives, plan-scoped concepts and relationships, resumable tutor sessions, and ordered tutor messages with provider/model/prompt provenance fields. These are persisted structures; provider generation and tutoring execution are not yet enabled.
 
 ## 3. Existing constraints and data integrity
