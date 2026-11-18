@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 type AdminNavigationProps = {
-  active: "overview" | "ai-configuration";
+  active: "overview" | "ai-configuration" | "ai-benchmarks";
 };
 
 export function AdminNavigation({ active }: AdminNavigationProps) {
