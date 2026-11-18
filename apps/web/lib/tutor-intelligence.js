@@ -420,8 +420,7 @@ function extractExplicitPromptExpression(text) {
 }
 function extractSingleLearnerNumericAnswer(text) {
   const source = String(text ?? "").trim().replace(/^[$]+|[$]+$/g, "").trim();
-  const numberPattern = "[+-]?(?:(?:\\\\d{1,3}(?:,\\\\d{3})+|\\\\d+)(?:\\\\.\\\\d+)?|\\\\.\\\\d+)";
-  const bareAnswer = source.match(new RegExp("^(" + numberPattern + ")[.!]?$"));
+  const bareAnswer = source.match(/^([+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+))[.!]?$/);
   if (bareAnswer) return normalizeNumber(bareAnswer[1]);
 
   const labelledValues = extractLearnerProposedValues(source);
@@ -431,7 +430,6 @@ function extractSingleLearnerNumericAnswer(text) {
   if (claims.length === 1) return claims[0].claimedValue;
   return null;
 }
-
 function isRealFeasibilityQuestion(text) {
   const source = String(text ?? "");
   return /\b(?:can|could|do|does|would)\b[\s\S]{0,90}\b(?:real|real-valued)\b[\s\S]{0,70}\b(?:solution|values?|roots?|numbers?|forces?|magnitudes?)\b/i.test(source) ||
