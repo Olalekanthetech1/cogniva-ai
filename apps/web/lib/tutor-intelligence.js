@@ -24,11 +24,12 @@ function tokenizeExpression(source) {
     if (!match || match.index !== offset) return null;
 
     const token = match[1];
-    if (/^\d/.test(token)) {
+    if (/^(?:\d|\.)/.test(token)) {
       const validGrouping = /^\d+$/.test(token) ||
         /^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(token) ||
         /^\d+(?:\.\d+)?$/.test(token) ||
         /^\.\d+$/.test(token);
+      if (!validGrouping) return null;
       tokens.push({ type: "number", value: Number(token.replace(/,/g, "")) });
     } else {
       tokens.push({ type: "symbol", value: token.toLowerCase() });
