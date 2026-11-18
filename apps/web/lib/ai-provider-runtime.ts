@@ -291,7 +291,8 @@ export async function generateTextWithProvider(
             ],
             generationConfig: {
               maxOutputTokens: input.maxOutputTokens,
-              temperature: input.temperature
+              // Gemini 3.x uses its model default; provider guidance warns
+              // against overriding sampling settings for these reasoning models.
             }
           }
         : {
