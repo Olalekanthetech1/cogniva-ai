@@ -10,7 +10,9 @@ import type { AiProviderId } from "@/lib/admin-ai-config";
 import {
   analyzeTutorTurn,
   buildAdaptiveTutorInstructions,
+  buildNumericAnswerFeedback,
   buildNumericOutputCorrectionResponse,
+  buildRealPairInconsistencyResponse,
   buildVerifiedCorrectionResponse,
   findIncorrectNumericClaims
 } from "@/lib/tutor-intelligence";
@@ -22,7 +24,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PROMPT_VERSION = "cogniva-socratic-tutor-2026-11-18-v2";
+const PROMPT_VERSION = "cogniva-socratic-tutor-2026-11-18-v3";
 const MAX_CONTEXT_CHARACTERS = 10_000;
 const MAX_CONTEXT_MESSAGES = 16;
 const MAX_OUTPUT_TOKENS = 240;
@@ -490,7 +492,61 @@ export async function POST(
     verification: Record<string, unknown> | null;
   };
 
-  if (turnAnalysis.correctionRequired && turnAnalysis.latestTutorClaim) {
+  const pairConsistencyIsRelevant = turnAnalysis.realPairFeasibility &&
+    !turnAnalysis.realPairFeasibility.possible &&
+    (
+      turnAnalysis.realFeasibilityQuestion ||
+      turnAnalysis.numericAnswerEvaluation?.method === "verified_sum_of_squares_product_identity" ||
+      turnAnalysis.numericAnswerEvaluation?.method === "verified_quadratic_discriminant_from_pair_constraints"
+    );
+
+  if (pairConsistencyIsRelevant && turnAnalysis.realPairFeasibility) {
+    generated = {
+      provider: "cogniva-core",
+      resolvedModel: "bounded-real-pair-check-v1",
+      text: buildRealPairInconsistencyResponse(
+        turnAnalysis.realPairFeasibility,
+        turnAnalysis.numericAnswerEvaluation
+      ),
+      usage: { inputTokens: null, outputTokens: null, totalTokens: null },
+      finishReason: "stop",
+      latencyMs: 0,
+      responseSource: "deterministic_verifier",
+      upstreamProvider: null,
+      upstreamModel: null,
+      verification: {
+        status: "real_pair_inconsistency_detected",
+        method: "two_variable_sum_of_squares_and_product",
+        variables: turnAnalysis.realPairFeasibility.variables,
+        sumSquares: turnAnalysis.realPairFeasibility.sumSquares,
+        product: turnAnalysis.realPairFeasibility.product,
+        differenceSquare: turnAnalysis.realPairFeasibility.differenceSquare,
+        possible: turnAnalysis.realPairFeasibility.possible,
+        numericAnswerEvaluation: turnAnalysis.numericAnswerEvaluation
+      }
+    };
+  } else if (turnAnalysis.numericAnswerEvaluation) {
+    generated = {
+      provider: "cogniva-core",
+      resolvedModel: "bounded-numeric-answer-check-v1",
+      text: buildNumericAnswerFeedback(turnAnalysis.numericAnswerEvaluation),
+      usage: { inputTokens: null, outputTokens: null, totalTokens: null },
+      finishReason: "stop",
+      latencyMs: 0,
+      responseSource: "deterministic_verifier",
+      upstreamProvider: null,
+      upstreamModel: null,
+      verification: {
+        status: turnAnalysis.numericAnswerEvaluation.isCorrect
+          ? "numeric_answer_verified_correct"
+          : "numeric_answer_verified_incorrect",
+        method: turnAnalysis.numericAnswerEvaluation.method,
+        expression: turnAnalysis.numericAnswerEvaluation.expression,
+        expectedValue: turnAnalysis.numericAnswerEvaluation.expectedText,
+        submittedValue: turnAnalysis.numericAnswerEvaluation.submittedText
+      }
+    };
+  } else if (turnAnalysis.correctionRequired && turnAnalysis.latestTutorClaim) {
     generated = {
       provider: "cogniva-core",
       resolvedModel: "verified-numeric-correction-v1",
