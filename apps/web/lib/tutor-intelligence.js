@@ -234,8 +234,8 @@ function isCorrectionChallenge(text) {
 }
 
 function isDirectAnswerRequest(text) {
-  return /\b(give|provide|show|tell me|just)\b.{0,35}\b(answer|solution|result)\b/i.test(text) ||
-    /\b(full|complete|worked)\s+(answer|solution|working)\b/i.test(text) ||
+  return /\b(give|provide|show|tell me|just|what is|what's)\b.{0,45}\b(ans|answer|solution|result)\b/i.test(text) ||
+    /\b(full|complete|worked)\s+(ans|answer|solution|working)\b/i.test(text) ||
     /\bsolve it completely\b/i.test(text);
 }
 
@@ -272,6 +272,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
     : [];
   const latestTutorClaim = latestTutorClaims.at(-1) ?? null;
 
+  const learnerNumericMismatches = findIncorrectNumericClaims(latestStudentMessage);
   const learnerNumbers = extractNumbers(latestStudentMessage);
   const learnerValueMatches = latestTutorClaim
     ? learnerNumbers.some((value) => {
@@ -312,6 +313,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
     learnerIntent,
     latestStudentMessage,
     latestTutorClaim,
+    learnerNumericMismatches,
     learnerValueMatches,
     correctionRequired,
     repeatedQuestionCount,
@@ -352,6 +354,16 @@ export function buildAdaptiveTutorInstructions(analysis) {
   if (analysis.repeatedQuestionCount >= 2) {
     instructions.push(
       "The recent tutor history contains a repeated question. Do not ask it again. Explicitly change approach: explain the operation, demonstrate a smaller example, or give a worked micro-step before asking a new question."
+    );
+  }
+
+  if (analysis.learnerNumericMismatches?.length) {
+    const claim = analysis.learnerNumericMismatches[0];
+    instructions.push(
+      "A deterministic arithmetic check of the learner's submitted working found a mismatch: " +
+      claim.expression + " " + claim.operator + " " + claim.claimedText +
+      " is inconsistent; the expression evaluates to " + claim.expectedText +
+      ". Explain the precise arithmetic correction without dismissing any other correct reasoning."
     );
   }
 
