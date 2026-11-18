@@ -17,6 +17,7 @@ test("evaluates a square root with thousands separators", () => {
 
 test("evaluates bounded arithmetic without executing arbitrary code", () => {
   assert.equal(evaluateNumericExpression("2 × 120 × 140 × 0.8192"), 27525.12);
+  assert.equal(evaluateNumericExpression("2(120)(140)(.8192)"), 27525.12);
   assert.equal(evaluateNumericExpression("sqrt(81) + 3^2"), 18);
   assert.equal(evaluateNumericExpression("cos 35°"), Math.cos(35 * Math.PI / 180));
   assert.equal(evaluateNumericExpression("process.exit()"), null);
