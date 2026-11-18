@@ -1,6 +1,6 @@
 # Cogniva AI provider runtime foundation
 
-**Status:** Implemented connection-test adapters only. This document does not claim that learner-facing AI generation or comparative benchmarking is active.
+**Status:** Provider-neutral connection-test adapters are implemented. The versioned benchmark protocol and fixed evaluation cases are defined, but benchmark execution, persisted results, and learner-facing AI are not active.
 
 ## Supported providers
 
@@ -43,6 +43,17 @@ The response includes:
 
 The generated text itself is not returned or persisted. A successful connection test means only that the selected provider/model responded; it does not establish pedagogical quality, structured plan correctness, safe tutoring behaviour, or production readiness.
 
+## Benchmark protocol and case set
+
+The benchmark shortlist, dated pricing snapshot, fixed system prompts, and six evaluation cases are versioned in:
+
+- `docs/AI_PROVIDER_BENCHMARK.md`
+- `apps/web/lib/ai-benchmark-suite.ts`
+
+The initial candidates are Gemini `gemini-3.8-flash`, Groq `openai/gpt-oss-120b`, and Mistral `mistral-large-4-0`. They are candidates only. No output has been benchmarked and no provider has been selected.
+
+The evaluation set covers learning-plan generation and Socratic tutoring. It includes measurable review criteria and expected/failure signals. The protocol requires identical prompts, retained failures, token/latency evidence, timestamped pricing, and blinded human rubric review. Estimated cost must remain unavailable when usage data is incomplete.
+
 ## Explicitly not enabled
 
 This foundation does **not**:
@@ -51,18 +62,17 @@ This foundation does **not**:
 - create or continue tutoring sessions;
 - stream model responses to students;
 - select a preferred provider automatically;
-- provide a provider model catalogue;
-- compare provider quality, pricing, or latency across a benchmark suite.
+- persist comparative benchmark runs or human reviews;
+- present benchmark results or activate a provider.
 
 The Admin page labels learner runtime as inactive. Saved task preferences remain configuration data only.
 
 ## Benchmark gate
 
-Before selecting or activating a provider, Cogniva must run a versioned, identical evaluation set against comparable model candidates for both supported tasks:
+Before selecting or activating a provider, Cogniva must execute the versioned suite against the listed candidates (or a documented replacement set if any candidate is no longer available).
 
-1. Learning-plan generation: output validity, required structure, coverage of the learner's stated topic, objective measurability, ordering coherence, and absence of unsupported claims.
-2. Socratic tutoring: adherence to one-step guidance, relevance to the learner's last input, preservation of the current step during clarification, quality of hints, and no unsupported verification claims.
+Learning-plan generation is reviewed for output validity, required structure, topic coverage, objective measurability, ordering coherence, and absence of unsupported claims. Socratic tutoring is reviewed for one-step guidance, relevance to the learner's last input, context continuity, hint quality, and unsupported verification claims.
 
-Record latency and provider-reported token usage for every completed case. Cost comparisons require a timestamped pricing snapshot for the exact model and account tier used. Pedagogical quality must include blinded human rubric review; a model judging its own output is not sufficient evidence.
+Record latency and provider-reported token usage for every attempt. Cost comparisons require the run's retained pricing snapshot. Pedagogical quality must include blinded human rubric review; a model judging its own output is not sufficient evidence.
 
 A benchmark report must show failed, timed-out, rate-limited, and invalid outputs rather than dropping them from the results. No provider is activated automatically from a score.
