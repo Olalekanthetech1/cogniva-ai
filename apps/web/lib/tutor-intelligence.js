@@ -266,7 +266,7 @@ function extractLearnerProposedValues(text) {
 }
 
 function isCorrectionChallenge(text) {
-  return /\\b(incorrect|wrong|error|not correct|isn't correct|is not correct|i disagree|that can't be right|doesn't seem right|does not seem right|doesn't match|does not match)\\b/i.test(String(text ?? ""));
+  return /\b(incorrect|wrong|error|not correct|isn't correct|is not correct|i disagree|that can't be right|doesn't seem right|does not seem right|doesn't match|does not match)\b/i.test(String(text ?? ""));
 }
 
 function isDirectAnswerRequest(text) {
@@ -321,7 +321,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
         const laterText = String(message.content ?? "");
         const repeatsVerifiedValue = laterText.includes(candidate.expectedText);
         const acknowledgesCorrection = laterText.includes(candidate.claimedText) ||
-          /\\b(previous|earlier|rechecked|recalculated|correction|corrected|mistake|incorrect|wrong)\\b/i.test(laterText);
+          /\b(previous|earlier|rechecked|recalculated|correction|corrected|mistake|incorrect|wrong)\b/i.test(laterText);
         return repeatsVerifiedValue && acknowledgesCorrection;
       });
 
@@ -348,9 +348,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   const learnerValueMatches = latestTutorClaim
     ? learnerProposedValues.some((value) => {
         const places = latestTutorClaim.decimalPlaces;
-        const tolerance = Math.max(1e-9, 0.5 * Math.pow(10, -places));
-        return Math.abs(value - latestTutorClaim.computedValue) <= tolerance +
-          Math.abs(latestTutorClaim.computedValue) * 1e-12;
+        return Number(value.toFixed(places)) === Number(latestTutorClaim.expectedText);
       })
     : false;
   const correctionChallenge = isCorrectionChallenge(latestStudentMessage);
