@@ -266,11 +266,26 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   const previousTutorMessages = latestStudentIndex >= 0
     ? safeMessages.slice(0, latestStudentIndex).filter((message) => message?.role === "tutor")
     : [];
-  const latestTutorMessage = previousTutorMessages.at(-1);
-  const latestTutorClaims = latestTutorMessage
-    ? findIncorrectNumericClaims(String(latestTutorMessage.content ?? ""))
-    : [];
-  const latestTutorClaim = latestTutorClaims.at(-1) ?? null;
+  let latestTutorClaim = null;
+  const tutorHistoryStart = Math.max(0, previousTutorMessages.length - 6);
+  for (let index = previousTutorMessages.length - 1; index >= tutorHistoryStart; index -= 1) {
+    const claims = findIncorrectNumericClaims(String(previousTutorMessages[index].content ?? ""));
+    const candidate = claims.at(-1);
+    if (!candidate) continue;
+
+    const acknowledgedLater = previousTutorMessages.slice(index + 1).some((message) => {
+      const laterText = String(message.content ?? "");
+      const repeatsVerifiedValue = laterText.includes(candidate.expectedText);
+      const acknowledgesCorrection = laterText.includes(candidate.claimedText) ||
+        /\b(previous|earlier|rechecked|recalculated|correction|corrected|mistake|incorrect|wrong)\b/i.test(laterText);
+      return repeatsVerifiedValue && acknowledgesCorrection;
+    });
+
+    if (!acknowledgedLater) {
+      latestTutorClaim = candidate;
+      break;
+    }
+  }
 
   const learnerNumericMismatches = findIncorrectNumericClaims(latestStudentMessage);
   const learnerNumbers = extractNumbers(latestStudentMessage);
