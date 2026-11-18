@@ -96,6 +96,7 @@ export const aiBenchmarkResults = pgTable(
     candidateId: varchar("candidate_id", { length: 80 }).notNull(),
     provider: aiProvider("provider").notNull(),
     model: varchar("model", { length: 160 }).notNull(),
+    resolvedModel: varchar("resolved_model", { length: 160 }),
     blindLabel: varchar("blind_label", { length: 8 }).notNull(),
     task: aiTaskKey("task").notNull(),
     caseId: varchar("case_id", { length: 100 }).notNull(),
@@ -111,6 +112,9 @@ export const aiBenchmarkResults = pgTable(
       precision: 12,
       scale: 6
     }).notNull(),
+    pricingReviewedAt: varchar("pricing_reviewed_at", { length: 10 }).notNull(),
+    pricingEffectiveThrough: varchar("pricing_effective_through", { length: 10 }),
+    pricingSource: text("pricing_source").notNull(),
     status: aiBenchmarkResultStatus("status").notNull().default("pending"),
     outputText: text("output_text"),
     usageInputTokens: integer("usage_input_tokens"),
