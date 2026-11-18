@@ -12,6 +12,7 @@ export type NumericClaimMismatch = {
   difference: number;
   decimalPlaces: number;
   expectedText: string;
+  isCorrect: boolean;
 };
 
 export type TutorTurnAnalysis = {
@@ -19,7 +20,9 @@ export type TutorTurnAnalysis = {
   latestStudentMessage: string;
   latestTutorClaim: NumericClaimMismatch | null;
   learnerNumericMismatches: NumericClaimMismatch[];
+  learnerProposedValues: number[];
   learnerValueMatches: boolean;
+  learnerValueDiffers: boolean;
   correctionRequired: boolean;
   repeatedQuestionCount: number;
   previousTutorMessageCount: number;
@@ -27,6 +30,7 @@ export type TutorTurnAnalysis = {
 };
 
 export function evaluateNumericExpression(expression: string): number | null;
+export function findNumericClaims(text: string): NumericClaimMismatch[];
 export function findIncorrectNumericClaims(text: string): NumericClaimMismatch[];
 export function analyzeTutorTurn(input: {
   messages: TutorMessageForAnalysis[];
