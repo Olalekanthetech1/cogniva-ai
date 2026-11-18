@@ -408,7 +408,7 @@ function findRealPairFeasibility(messages) {
   return resolved.length === 1 ? resolved[0] : null;
 }
 function extractExplicitPromptExpression(text) {
-  const source = lastQuestion(String(text ?? "")) || String(text ?? "");
+  const source = String(text ?? "");
   const matches = [...source.matchAll(
     /\b(?:compute|calculate|evaluate|work\s+out|simplify)\s+(?:the\s+expression\s*)?([0-9][0-9,.\s()+\-*/×·÷^°]*?)(?=\s*(?:\$|[?!;,]|$))/gi
   )];
@@ -678,6 +678,20 @@ export function buildAdaptiveTutorInstructions(analysis) {
   if (analysis.repeatedQuestionCount >= 2) {
     instructions.push(
       "The recent tutor history contains a repeated question. Do not ask it again. Explicitly change approach: explain the operation, demonstrate a smaller example, or give a worked micro-step before asking a new question."
+    );
+  }
+
+  if (analysis.numericAnswerEvaluation) {
+    const evaluation = analysis.numericAnswerEvaluation;
+    instructions.push(
+      "A bounded numeric-answer check compared the learner's single-number attempt with the explicit target in the immediately preceding tutor question. The expected value is " +
+      evaluation.expectedText + " from " + evaluation.expression + ". Acknowledge the verified result, do not repeat the answered calculation, and do not claim mastery."
+    );
+  }
+
+  if (analysis.realPairFeasibility && !analysis.realPairFeasibility.possible) {
+    instructions.push(
+      "The available conversation contains a supported pair of constraints that is inconsistent with real values. Explain only the derived contradiction shown by the bounded consistency check; do not invent a solution or generalize this check to unsupported equations."
     );
   }
 
