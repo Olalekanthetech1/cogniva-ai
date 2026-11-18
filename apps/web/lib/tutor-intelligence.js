@@ -270,10 +270,10 @@ function lastQuestion(text) {
   if (questionEnd < 0) return "";
 
   const sentenceStart = Math.max(
-    source.lastIndexOf("\n", questionEnd)
+    source.lastIndexOf(".", questionEnd),
     source.lastIndexOf("!", questionEnd),
     source.lastIndexOf("?", questionEnd - 1),
-    source.lastIndexOf("\\n", questionEnd)
+    source.lastIndexOf("\n", questionEnd)
   );
   return source.slice(sentenceStart + 1, questionEnd + 1)
     .toLowerCase()
