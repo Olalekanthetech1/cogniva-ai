@@ -44,11 +44,16 @@ function hasTrustedOrigin(request: Request): boolean {
   });
 }
 
-async function requireAdministrator() {
+type AdministratorAuthorization =
+  | { ok: true; adminUserId: string }
+  | { ok: false; response: Response };
+
+async function requireAdministrator(): Promise<AdministratorAuthorization> {
   const access = await getAdminAccess();
 
   if (access.kind === "unauthenticated") {
     return {
+      ok: false,
       response: responseError(
         "UNAUTHENTICATED",
         "Sign in to access Cogniva administration.",
@@ -59,6 +64,7 @@ async function requireAdministrator() {
 
   if (access.kind === "forbidden") {
     return {
+      ok: false,
       response: responseError(
         "FORBIDDEN",
         "Administrator access is required.",
@@ -67,13 +73,13 @@ async function requireAdministrator() {
     };
   }
 
-  return { access };
+  return { ok: true, adminUserId: access.admin.id };
 }
 
 export async function GET(): Promise<Response> {
   try {
     const authorization = await requireAdministrator();
-    if ("response" in authorization) return authorization.response;
+    if (!authorization.ok) return authorization.response;
 
     const data = await getAdminAiConfiguration();
     return Response.json({ data });
@@ -97,7 +103,7 @@ export async function PUT(request: Request): Promise<Response> {
     }
 
     const authorization = await requireAdministrator();
-    if ("response" in authorization) return authorization.response;
+    if (!authorization.ok) return authorization.response;
 
     let body: unknown;
     try {
@@ -172,7 +178,7 @@ export async function PUT(request: Request): Promise<Response> {
       task: input.task as (typeof aiTaskKeyValues)[number],
       provider: input.provider as (typeof aiProviderValues)[number],
       model: input.model.trim(),
-      adminUserId: authorization.access.admin.id
+      adminUserId: authorization.adminUserId
     });
 
     return Response.json({ data });
