@@ -40,7 +40,9 @@ Implemented in this slice:
 - `ai_task_routes` stores provider/model preferences and the administrator who last updated them.
 - The application exposes no update/delete operation for audit events.
 
-**Capability boundary:** saved routing preferences are not active runtime routing. This slice does not call any provider API, validate credentials with an external request, list live models, benchmark model quality/latency/cost, or generate learner content. The UI explicitly reports that runtime adapters are not integrated. A later PR must implement provider-neutral adapters, live connection checks, structured-output validation, budget/timeout controls, and benchmark evidence before any task can be marked active.
+**Capability boundary:** saved routing preferences remain configuration data, not active learner-facing routing. Provider-neutral text-generation adapters for Gemini, Groq, and Mistral and a protected, fixed-prompt administrator connection test are now implemented. The test uses the saved route for a task and reports connection status, exact-token adherence, latency, and provider-reported token usage. It does not return or persist the generated test text.
+
+No learner request is routed to a provider. Cogniva does not yet generate learning plans, tutor students, expose a live model catalogue, compare model quality/cost, or automatically select/activate a provider. The comparative benchmark and activation gate remain separate work. See [AI_PROVIDER_RUNTIME.md](AI_PROVIDER_RUNTIME.md) for the adapter contract, security boundaries, and benchmark requirements.
 
 To provide credentials, add the appropriate variable in the Render web service's Environment settings. Never paste API keys into the admin page, GitHub, source code, screenshots, or chat. After changing an environment variable, restart/redeploy the service so the running process receives it.
 

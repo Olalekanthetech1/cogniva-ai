@@ -12,6 +12,26 @@ type RouteDraft = {
   model: string;
 };
 
+type TaskFeedback = {
+  kind: "success" | "warning" | "error";
+  message: string;
+};
+
+type ProviderTestPayload = {
+  data?: {
+    provider: AiProviderId;
+    resolvedModel: string;
+    latencyMs: number;
+    instructionCheck: "passed" | "not_exact";
+    usage: {
+      inputTokens: number | null;
+      outputTokens: number | null;
+      totalTokens: number | null;
+    };
+  };
+  error?: { message?: string };
+};
+
 function createDrafts(configuration: AiConfigurationSnapshot) {
   return Object.fromEntries(
     configuration.tasks.map((task) => [
@@ -32,8 +52,9 @@ export function AiConfigurationEditor({
   const [configuration, setConfiguration] = useState(initialConfiguration);
   const [drafts, setDrafts] = useState(() => createDrafts(initialConfiguration));
   const [savingTask, setSavingTask] = useState<AiTaskKey | null>(null);
+  const [testingTask, setTestingTask] = useState<AiTaskKey | null>(null);
   const [feedback, setFeedback] = useState<
-    Partial<Record<AiTaskKey, { kind: "success" | "error"; message: string }>>
+    Partial<Record<AiTaskKey, TaskFeedback>>
   >({});
 
   function updateDraft(task: AiTaskKey, patch: Partial<RouteDraft>) {
@@ -77,7 +98,8 @@ export function AiConfigurationEditor({
         ...current,
         [task]: {
           kind: "success",
-          message: "Routing preference saved. It is not active until the provider runtime is integrated."
+          message:
+            "Routing preference saved. It does not activate learner-facing AI."
         }
       }));
     } catch (error) {
@@ -93,6 +115,65 @@ export function AiConfigurationEditor({
       }));
     } finally {
       setSavingTask(null);
+    }
+  }
+
+  async function testSavedRoute(task: AiTaskKey) {
+    const saved = configuration.tasks.find((item) => item.id === task)?.route;
+    if (!saved) return;
+
+    setTestingTask(task);
+    setFeedback((current) => ({ ...current, [task]: undefined }));
+
+    try {
+      const response = await fetch("/api/v1/admin/ai-config/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task })
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | ProviderTestPayload
+        | null;
+
+      if (!response.ok || !payload?.data) {
+        throw new Error(
+          payload?.error?.message ?? "The provider connection test failed."
+        );
+      }
+
+      const result = payload.data;
+      const tokenUsage = [
+        result.usage.inputTokens === null
+          ? null
+          : `${result.usage.inputTokens} input tokens`,
+        result.usage.outputTokens === null
+          ? null
+          : `${result.usage.outputTokens} output tokens`
+      ].filter((value): value is string => value !== null);
+
+      setFeedback((current) => ({
+        ...current,
+        [task]: {
+          kind: result.instructionCheck === "passed" ? "success" : "warning",
+          message:
+            result.instructionCheck === "passed"
+              ? `Connection succeeded: ${result.provider} / ${result.resolvedModel} in ${result.latencyMs} ms${tokenUsage.length ? ` · ${tokenUsage.join(" · ")}` : ""}. Exact-token check passed.`
+              : `The provider responded in ${result.latencyMs} ms, but did not return the exact test token. Review its model behaviour before benchmarking.`
+        }
+      }));
+    } catch (error) {
+      setFeedback((current) => ({
+        ...current,
+        [task]: {
+          kind: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "The provider connection test failed."
+        }
+      }));
+    } finally {
+      setTestingTask(null);
     }
   }
 
@@ -138,9 +219,10 @@ export function AiConfigurationEditor({
         <div className="admin-notice admin-config-boundary">
           <strong>Routing is not active yet</strong>
           <span>
-            This page stores your intended provider and model for each AI task. Cogniva does not
-            call Gemini, Groq, or Mistral yet. Provider adapters, live connection tests, model
-            catalogues, and benchmark-based activation will be delivered separately.
+            Cogniva can now run an administrator-only connection test against a saved
+            provider/model pair. These tests do not serve learners, create plans, or
+            start tutoring sessions. Comparative benchmarks and activation controls
+            remain separate.
           </span>
         </div>
 
@@ -151,6 +233,10 @@ export function AiConfigurationEditor({
             const isDirty =
               (saved?.provider ?? "") !== draft.provider ||
               (saved?.model ?? "") !== draft.model.trim();
+            const savedProviderConfigured = configuration.providers.some(
+              (provider) =>
+                provider.id === saved?.provider && provider.credentialConfigured
+            );
 
             return (
               <article className="admin-task-card" key={task.id}>
@@ -159,7 +245,7 @@ export function AiConfigurationEditor({
                     <h3>{task.label}</h3>
                     <p>{task.description}</p>
                   </div>
-                  <span className="admin-runtime-state">Runtime not integrated</span>
+                  <span className="admin-runtime-state">Learner runtime inactive</span>
                 </div>
 
                 <div className="admin-config-fields">
@@ -202,27 +288,46 @@ export function AiConfigurationEditor({
                       ? `Saved preference: ${saved.provider} / ${saved.model}`
                       : "No routing preference saved"}
                   </span>
-                  <button
-                    type="button"
-                    disabled={
-                      savingTask !== null ||
-                      !draft.provider ||
-                      !draft.model.trim() ||
-                      !isDirty
-                    }
-                    onClick={() => void saveRoute(task.id)}
-                  >
-                    {savingTask === task.id ? "Saving…" : "Save preference"}
-                  </button>
+                  <div className="admin-task-action-buttons">
+                    <button
+                      className="is-secondary"
+                      type="button"
+                      disabled={
+                        savingTask !== null ||
+                        testingTask !== null ||
+                        !saved ||
+                        !savedProviderConfigured
+                      }
+                      onClick={() => void testSavedRoute(task.id)}
+                      title={
+                        !saved
+                          ? "Save a provider and model first."
+                          : !savedProviderConfigured
+                            ? "Add the provider credential to Render first."
+                            : "Send one fixed, low-token connection test."
+                      }
+                    >
+                      {testingTask === task.id ? "Testing…" : "Test saved route"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        savingTask !== null ||
+                        testingTask !== null ||
+                        !draft.provider ||
+                        !draft.model.trim() ||
+                        !isDirty
+                      }
+                      onClick={() => void saveRoute(task.id)}
+                    >
+                      {savingTask === task.id ? "Saving…" : "Save preference"}
+                    </button>
+                  </div>
                 </div>
 
                 {feedback[task.id] ? (
                   <p
-                    className={
-                      feedback[task.id]?.kind === "success"
-                        ? "admin-form-feedback is-success"
-                        : "admin-form-feedback is-error"
-                    }
+                    className={`admin-form-feedback is-${feedback[task.id]?.kind}`}
                     role="status"
                   >
                     {feedback[task.id]?.message}
