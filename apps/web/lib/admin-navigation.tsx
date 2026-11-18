@@ -21,6 +21,13 @@ export function AdminNavigation({ active }: AdminNavigationProps) {
       >
         <span aria-hidden="true">◈</span> AI configuration
       </Link>
+      <Link
+        className={`admin-nav-item${active === "ai-benchmarks" ? " is-active" : ""}`}
+        href="/admin/ai-benchmarks"
+        aria-current={active === "ai-benchmarks" ? "page" : undefined}
+      >
+        <span aria-hidden="true">◉</span> AI benchmarking
+      </Link>
       <span className="admin-nav-item is-unavailable" aria-disabled="true">
         <span aria-hidden="true">✎</span> Prompt management
         <small>Not available yet</small>
