@@ -23,6 +23,14 @@ The parser does not use eval or execute learner text. It enforces expression len
 
 When exactly one explicit numeric mismatch is found in a generated tutor response, Cogniva can replace that response with an arithmetic-only correction. When a learner challenges prior work, the deterministic path is used only if recent tutor history contains exactly one distinct unresolved numeric claim. Ambiguous multi-claim history is left to the configured tutor rather than selecting an arbitrary calculation. Ordinary mentions of an answer, or simply reporting a learner answer, do not by themselves trigger deterministic correction. The response metadata records whether the answer came from the configured provider or the bounded arithmetic checker. A deterministic arithmetic result does not verify units, physical interpretation, or the surrounding explanation.
 
+## Evidence-bounded learner arithmetic error analysis
+
+For an explicitly submitted attempt, Cogniva classifies an error only when the bounded parser finds one or more complete numeric equalities/approximations whose stated result does not match the evaluated expression. A single supported mismatch is classified as `arithmetic_result_mismatch`; multiple supported mismatches are kept in their original written order as `multiple_arithmetic_result_mismatches`. The evidence records the expression, learner-stated result, computed result, and checker method.
+
+For one mismatch, Cogniva gives a deterministic correction that names the exact arithmetic discrepancy and asks the learner to re-evaluate that expression. For multiple mismatches, the provider receives the ordered evidence and is instructed to begin with the first listed discrepancy while preserving any correct reasoning. The deterministic classifier does not infer whether the cause was order of operations, multiplication, rounding, a conceptual misunderstanding, or another cognitive cause. Unsupported algebra, prose without a complete supported equality, and follow-up questions receive no learner-error category. Absence of a detected mismatch is not evidence that the full attempt is correct.
+
+When the single-mismatch deterministic response is saved, the associated attempt transitions to `evaluated` in the same transaction, using the existing attempt lifecycle. This records that the bounded arithmetic statement was checked; it does not mean the whole solution, units, physical model, or learner mastery has been verified.
+
 ## Bounded answer evaluation and real-pair consistency
 
 A plain numeric learner attempt is evaluated only when the immediately preceding tutor message contains a supported explicit arithmetic prompt, or when the tutor asks for a recognized sum-square or discriminant result and the conversation contains one unambiguous pair of constraints:

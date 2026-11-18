@@ -11,6 +11,7 @@ import { shouldPersistDeterministicAttemptEvaluation } from "@/lib/tutor-attempt
 import {
   analyzeTutorTurn,
   buildAdaptiveTutorInstructions,
+  buildLearnerArithmeticFeedback,
   buildNumericAnswerFeedback,
   buildNumericOutputCorrectionResponse,
   buildRealPairInconsistencyResponse,
@@ -582,6 +583,34 @@ export async function POST(
         learnerValueDiffers: turnAnalysis.learnerValueDiffers
       }
     };
+  } else if (
+    turnAnalysis.learnerErrorAnalysis?.classification === "arithmetic_result_mismatch" &&
+    turnAnalysis.learnerErrorAnalysis.mismatchCount === 1
+  ) {
+    const errorAnalysis = turnAnalysis.learnerErrorAnalysis;
+    const mismatch = errorAnalysis.mismatches[0];
+    generated = {
+      provider: "cogniva-core",
+      resolvedModel: "bounded-arithmetic-attempt-check-v1",
+      text: buildLearnerArithmeticFeedback(errorAnalysis) ?? "",
+      usage: { inputTokens: null, outputTokens: null, totalTokens: null },
+      finishReason: "stop",
+      latencyMs: 0,
+      responseSource: "deterministic_verifier",
+      upstreamProvider: null,
+      upstreamModel: null,
+      verification: {
+        status: "learner_arithmetic_result_mismatch_detected",
+        method: errorAnalysis.method,
+        classification: errorAnalysis.classification,
+        expression: mismatch.expression,
+        operator: mismatch.operator,
+        submittedValue: mismatch.claimedText,
+        computedValue: mismatch.expectedText,
+        mismatchCount: errorAnalysis.mismatchCount,
+        scope: "arithmetic_result_only_cognitive_cause_units_and_physical_model_not_verified"
+      }
+    };
   } else {
     let providerGenerated;
     try {
@@ -660,10 +689,25 @@ export async function POST(
     }
   }
 
+  const singleLearnerArithmeticMismatch =
+    generated.resolvedModel === "bounded-arithmetic-attempt-check-v1" &&
+    turnAnalysis.learnerErrorAnalysis?.classification === "arithmetic_result_mismatch"
+      ? turnAnalysis.learnerErrorAnalysis.mismatches[0]
+      : null;
+  const attemptEvaluation = turnAnalysis.numericAnswerEvaluation ?? (
+    singleLearnerArithmeticMismatch
+      ? {
+          method: "bounded_arithmetic_expression",
+          expectedValue: singleLearnerArithmeticMismatch.computedValue,
+          submittedValue: singleLearnerArithmeticMismatch.claimedValue,
+          isCorrect: singleLearnerArithmeticMismatch.isCorrect
+        }
+      : null
+  );
   const persistDeterministicAttemptEvaluation = shouldPersistDeterministicAttemptEvaluation({
     latestSubmissionType: claim.latestSubmissionType,
     responseSource: generated.responseSource,
-    evaluation: turnAnalysis.numericAnswerEvaluation
+    evaluation: attemptEvaluation
   });
 
   const outputIssue = validateTutorOutput(generated.text, generated.finishReason);
@@ -706,7 +750,21 @@ export async function POST(
             verification: generated.verification,
             adaptive: {
               learnerIntent: turnAnalysis.learnerIntent,
-              repeatedQuestionCount: turnAnalysis.repeatedQuestionCount
+              repeatedQuestionCount: turnAnalysis.repeatedQuestionCount,
+              errorClassification: turnAnalysis.learnerErrorAnalysis
+                ? {
+                    classification: turnAnalysis.learnerErrorAnalysis.classification,
+                    method: turnAnalysis.learnerErrorAnalysis.method,
+                    mismatchCount: turnAnalysis.learnerErrorAnalysis.mismatchCount,
+                    omittedMismatchCount: turnAnalysis.learnerErrorAnalysis.omittedMismatchCount,
+                    evidence: turnAnalysis.learnerErrorAnalysis.mismatches.map((mismatch) => ({
+                      expression: mismatch.expression,
+                      operator: mismatch.operator,
+                      submittedValue: mismatch.claimedText,
+                      computedValue: mismatch.expectedText
+                    }))
+                  }
+                : null
             }
           }
         })

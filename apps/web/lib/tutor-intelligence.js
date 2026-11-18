@@ -248,6 +248,47 @@ export function findIncorrectNumericClaims(text) {
   return findNumericClaims(text).filter((claim) => !claim.isCorrect);
 }
 
+function classifyLearnerAttempt(submissionType, mismatches) {
+  if (submissionType !== "attempt" || !Array.isArray(mismatches) || mismatches.length === 0) {
+    return null;
+  }
+
+  const evidenceLimit = 5;
+  const evidence = mismatches.slice(0, evidenceLimit);
+
+  return {
+    status: "verified_mismatch",
+    classification: mismatches.length === 1
+      ? "arithmetic_result_mismatch"
+      : "multiple_arithmetic_result_mismatches",
+    method: "bounded_arithmetic_expression",
+    mismatchCount: mismatches.length,
+    mismatches: evidence,
+    omittedMismatchCount: Math.max(0, mismatches.length - evidence.length)
+  };
+}
+
+export function buildLearnerArithmeticFeedback(errorAnalysis) {
+  if (
+    errorAnalysis?.classification !== "arithmetic_result_mismatch" ||
+    errorAnalysis.mismatchCount !== 1 ||
+    !Array.isArray(errorAnalysis.mismatches) ||
+    errorAnalysis.mismatches.length !== 1
+  ) {
+    return null;
+  }
+
+  const mismatch = errorAnalysis.mismatches[0];
+  const evaluationPhrase = mismatch.operator === "="
+    ? "evaluates to"
+    : "rounds to";
+
+  return "I checked the arithmetic statement: " + mismatch.expression + " " +
+    mismatch.operator + " " + mismatch.claimedText + ". The expression " +
+    evaluationPhrase + " " + mismatch.expectedText + ", not " + mismatch.claimedText +
+    ". This confirms an arithmetic-result mismatch only; it does not identify which reasoning step caused it or verify units or the physical model. Re-evaluate this expression one operation at a time, following the normal order of operations. What value do you get?";
+}
+
 function extractLearnerProposedValues(text) {
   const number = "([+-]?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+))";
   const patterns = [
@@ -580,6 +621,11 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
     realPairFeasibility
   });
   const learnerNumericMismatches = findIncorrectNumericClaims(latestStudentMessage);
+  const normalizedSubmissionType = latestSubmissionType ?? "question";
+  const learnerErrorAnalysis = classifyLearnerAttempt(
+    normalizedSubmissionType,
+    learnerNumericMismatches
+  );
   const learnerProposedValues = extractLearnerProposedValues(latestStudentMessage);
   for (const mismatch of learnerNumericMismatches) {
     if (!learnerProposedValues.includes(mismatch.claimedValue)) {
@@ -624,6 +670,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
     latestStudentMessage,
     latestTutorClaim,
     learnerNumericMismatches,
+    learnerErrorAnalysis,
     learnerProposedValues,
     learnerValueMatches,
     learnerValueDiffers,
@@ -633,7 +680,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
     numericAnswerEvaluation,
     repeatedQuestionCount,
     previousTutorMessageCount: previousTutorMessages.length,
-    latestSubmissionType: latestSubmissionType ?? "question"
+    latestSubmissionType: normalizedSubmissionType
   };
 }
 
@@ -686,13 +733,31 @@ export function buildAdaptiveTutorInstructions(analysis) {
     );
   }
 
-  if (analysis.learnerNumericMismatches?.length) {
-    const claim = analysis.learnerNumericMismatches[0];
+  if (analysis.learnerErrorAnalysis?.classification === "multiple_arithmetic_result_mismatches") {
+    const mismatches = analysis.learnerErrorAnalysis.mismatches ?? [];
+    const evidence = mismatches.map((claim, index) =>
+      (index + 1) + ") " + claim.expression + " " + claim.operator + " " +
+      claim.claimedText + " (bounded result: " + claim.expectedText + ")"
+    ).join("; ");
     instructions.push(
-      "A deterministic arithmetic check of the learner's submitted working found a mismatch: " +
-      claim.expression + " " + claim.operator + " " + claim.claimedText +
-      " is inconsistent; the expression evaluates to " + claim.expectedText +
-      ". Explain the precise arithmetic correction without dismissing any other correct reasoning."
+      "The learner submitted multiple explicit arithmetic statements that the bounded checker evaluated. Evidence in their written order: " +
+      evidence + ". " +
+      (analysis.learnerErrorAnalysis.omittedMismatchCount > 0
+        ? analysis.learnerErrorAnalysis.omittedMismatchCount + " additional mismatch(es) were detected but are not expanded here. "
+        : "") +
+      "Treat these only as arithmetic-result mismatches, not as proof of a particular conceptual misconception or its cause. Start with the first listed mismatch, explain that calculation, preserve any correct reasoning, and ask for one revised step."
+    );
+  } else if (analysis.learnerErrorAnalysis?.classification === "arithmetic_result_mismatch") {
+    const claim = analysis.learnerErrorAnalysis.mismatches[0];
+    instructions.push(
+      "The learner's explicit arithmetic statement " + claim.expression + " " +
+      claim.operator + " " + claim.claimedText +
+      " was checked by the bounded arithmetic evaluator and the result is " +
+      claim.expectedText + ". This proves an arithmetic-result mismatch only; it does not establish the learner's underlying misconception or cause. Explain the exact discrepancy without inventing a cause, preserve any correct reasoning, and ask the learner to recalculate that expression."
+    );
+  } else if (analysis.latestSubmissionType === "attempt") {
+    instructions.push(
+      "No supported numeric mismatch was established by Cogniva's deterministic checker for this attempt. Do not label the work correct or incorrect on that basis, and do not invent a misconception. Inspect only what the submitted evidence supports; ask for a clearer single step when needed."
     );
   }
 

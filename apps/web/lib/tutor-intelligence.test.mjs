@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   analyzeTutorTurn,
   buildAdaptiveTutorInstructions,
+  buildLearnerArithmeticFeedback,
   buildNumericAnswerFeedback,
   buildRealPairInconsistencyResponse,
   buildVerifiedCorrectionResponse,
@@ -509,4 +510,81 @@ test("leaves ambiguous or unsupported attempts unevaluated", () => {
     }),
     false
   );
+});
+
+
+test("classifies one explicit arithmetic mismatch and gives bounded corrective guidance", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "Show the calculation for this step." },
+      { role: "student", content: "2 + 3 × 4 = 20" }
+    ]
+  });
+
+  assert.equal(analysis.learnerErrorAnalysis?.status, "verified_mismatch");
+  assert.equal(analysis.learnerErrorAnalysis?.classification, "arithmetic_result_mismatch");
+  assert.equal(analysis.learnerErrorAnalysis?.method, "bounded_arithmetic_expression");
+  assert.equal(analysis.learnerErrorAnalysis?.mismatchCount, 1);
+  assert.equal(analysis.learnerErrorAnalysis?.mismatches[0]?.expectedText, "14");
+
+  const feedback = buildLearnerArithmeticFeedback(analysis.learnerErrorAnalysis);
+  assert.match(feedback, /2 \+ 3 × 4 = 20/);
+  assert.match(feedback, /evaluates to 14, not 20/);
+  assert.match(feedback, /does not identify which reasoning step caused it/i);
+  assert.match(feedback, /one operation at a time/i);
+  assert.equal((feedback.match(/\?/g) ?? []).length, 1);
+  assert.doesNotMatch(feedback, /you have a misconception|you do not understand/i);
+});
+
+test("keeps multiple arithmetic mismatches ordered and does not collapse them into one diagnosis", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "Show each calculation on a separate line." },
+      { role: "student", content: "2 + 3 = 6\n4 × 5 = 21" }
+    ]
+  });
+
+  assert.equal(analysis.learnerErrorAnalysis?.classification, "multiple_arithmetic_result_mismatches");
+  assert.equal(analysis.learnerErrorAnalysis?.mismatchCount, 2);
+  assert.deepEqual(
+    analysis.learnerErrorAnalysis?.mismatches.map((item) => item.expectedText),
+    ["5", "20"]
+  );
+  assert.match(buildAdaptiveTutorInstructions(analysis), /Start with the first listed mismatch/i);
+  assert.match(buildAdaptiveTutorInstructions(analysis), /not as proof of a particular conceptual misconception/i);
+});
+
+test("does not assign an error category to unsupported work or follow-up questions", () => {
+  const unsupported = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "Show your algebraic working." },
+      { role: "student", content: "x^2 + 2x + 1 = 9" }
+    ]
+  });
+  const question = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "tutor", content: "Check this equality." },
+      { role: "student", content: "2 + 3 = 6" }
+    ]
+  });
+
+  assert.equal(unsupported.learnerErrorAnalysis, null);
+  assert.equal(question.learnerErrorAnalysis, null);
+  assert.match(buildAdaptiveTutorInstructions(unsupported), /No supported numeric mismatch was established/i);
+});
+
+test("does not classify a supported correct equality as an error", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "Show the calculation." },
+      { role: "student", content: "2 + 3 × 4 = 14" }
+    ]
+  });
+
+  assert.equal(analysis.learnerErrorAnalysis, null);
 });
