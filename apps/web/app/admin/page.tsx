@@ -143,11 +143,13 @@ export default async function AdminPage() {
             <span>Available modules will be enabled as their backend controls are implemented</span>
           </div>
           <div className="admin-notice">
-            <strong>Admin foundation is active</strong>
+            <strong>AI configuration foundation is available</strong>
             <span>
-              Role-based access and the live overview are in place. AI provider settings, prompt versions,
-              user operations and audit history are not enabled yet.
+              Gemini, Groq and Mistral credential presence can be checked without exposing secrets,
+              and task-routing preferences can be saved. Provider execution and benchmarking are
+              still separate implementation work.
             </span>
+            <Link href="/admin/ai-configuration">Open AI configuration →</Link>
           </div>
         </section>
 
