@@ -50,7 +50,7 @@ The benchmark shortlist, dated pricing snapshot, fixed system prompts, and six e
 - `docs/AI_PROVIDER_BENCHMARK.md`
 - `apps/web/lib/ai-benchmark-suite.ts`
 
-The initial candidates are Gemini `gemini-3.8-flash`, Groq `openai/gpt-oss-120b`, and Mistral `mistral-large-4-0`. They are candidates only. No output has been benchmarked and no provider has been selected.
+The initial candidates are Gemini `gemini-3.8-flash`, Groq `openai/gpt-oss-120b`, and Mistral `mistral-small-2603`. Mistral Large 4 was excluded because it is currently documented as Public Preview; Mistral Small 4 is documented as generally available. These are candidates only. No output has been benchmarked and no provider has been selected.
 
 The evaluation set covers learning-plan generation and Socratic tutoring. It includes measurable review criteria and expected/failure signals. The protocol requires identical prompts, retained failures, token/latency evidence, timestamped pricing, and blinded human rubric review. Estimated cost must remain unavailable when usage data is incomplete.
 
