@@ -29,6 +29,13 @@
       "when": 1794981721252,
       "tag": "0003_lean_gateway",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794985287617,
+      "tag": "0004_classy_freak",
+      "breakpoints": true
     }
   ]
 }
