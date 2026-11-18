@@ -132,7 +132,7 @@ export function AiConfigurationEditor({
       <section className="admin-section" aria-labelledby="task-routing-title">
         <div className="admin-section-heading">
           <h2 id="task-routing-title">Task routing preferences</h2>
-          <span>Saved in Cogniva's database</span>
+          <span>Saved in Cogniva&apos;s database</span>
         </div>
 
         <div className="admin-notice admin-config-boundary">
