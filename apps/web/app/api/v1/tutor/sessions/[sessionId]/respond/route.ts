@@ -7,6 +7,7 @@ import {
 } from "@cogniva/database";
 import { getSignedInStudent, getStudentDatabase, isUuid } from "@/lib/student-data";
 import type { AiProviderId } from "@/lib/admin-ai-config";
+import { shouldPersistDeterministicAttemptEvaluation } from "@/lib/tutor-attempt-evaluation";
 import {
   analyzeTutorTurn,
   buildAdaptiveTutorInstructions,
@@ -284,6 +285,7 @@ export async function POST(
     responseSequenceNumber: number;
     messages: Array<{ role: "student" | "tutor"; content: string }>;
     latestSubmissionType: "attempt" | "question" | "initial_prompt";
+    attemptMessageId: string | null;
   };
 
   try {
@@ -335,6 +337,7 @@ export async function POST(
 
       let pendingSubmissionType: "attempt" | "question" | "initial_prompt" =
         lastMessage.sequenceNumber === 1 ? "initial_prompt" : "question";
+      let attemptMessageId: string | null = null;
 
       if (!learnerMessage) {
         const [existingAttempt] = await tx
@@ -352,6 +355,7 @@ export async function POST(
 
         if (existingAttempt) {
           pendingSubmissionType = "attempt";
+          attemptMessageId = lastMessage.id;
         }
       }
 
@@ -380,6 +384,7 @@ export async function POST(
         }
 
         if (submissionType === "attempt") {
+          attemptMessageId = savedLearnerMessage.id;
           const [lastAttempt] = await tx
             .select({ attemptNumber: tutorAttempts.attemptNumber })
             .from(tutorAttempts)
@@ -435,6 +440,7 @@ export async function POST(
         claimedVersion: updated.version,
         responseSequenceNumber: nextSequenceNumber,
         latestSubmissionType: learnerMessage ? submissionType : pendingSubmissionType,
+        attemptMessageId,
         messages: recentMessages.reverse()
       };
     });
@@ -654,6 +660,12 @@ export async function POST(
     }
   }
 
+  const persistDeterministicAttemptEvaluation = shouldPersistDeterministicAttemptEvaluation({
+    latestSubmissionType: claim.latestSubmissionType,
+    responseSource: generated.responseSource,
+    evaluation: turnAnalysis.numericAnswerEvaluation
+  });
+
   const outputIssue = validateTutorOutput(generated.text, generated.finishReason);
   if (outputIssue) {
     await restoreSessionState({
@@ -710,6 +722,32 @@ export async function POST(
         });
 
       if (!message) throw new Error("Tutor message persistence returned no record.");
+
+      if (persistDeterministicAttemptEvaluation) {
+        if (!claim.attemptMessageId) {
+          throw new Error("A verified tutor attempt did not resolve to its saved learner message.");
+        }
+
+        const [updatedAttempt] = await tx
+          .update(tutorAttempts)
+          .set({
+            evaluationStatus: "evaluated",
+            evaluatedAt: new Date()
+          })
+          .where(
+            and(
+              eq(tutorAttempts.sessionId, sessionId),
+              eq(tutorAttempts.studentId, student.id),
+              eq(tutorAttempts.messageId, claim.attemptMessageId),
+              eq(tutorAttempts.evaluationStatus, "not_evaluated")
+            )
+          )
+          .returning({ id: tutorAttempts.id });
+
+        if (!updatedAttempt) {
+          throw new Error("The verified tutor attempt could not be transitioned to evaluated.");
+        }
+      }
 
       const [session] = await tx
         .update(tutorSessions)
