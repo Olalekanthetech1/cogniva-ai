@@ -36,10 +36,10 @@ export function AiConfigurationEditor({
     Partial<Record<AiTaskKey, { kind: "success" | "error"; message: string }>>
   >({});
 
-  function updateDraft(task: AiTaskKey, field: keyof RouteDraft, value: string) {
+  function updateDraft(task: AiTaskKey, patch: Partial<RouteDraft>) {
     setDrafts((current) => ({
       ...current,
-      [task]: { ...current[task], [field]: value }
+      [task]: { ...current[task], ...patch }
     }));
     setFeedback((current) => ({ ...current, [task]: undefined }));
   }
@@ -168,7 +168,7 @@ export function AiConfigurationEditor({
                     <select
                       value={draft.provider}
                       onChange={(event) =>
-                        updateDraft(task.id, "provider", event.target.value)
+                        updateDraft(task.id, { provider: event.target.value as AiProviderId | "" })
                       }
                     >
                       <option value="">Choose provider</option>
@@ -190,7 +190,7 @@ export function AiConfigurationEditor({
                       placeholder="Enter the provider's exact model ID"
                       value={draft.model}
                       onChange={(event) =>
-                        updateDraft(task.id, "model", event.target.value)
+                        updateDraft(task.id, { model: event.target.value })
                       }
                     />
                   </label>
