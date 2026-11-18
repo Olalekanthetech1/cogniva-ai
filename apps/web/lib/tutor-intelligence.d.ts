@@ -38,11 +38,21 @@ export type NumericAnswerEvaluation = {
   isCorrect: boolean;
 };
 
+export type LearnerErrorAnalysis = {
+  status: "verified_mismatch";
+  classification: "arithmetic_result_mismatch" | "multiple_arithmetic_result_mismatches";
+  method: "bounded_arithmetic_expression";
+  mismatchCount: number;
+  mismatches: NumericClaimMismatch[];
+  omittedMismatchCount: number;
+};
+
 export type TutorTurnAnalysis = {
   learnerIntent: "correction_challenge" | "direct_answer_request" | "work_attempt" | "clarification" | "follow_up";
   latestStudentMessage: string;
   latestTutorClaim: NumericClaimMismatch | null;
   learnerNumericMismatches: NumericClaimMismatch[];
+  learnerErrorAnalysis: LearnerErrorAnalysis | null;
   learnerProposedValues: number[];
   learnerValueMatches: boolean;
   learnerValueDiffers: boolean;
@@ -63,6 +73,7 @@ export function analyzeTutorTurn(input: {
   latestSubmissionType?: "attempt" | "question" | "initial_prompt";
 }): TutorTurnAnalysis;
 export function buildAdaptiveTutorInstructions(analysis: TutorTurnAnalysis): string;
+export function buildLearnerArithmeticFeedback(analysis: LearnerErrorAnalysis): string | null;
 export function buildVerifiedCorrectionResponse(input: {
   claim: NumericClaimMismatch;
   learnerMessage: string;
