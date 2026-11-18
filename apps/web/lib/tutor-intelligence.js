@@ -13,7 +13,7 @@ function tokenizeExpression(source) {
     .replace(/÷/g, "/")
     .replace(/\u00a0/g, " ");
 
-  const tokenPattern = /\s*(sqrt|sin|cos|tan|√|[()+\-*/^°]|(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)/iy;
+  const tokenPattern = /\s*(sqrt|sin|cos|tan|√|[()+\-*/^°]|(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)/iy;
   const tokens = [];
   let offset = 0;
 
@@ -27,8 +27,8 @@ function tokenizeExpression(source) {
     if (/^\d/.test(token)) {
       const validGrouping = /^\d+$/.test(token) ||
         /^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(token) ||
-        /^\d+(?:\.\d+)?$/.test(token);
-      if (!validGrouping) return null;
+        /^\d+(?:\.\d+)?$/.test(token) ||
+        /^\.\d+$/.test(token);
       tokens.push({ type: "number", value: Number(token.replace(/,/g, "")) });
     } else {
       tokens.push({ type: "symbol", value: token.toLowerCase() });
@@ -233,7 +233,7 @@ export function findIncorrectNumericClaims(text) {
 }
 
 function extractNumbers(text) {
-  const pattern = /[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/g;
+  const pattern = /[+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)/g;
   return [...String(text ?? "").matchAll(pattern)]
     .map((match) => normalizeNumber(match[0]))
     .filter(Number.isFinite);
