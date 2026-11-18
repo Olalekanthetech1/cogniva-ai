@@ -57,6 +57,29 @@ Implemented in this change:
 
 ## 5. Sessions and tutoring
 
+## 5.1 Implemented tutor session API
+
+The following learner-authenticated routes are implemented in the current Phase 4 vertical slice:
+
+- `GET /api/v1/tutor/sessions` — list sessions owned by the signed-in learner.
+- `POST /api/v1/tutor/sessions` — create a session and persist its initial learner message atomically.
+- `GET /api/v1/tutor/sessions/:sessionId` — retrieve an owned session, ordered messages, and explicitly submitted attempts.
+- `POST /api/v1/tutor/sessions/:sessionId/respond` — generate the next Socratic response or retry an unanswered learner turn.
+- `POST /api/v1/tutor/sessions/:sessionId/end` — cancel an active session; this does not mark it completed or mastered.
+
+When a learner sends a new message to the `respond` route, the optional `messageType` field distinguishes a submitted attempt from a follow-up question:
+
+```json
+{
+  "message": "I think the answer is 12 because ...",
+  "messageType": "attempt"
+}
+```
+
+Use `"question"` for a follow-up question. When omitted, `messageType` defaults to `"attempt"` for compatibility. An empty JSON object requests a retry for the most recent unanswered learner message and does not create a duplicate attempt.
+
+An attempt record and its student message are committed in the same database transaction before a provider request begins. The session response exposes the attempt number, linked message, submission time, and evaluation status. New records are saved as `not_evaluated`; the Socratic tutor reply is not an independent answer verification and must not be presented as a correctness or mastery result.
+
 - `POST /api/v1/sessions`
 - `GET /api/v1/sessions`
 - `GET /api/v1/sessions/:sessionId`
