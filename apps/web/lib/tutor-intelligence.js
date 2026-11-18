@@ -175,7 +175,7 @@ function decimalPlaces(value) {
  * Extract only explicit numeric equalities/approximations that the bounded
  * arithmetic parser can evaluate. Unsupported notation is deliberately ignored.
  */
-export function findIncorrectNumericClaims(text) {
+export function findNumericClaims(text) {
   if (typeof text !== "string" || !text.trim()) return [];
 
   const numberPattern = "[+-]?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+)";
@@ -211,7 +211,7 @@ export function findIncorrectNumericClaims(text) {
     const places = decimalPlaces(claimedText);
     const tolerance = Math.max(1e-9, 0.5 * Math.pow(10, -places));
     const difference = Math.abs(computedValue - claimedValue);
-    if (difference <= tolerance + Math.abs(computedValue) * 1e-12) continue;
+    const isCorrect = difference <= tolerance + Math.abs(computedValue) * 1e-12;
 
     const key = verifiedExpression + operator + claimedText;
     if (seen.has(key)) continue;
@@ -225,11 +225,16 @@ export function findIncorrectNumericClaims(text) {
       computedValue,
       difference,
       decimalPlaces: places,
-      expectedText: computedValue.toFixed(places > 0 ? places : 2)
+      expectedText: computedValue.toFixed(places > 0 ? places : 2),
+      isCorrect
     });
   }
 
   return findings;
+}
+
+export function findIncorrectNumericClaims(text) {
+  return findNumericClaims(text).filter((claim) => !claim.isCorrect);
 }
 
 function extractNumbers(text) {
@@ -237,6 +242,23 @@ function extractNumbers(text) {
   return [...String(text ?? "").matchAll(pattern)]
     .map((match) => normalizeNumber(match[0]))
     .filter(Number.isFinite);
+}
+
+function extractLearnerProposedValues(text) {
+  const number = "([+-]?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+))";
+  const patterns = [
+    new RegExp("\\b(?:my\\s+)?(?:calculator|calculation)\\s+(?:gives|shows|displayed|displays|returns)\\s*(?:" + number + ")", "i"),
+    new RegExp("\\b(?:my\\s+)?(?:answer|result|value)\\s*(?:is|was|=|:)\\s*(?:" + number + ")", "i"),
+    new RegExp("\\bI\\s+(?:got|calculated|obtained|found)\\s*(?:" + number + ")", "i"),
+    new RegExp("\\b(?:it|that)\\s+(?:is|equals|comes\\s+to)\\s*(?:" + number + ")", "i")
+  ];
+
+  const values = [];
+  for (const pattern of patterns) {
+    const match = String(text ?? "").match(pattern);
+    if (match?.[1]) values.push(normalizeNumber(match[1]));
+  }
+  return values.filter(Number.isFinite);
 }
 
 function isCorrectionChallenge(text) {
@@ -298,15 +320,22 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   }
 
   const learnerNumericMismatches = findIncorrectNumericClaims(latestStudentMessage);
-  const learnerNumbers = extractNumbers(latestStudentMessage);
+  const learnerProposedValues = extractLearnerProposedValues(latestStudentMessage);
+  for (const mismatch of learnerNumericMismatches) {
+    if (!learnerProposedValues.includes(mismatch.claimedValue)) {
+      learnerProposedValues.push(mismatch.claimedValue);
+    }
+  }
   const learnerValueMatches = latestTutorClaim
-    ? learnerNumbers.some((value) => {
+    ? learnerProposedValues.some((value) => {
         const places = latestTutorClaim.decimalPlaces;
         const tolerance = Math.max(1e-9, 0.5 * Math.pow(10, -places));
         return Math.abs(value - latestTutorClaim.computedValue) <= tolerance +
           Math.abs(latestTutorClaim.computedValue) * 1e-12;
       })
     : false;
+  const learnerValueDiffers = Boolean(latestTutorClaim) &&
+    learnerProposedValues.length > 0 && !learnerValueMatches;
 
   const correctionChallenge = isCorrectionChallenge(latestStudentMessage);
   const directAnswerRequest = isDirectAnswerRequest(latestStudentMessage);
@@ -332,14 +361,17 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   const repeatedQuestionCount = Math.max(0, ...questionCounts.values());
 
   const correctionRequired = Boolean(latestTutorClaim) &&
-    (learnerIntent === "correction_challenge" || learnerValueMatches);
+    (!latestTutorClaim.isCorrect || learnerIntent === "correction_challenge" ||
+      learnerValueMatches || learnerValueDiffers);
 
   return {
     learnerIntent,
     latestStudentMessage,
     latestTutorClaim,
     learnerNumericMismatches,
+    learnerProposedValues,
     learnerValueMatches,
+    learnerValueDiffers,
     correctionRequired,
     repeatedQuestionCount,
     previousTutorMessageCount: previousTutorMessages.length,
@@ -395,10 +427,15 @@ export function buildAdaptiveTutorInstructions(analysis) {
   if (analysis.latestTutorClaim) {
     const claim = analysis.latestTutorClaim;
     instructions.push(
-      "A deterministic arithmetic check of the immediately preceding tutor message found a mismatch: " +
-      claim.expression + " " + claim.operator + " " + claim.claimedText +
-      " is inconsistent; the expression evaluates to " + claim.expectedText +
-      ". Treat this check as authoritative for this numeric expression, correct the prior message before advancing, and do not repeat the incorrect value."
+      claim.isCorrect
+        ? "A deterministic check confirms the previous tutor's numeric claim: " +
+          claim.expression + " " + claim.operator + " " + claim.claimedText +
+          " is consistent with the computed value " + claim.expectedText +
+          ". Explain this check clearly if the learner challenges it."
+        : "A deterministic arithmetic check of a recent tutor message found a mismatch: " +
+          claim.expression + " " + claim.operator + " " + claim.claimedText +
+          " is inconsistent; the expression evaluates to " + claim.expectedText +
+          ". Treat this check as authoritative for this numeric expression, correct the prior message before advancing, and do not repeat the incorrect value."
     );
   }
 
@@ -416,12 +453,28 @@ function includesUnitNewton(text) {
 export function buildVerifiedCorrectionResponse({ claim, learnerMessage, contextText }) {
   const expected = claim.expectedText;
   const unit = includesUnitNewton(learnerMessage) || includesUnitNewton(contextText) ? " N" : "";
-  const learnerNumbers = extractNumbers(learnerMessage);
-  const learnerMatches = learnerNumbers.some((value) => {
+  const proposedValues = extractLearnerProposedValues(learnerMessage);
+  const learnerMatches = proposedValues.some((value) => {
     const tolerance = Math.max(1e-9, 0.5 * Math.pow(10, -claim.decimalPlaces));
     return Math.abs(value - claim.computedValue) <= tolerance +
       Math.abs(claim.computedValue) * 1e-12;
   });
+  const proposedValue = proposedValues[0];
+
+  if (claim.isCorrect) {
+    if (proposedValue !== undefined && !learnerMatches) {
+      return "I rechecked the calculation: " + claim.expression +
+        " is approximately " + expected + unit +
+        ", so my previous hint of " + claim.claimedText + unit +
+        " was correct to the displayed precision. The value you reported, " +
+        proposedValue.toFixed(claim.decimalPlaces > 0 ? claim.decimalPlaces : 2) + unit +
+        ", does not match this result. Please check the square-root input. Would you like to go through it together?";
+    }
+    return "I rechecked the calculation: " + claim.expression +
+      " is approximately " + expected + unit +
+      ", so my previous hint of " + claim.claimedText + unit +
+      " was correct to the displayed precision. Would you like me to show the square-root calculation step by step?";
+  }
 
   if (learnerMatches) {
     return "You're right to challenge my previous hint. I rechecked it: " +
