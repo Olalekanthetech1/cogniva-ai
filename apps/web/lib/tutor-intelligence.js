@@ -66,9 +66,14 @@ function parseExpressionTokens(tokens) {
 
   function parseFunction(name) {
     let value;
+    let angleHasDegree = false;
     if (peek() === "(") {
       take();
       value = parseAdditive();
+      if (["sin", "cos", "tan"].includes(name) && peek() === "°") {
+        take();
+        angleHasDegree = true;
+      }
       if (peek() !== ")") throw new Error("Missing function parenthesis");
       take();
     } else {
@@ -79,8 +84,10 @@ function parseExpressionTokens(tokens) {
 
     // Trigonometric functions are evaluated only when the input explicitly
     // marks the angle in degrees; unmarked units are ambiguous.
-    if (peek() !== "°") throw new Error("Trigonometric angle unit is ambiguous");
-    take();
+    if (!angleHasDegree) {
+      if (peek() !== "°") throw new Error("Trigonometric angle unit is ambiguous");
+      take();
+    }
     const radians = (value * Math.PI) / 180;
     if (name === "sin") return Math.sin(radians);
     if (name === "cos") return Math.cos(radians);
@@ -470,12 +477,12 @@ export function buildVerifiedCorrectionResponse({ claim, learnerMessage, context
         ", so my previous hint of " + claim.claimedText + unit +
         " was correct to the displayed precision. The value you reported, " +
         proposedValue.toFixed(claim.decimalPlaces > 0 ? claim.decimalPlaces : 2) + unit +
-        ", does not match this result. Please check the square-root input. Would you like to go through it together?";
+        ", does not match this result. Please compare the expression with the value you entered. Would you like me to show this calculation step by step?";
     }
     return "I rechecked the calculation: " + claim.expression +
       " is approximately " + expected + unit +
       ", so my previous hint of " + claim.claimedText + unit +
-      " was correct to the displayed precision. Would you like me to show the square-root calculation step by step?";
+      " was correct to the displayed precision. Would you like me to show this calculation step by step?";
   }
 
   if (learnerMatches) {
