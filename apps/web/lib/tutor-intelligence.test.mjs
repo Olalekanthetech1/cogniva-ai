@@ -93,6 +93,20 @@ test("detects repeated tutor questions and changes the strategy", () => {
   assert.match(buildAdaptiveTutorInstructions(analysis), /change approach/i);
 });
 
+test("detects a learner's incorrect arithmetic without rejecting unrelated prose", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "Substitute the values and calculate the product." },
+      { role: "student", content: "2 × 120 × 140 × 0.8192 = 27,535.12" }
+    ]
+  });
+
+  assert.equal(analysis.learnerNumericMismatches.length, 1);
+  assert.equal(analysis.learnerNumericMismatches[0].expectedText, "27,525.12");
+  assert.match(buildAdaptiveTutorInstructions(analysis), /learner's submitted working/i);
+});
+
 test("does not claim independent verification for unsupported expressions", () => {
   assert.deepEqual(findIncorrectNumericClaims("The material is stronger than the previous sample."), []);
   assert.equal(evaluateNumericExpression("stress = force / area"), null);
