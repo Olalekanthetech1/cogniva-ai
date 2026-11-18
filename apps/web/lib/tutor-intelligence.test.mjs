@@ -190,7 +190,7 @@ test("does not select an arbitrary claim when recent tutor history contains mult
   const analysis = analyzeTutorTurn({
     latestSubmissionType: "question",
     messages: [
-      { role: "tutor", content: "First, 3 + 4 = 7. As a check, 5 + 5 = 10." },
+      { role: "tutor", content: "Result: 3 + 4 = 7\nCheck: 5 + 5 = 10." },
       { role: "student", content: "Your answer is wrong." }
     ]
   });
@@ -207,6 +207,6 @@ test("does not infer Newtons or any other physical unit from nearby conversation
     contextText: "Forces are measured in N."
   });
 
-  assert.doesNotMatch(response, /\\bN\\b/);
+  assert.doesNotMatch(response, /\bN\b/);
   assert.match(response, /does not verify units/i);
 });
