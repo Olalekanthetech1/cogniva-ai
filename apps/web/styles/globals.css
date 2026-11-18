@@ -2077,3 +2077,16 @@ a:focus-visible {
     width: 100%;
   }
 }
+
+
+.tutor-attempt-status {
+  justify-self: start;
+  margin: 3px 0 0;
+  padding: 5px 8px;
+  border: 1px solid #e0e6da;
+  border-radius: 7px;
+  background: #f6f8f3;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
