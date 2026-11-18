@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
   aiTaskRoutes,
+  tutorAttempts,
   tutorMessages,
   tutorSessions
 } from "@cogniva/database";
@@ -87,6 +88,7 @@ function buildSystemPrompt(): string {
 function buildConversationPrompt(input: {
   intent: string;
   initialPrompt: string;
+  latestSubmissionType: "attempt" | "question" | "initial_prompt";
   messages: Array<{ role: "student" | "tutor"; content: string }>;
 }): string {
   let remaining = MAX_CONTEXT_CHARACTERS;
@@ -104,6 +106,12 @@ function buildConversationPrompt(input: {
   return [
     `Learning intent: ${input.intent}`,
     `Original learning request: ${input.initialPrompt}`,
+    `Latest learner turn type: ${input.latestSubmissionType}`,
+    input.latestSubmissionType === "attempt"
+      ? "The learner has explicitly submitted an attempt. Respond constructively to the reasoning or answer, but do not claim independent verification or mastery."
+      : input.latestSubmissionType === "initial_prompt"
+        ? "This is the learner's initial learning prompt, not a submitted assessment attempt. Begin the Socratic dialogue without claiming that the learner has demonstrated mastery."
+        : "The learner has submitted a follow-up question. Continue the Socratic dialogue without treating it as a formal assessment.",
     "Recent conversation, in chronological order:",
     ...selected,
     "Now respond to the latest learner message. Do not repeat the conversation or provide a complete worked solution."
@@ -228,8 +236,20 @@ export async function POST(
     return errorResponse("VALIDATION_ERROR", "The request body must be valid JSON.", 400);
   }
 
-  if (Object.keys(input).some((key) => key !== "message")) {
+  if (Object.keys(input).some((key) => key !== "message" && key !== "messageType")) {
     return errorResponse("VALIDATION_ERROR", "The request contains unsupported fields.", 400);
+  }
+
+  let submissionType: "attempt" | "question" = "attempt";
+  if (input.messageType !== undefined && input.message === undefined) {
+    return errorResponse("VALIDATION_ERROR", "A message type requires a learner message.", 400);
+  }
+
+  if (input.messageType !== undefined) {
+    if (input.messageType !== "attempt" && input.messageType !== "question") {
+      return errorResponse("VALIDATION_ERROR", "Choose attempt or follow-up question as the message type.", 400);
+    }
+    submissionType = input.messageType;
   }
 
   let learnerMessage: string | null = null;
@@ -254,6 +274,7 @@ export async function POST(
     claimedVersion: number;
     responseSequenceNumber: number;
     messages: Array<{ role: "student" | "tutor"; content: string }>;
+    latestSubmissionType: "attempt" | "question" | "initial_prompt";
   };
 
   try {
@@ -292,6 +313,7 @@ export async function POST(
 
       const [lastMessage] = await tx
         .select({
+          id: tutorMessages.id,
           role: tutorMessages.role,
           sequenceNumber: tutorMessages.sequenceNumber
         })
@@ -301,6 +323,28 @@ export async function POST(
         .limit(1);
 
       if (!lastMessage) return { kind: "empty_session" as const };
+
+      let pendingSubmissionType: "attempt" | "question" | "initial_prompt" =
+        lastMessage.sequenceNumber === 1 ? "initial_prompt" : "question";
+
+      if (!learnerMessage) {
+        const [existingAttempt] = await tx
+          .select({
+            attemptNumber: tutorAttempts.attemptNumber
+          })
+          .from(tutorAttempts)
+          .where(
+            and(
+              eq(tutorAttempts.sessionId, session.id),
+              eq(tutorAttempts.messageId, lastMessage.id)
+            )
+          )
+          .limit(1);
+
+        if (existingAttempt) {
+          pendingSubmissionType = "attempt";
+        }
+      }
 
       if (learnerMessage && lastMessage.role !== "tutor") {
         return { kind: "unanswered_turn" as const };
@@ -312,12 +356,37 @@ export async function POST(
 
       let nextSequenceNumber = lastMessage.sequenceNumber + 1;
       if (learnerMessage) {
-        await tx.insert(tutorMessages).values({
-          sessionId: session.id,
-          role: "student",
-          content: learnerMessage,
-          sequenceNumber: nextSequenceNumber
-        });
+        const [savedLearnerMessage] = await tx
+          .insert(tutorMessages)
+          .values({
+            sessionId: session.id,
+            role: "student",
+            content: learnerMessage,
+            sequenceNumber: nextSequenceNumber
+          })
+          .returning({ id: tutorMessages.id });
+
+        if (!savedLearnerMessage) {
+          throw new Error("Learner message persistence returned no record.");
+        }
+
+        if (submissionType === "attempt") {
+          const [lastAttempt] = await tx
+            .select({ attemptNumber: tutorAttempts.attemptNumber })
+            .from(tutorAttempts)
+            .where(eq(tutorAttempts.sessionId, session.id))
+            .orderBy(desc(tutorAttempts.attemptNumber))
+            .limit(1);
+
+          const attemptNumber = (lastAttempt?.attemptNumber ?? 0) + 1;
+          await tx.insert(tutorAttempts).values({
+            sessionId: session.id,
+            studentId: student.id,
+            messageId: savedLearnerMessage.id,
+            attemptNumber
+          });
+        }
+
         nextSequenceNumber += 1;
       }
 
@@ -356,6 +425,7 @@ export async function POST(
         previousState: session.state,
         claimedVersion: updated.version,
         responseSequenceNumber: nextSequenceNumber,
+        latestSubmissionType: learnerMessage ? submissionType : pendingSubmissionType,
         messages: recentMessages.reverse()
       };
     });
@@ -400,6 +470,7 @@ export async function POST(
       userPrompt: buildConversationPrompt({
         intent: claim.intent,
         initialPrompt: claim.initialPrompt,
+        latestSubmissionType: claim.latestSubmissionType,
         messages: claim.messages
       }),
       maxOutputTokens: MAX_OUTPUT_TOKENS,

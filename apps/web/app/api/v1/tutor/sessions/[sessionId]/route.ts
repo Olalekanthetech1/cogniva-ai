@@ -1,5 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
-import { tutorMessages, tutorSessions } from "@cogniva/database";
+import { tutorAttempts, tutorMessages, tutorSessions } from "@cogniva/database";
 import { getSignedInStudent, getStudentDatabase, isUuid } from "@/lib/student-data";
 
 export const runtime = "nodejs";
@@ -60,19 +60,37 @@ export async function GET(
       return errorResponse("TUTOR_SESSION_NOT_FOUND", "Tutor session not found.", 404);
     }
 
-    const messages = await db
-      .select({
-        id: tutorMessages.id,
-        role: tutorMessages.role,
-        content: tutorMessages.content,
-        sequenceNumber: tutorMessages.sequenceNumber,
-        createdAt: tutorMessages.createdAt
-      })
-      .from(tutorMessages)
-      .where(eq(tutorMessages.sessionId, session.id))
-      .orderBy(asc(tutorMessages.sequenceNumber));
+    const [messages, attempts] = await Promise.all([
+      db
+        .select({
+          id: tutorMessages.id,
+          role: tutorMessages.role,
+          content: tutorMessages.content,
+          sequenceNumber: tutorMessages.sequenceNumber,
+          createdAt: tutorMessages.createdAt
+        })
+        .from(tutorMessages)
+        .where(eq(tutorMessages.sessionId, session.id))
+        .orderBy(asc(tutorMessages.sequenceNumber)),
+      db
+        .select({
+          id: tutorAttempts.id,
+          messageId: tutorAttempts.messageId,
+          attemptNumber: tutorAttempts.attemptNumber,
+          evaluationStatus: tutorAttempts.evaluationStatus,
+          submittedAt: tutorAttempts.submittedAt
+        })
+        .from(tutorAttempts)
+        .where(
+          and(
+            eq(tutorAttempts.sessionId, session.id),
+            eq(tutorAttempts.studentId, student.id)
+          )
+        )
+        .orderBy(asc(tutorAttempts.attemptNumber))
+    ]);
 
-    return Response.json({ data: { ...session, messages } });
+    return Response.json({ data: { ...session, messages, attempts } });
   } catch {
     return errorResponse(
       "TUTOR_DATA_UNAVAILABLE",
