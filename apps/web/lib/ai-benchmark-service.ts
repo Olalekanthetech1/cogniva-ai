@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import {
   adminAuditEvents,
   aiBenchmarkResults,
@@ -60,16 +60,6 @@ export async function createAiBenchmarkRun(adminUserId: string) {
   }
 
   const db = getStudentDatabase();
-  const [activeRun] = await db
-    .select({ id: aiBenchmarkRuns.id })
-    .from(aiBenchmarkRuns)
-    .where(eq(aiBenchmarkRuns.status, "running"))
-    .limit(1);
-
-  if (activeRun) {
-    return { kind: "active_run" as const, runId: activeRun.id };
-  }
-
   const shuffledCandidates = shuffle([...AI_BENCHMARK_CANDIDATES]);
   const blindLabels = new Map(
     shuffledCandidates.map((candidate, index) => [
@@ -83,10 +73,6 @@ export async function createAiBenchmarkRun(adminUserId: string) {
     ...AI_BENCHMARK_CASES.socratic_tutor_response
   ] as readonly AiBenchmarkCase[];
 
-  const candidateById = new Map<string, AiBenchmarkCandidate>(
-    AI_BENCHMARK_CANDIDATES.map((candidate) => [candidate.id, candidate])
-  );
-
   const workItems = shuffle(
     AI_BENCHMARK_CANDIDATES.flatMap((candidate) =>
       allCases.map((benchmarkCase) => ({ candidate, benchmarkCase }))
@@ -94,7 +80,18 @@ export async function createAiBenchmarkRun(adminUserId: string) {
   );
 
   const now = new Date();
-  const runId = await db.transaction(async (tx) => {
+  const creation = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(827364190)`);
+    const [activeRun] = await tx
+      .select({ id: aiBenchmarkRuns.id })
+      .from(aiBenchmarkRuns)
+      .where(eq(aiBenchmarkRuns.status, "running"))
+      .limit(1);
+
+    if (activeRun) {
+      return { kind: "active_run" as const, runId: activeRun.id };
+    }
+
     const [run] = await tx
       .insert(aiBenchmarkRuns)
       .values({
@@ -126,6 +123,9 @@ export async function createAiBenchmarkRun(adminUserId: string) {
       maxOutputTokens: benchmarkCase.maxOutputTokens,
       inputUsdPerMillion: candidate.inputUsdPerMillion.toFixed(6),
       outputUsdPerMillion: candidate.outputUsdPerMillion.toFixed(6),
+      pricingReviewedAt: candidate.pricingReviewedAt,
+      pricingEffectiveThrough: candidate.pricingEffectiveThrough,
+      pricingSource: candidate.pricingSource,
       status: "pending" as const,
       createdAt: now
     }));
@@ -144,16 +144,10 @@ export async function createAiBenchmarkRun(adminUserId: string) {
       createdAt: now
     });
 
-    return run.id;
+    return { kind: "created" as const, runId: run.id };
   });
 
-  // Confirm every static candidate used in this run still exists in the
-  // versioned suite; this guards accidental candidate drift at construction.
-  if (candidateById.size !== AI_BENCHMARK_CANDIDATES.length) {
-    throw new Error("Benchmark candidate identifiers are not unique.");
-  }
-
-  return { kind: "created" as const, runId };
+  return creation;
 }
 
 export function validateBenchmarkOutput(
@@ -238,7 +232,7 @@ export function validateBenchmarkOutput(
 
   const wordCount = output.trim().split(/\s+/).filter(Boolean).length;
   if (wordCount > 80) issues.push("Response exceeds the 80-word benchmark limit.");
-  if (!output.includes("?")) issues.push("Response does not end with a question prompt.");
+  if (!output.trim().endsWith("?")) issues.push("Response does not end with a question prompt.");
 
   return { valid: issues.length === 0, issues, wordCount };
 }
@@ -337,7 +331,7 @@ export async function getAiBenchmarkSnapshot(runId: string, reviewerId: string) 
       myScores: review?.scores ?? null,
       myNotes: review?.notes ?? null,
       ...(identitiesRevealed
-        ? { provider: result.provider, model: result.model }
+        ? { provider: result.provider, model: result.resolvedModel ?? result.model }
         : {})
     };
   });
