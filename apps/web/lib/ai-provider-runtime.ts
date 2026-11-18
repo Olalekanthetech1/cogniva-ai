@@ -162,6 +162,13 @@ function extractGeminiResponse(
   }
 
   const usage = isObject(body.usageMetadata) ? body.usageMetadata : {};
+  const inputTokens = readCount(usage.promptTokenCount);
+  const totalTokens = readCount(usage.totalTokenCount);
+  // Gemini total usage includes generated thinking tokens, which are billed as output.
+  const billedOutputTokens =
+    inputTokens !== null && totalTokens !== null && totalTokens >= inputTokens
+      ? totalTokens - inputTokens
+      : null;
 
   return {
     provider: "gemini",
@@ -169,9 +176,9 @@ function extractGeminiResponse(
     resolvedModel: readText(body.modelVersion) ?? requestedModel,
     text,
     usage: {
-      inputTokens: readCount(usage.promptTokenCount),
-      outputTokens: readCount(usage.candidatesTokenCount),
-      totalTokens: readCount(usage.totalTokenCount)
+      inputTokens,
+      outputTokens: billedOutputTokens,
+      totalTokens
     },
     finishReason: isObject(firstCandidate)
       ? readText(firstCandidate.finishReason)
