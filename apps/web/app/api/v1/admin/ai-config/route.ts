@@ -19,6 +19,31 @@ function responseError(
   return Response.json({ error: { code, message } }, { status });
 }
 
+function hasTrustedOrigin(request: Request): boolean {
+  const requestOrigin = request.headers.get("origin");
+  if (!requestOrigin) return false;
+
+  let normalizedOrigin: string;
+  try {
+    normalizedOrigin = new URL(requestOrigin).origin;
+  } catch {
+    return false;
+  }
+
+  const configuredOrigins = [
+    process.env.BETTER_AUTH_URL,
+    ...(process.env.AUTH_TRUSTED_ORIGINS ?? "").split(",")
+  ].filter((value): value is string => Boolean(value?.trim()));
+
+  return configuredOrigins.some((value) => {
+    try {
+      return new URL(value).origin === normalizedOrigin;
+    } catch {
+      return false;
+    }
+  });
+}
+
 async function requireAdministrator() {
   const access = await getAdminAccess();
 
@@ -63,6 +88,14 @@ export async function GET(): Promise<Response> {
 
 export async function PUT(request: Request): Promise<Response> {
   try {
+    if (!hasTrustedOrigin(request)) {
+      return responseError(
+        "ORIGIN_NOT_ALLOWED",
+        "This configuration change must come from a trusted Cogniva origin.",
+        403
+      );
+    }
+
     const authorization = await requireAdministrator();
     if ("response" in authorization) return authorization.response;
 
