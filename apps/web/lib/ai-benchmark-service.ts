@@ -13,7 +13,6 @@ import {
   AI_BENCHMARK_PRICING_SNAPSHOT,
   AI_BENCHMARK_SUITE_VERSION,
   AI_BENCHMARK_SYSTEM_PROMPTS,
-  type AiBenchmarkCandidate,
   type AiBenchmarkCase,
   estimateBenchmarkCostUsd
 } from "@/lib/ai-benchmark-suite";
@@ -331,7 +330,17 @@ export async function getAiBenchmarkSnapshot(runId: string, reviewerId: string) 
       myScores: review?.scores ?? null,
       myNotes: review?.notes ?? null,
       ...(identitiesRevealed
-        ? { provider: result.provider, model: result.resolvedModel ?? result.model }
+        ? {
+            provider: result.provider,
+            model: result.resolvedModel ?? result.model,
+            pricing: {
+              inputUsdPerMillion: result.inputUsdPerMillion,
+              outputUsdPerMillion: result.outputUsdPerMillion,
+              reviewedAt: result.pricingReviewedAt,
+              effectiveThrough: result.pricingEffectiveThrough,
+              source: result.pricingSource
+            }
+          }
         : {})
     };
   });
