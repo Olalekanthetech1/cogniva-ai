@@ -273,5 +273,5 @@ test("rejects division by zero, invalid roots, and out-of-bound results", () => 
 test("handles exact displayed precision for independent claims", () => {
   assert.deepEqual(findIncorrectNumericClaims("Result: 0.1 + 0.2 = 0.3"), []);
   assert.equal(findIncorrectNumericClaims("Result: 2^3^2 = 64")[0]?.expectedText, "512");
-  assert.equal(findIncorrectNumericClaims("Result: sin(90°) = 0.9")[0]?.expectedText, "1");
+  assert.equal(findIncorrectNumericClaims("Result: sin(90°) = 0.9")[0]?.expectedText, "1.0");
 });
