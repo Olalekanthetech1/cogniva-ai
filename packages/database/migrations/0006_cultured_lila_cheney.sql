@@ -12,11 +12,12 @@ CREATE TABLE "tutor_attempts" (
 	CONSTRAINT "tutor_attempts_evaluated_timestamp_check" CHECK ("tutor_attempts"."evaluation_status" <> 'evaluated' or "tutor_attempts"."evaluated_at" is not null)
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX "tutor_messages_session_id_unique" ON "tutor_messages" USING btree ("session_id","id");--> statement-breakpoint
+CREATE UNIQUE INDEX "tutor_sessions_id_student_unique" ON "tutor_sessions" USING btree ("id","student_id");
+--> statement-breakpoint
 ALTER TABLE "tutor_attempts" ADD CONSTRAINT "tutor_attempts_session_student_fk" FOREIGN KEY ("session_id","student_id") REFERENCES "public"."tutor_sessions"("id","student_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tutor_attempts" ADD CONSTRAINT "tutor_attempts_session_message_fk" FOREIGN KEY ("session_id","message_id") REFERENCES "public"."tutor_messages"("session_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "tutor_attempts_message_unique" ON "tutor_attempts" USING btree ("message_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "tutor_attempts_session_number_unique" ON "tutor_attempts" USING btree ("session_id","attempt_number");--> statement-breakpoint
 CREATE INDEX "tutor_attempts_student_submitted_idx" ON "tutor_attempts" USING btree ("student_id","submitted_at");--> statement-breakpoint
-CREATE INDEX "tutor_attempts_session_submitted_idx" ON "tutor_attempts" USING btree ("session_id","submitted_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "tutor_messages_session_id_unique" ON "tutor_messages" USING btree ("session_id","id");--> statement-breakpoint
-CREATE UNIQUE INDEX "tutor_sessions_id_student_unique" ON "tutor_sessions" USING btree ("id","student_id");
+CREATE INDEX "tutor_attempts_session_submitted_idx" ON "tutor_attempts" USING btree ("session_id","submitted_at");
