@@ -89,7 +89,7 @@ function ReviewForm({
     )
   );
   const [notes, setNotes] = useState(result.myNotes ?? "");
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(false);\n  const [reviewError, setReviewError] = useState<string | null>(null);
   const complete = result.reviewCriteria.length > 0 &&
     result.reviewCriteria.every((_, index) => {
       const value = Number(scores[`criterion_${index + 1}`]);
