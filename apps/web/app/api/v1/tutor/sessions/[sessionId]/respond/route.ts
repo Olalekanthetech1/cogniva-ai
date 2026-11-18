@@ -560,7 +560,7 @@ export async function POST(
     }
 
     const numericMismatches = findIncorrectNumericClaims(providerGenerated.text);
-    if (numericMismatches.length > 0) {
+    if (numericMismatches.length === 1) {
       const mismatch = numericMismatches[0];
       generated = {
         provider: "cogniva-core",
@@ -573,11 +573,12 @@ export async function POST(
         upstreamProvider: providerGenerated.provider,
         upstreamModel: providerGenerated.resolvedModel,
         verification: {
-          status: "generated_numeric_claim_corrected_before_delivery",
+          status: "single_explicit_numeric_claim_corrected_before_delivery",
           method: "bounded_numeric_expression",
           expression: mismatch.expression,
           incorrectValue: mismatch.claimedText,
-          verifiedValue: mismatch.expectedText
+          verifiedValue: mismatch.expectedText,
+          scope: "arithmetic_only_units_and_physical_model_not_verified"
         }
       };
     } else {
@@ -586,7 +587,13 @@ export async function POST(
         responseSource: "provider",
         upstreamProvider: providerGenerated.provider,
         upstreamModel: providerGenerated.resolvedModel,
-        verification: null
+        verification: numericMismatches.length > 1
+          ? {
+              status: "not_auto_corrected_ambiguous_multiple_numeric_claims",
+              method: "bounded_numeric_expression",
+              candidateCount: numericMismatches.length
+            }
+          : null
       };
     }
   }
