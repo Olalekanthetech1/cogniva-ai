@@ -43,6 +43,13 @@
       "when": 1794995354552,
       "tag": "0005_faithful_zodiak",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795015144412,
+      "tag": "0006_cultured_lila_cheney",
+      "breakpoints": true
     }
   ]
 }
