@@ -26,6 +26,7 @@ type BenchmarkResult = {
   finishReason: string | null;
   mechanicalCheck: { valid: boolean; issues: string[]; wordCount?: number } | null;
   failureCode: string | null;
+  failureMessage: string | null;
   reviewCriteria: string[];
   reviewedByMe: boolean;
   myScores: Record<string, number> | null;
@@ -582,9 +583,16 @@ export function AiBenchmarkWorkspace() {
                     />
                   </>
                 ) : result.status === "failed" ? (
-                  <p className="benchmark-failure">
-                    This provider request failed. The failure is retained in the benchmark evidence and is not scored as a successful output.
-                  </p>
+                  <div className="benchmark-failure">
+                    <strong>Provider request failed</strong>
+                    <p>This request is retained in the benchmark evidence and is not scored as a successful output.</p>
+                    {run?.identitiesRevealed && result.failureCode ? (
+                      <p><strong>Failure code:</strong> <code>{result.failureCode}</code></p>
+                    ) : null}
+                    {run?.identitiesRevealed && result.failureMessage ? (
+                      <p><strong>Diagnostic:</strong> {result.failureMessage}</p>
+                    ) : null}
+                  </div>
                 ) : (
                   <p className="benchmark-pending">This case has not completed yet.</p>
                 )}
