@@ -76,6 +76,19 @@ See [PHASE_2_LEARNING_WORKSPACE.md](PHASE_2_LEARNING_WORKSPACE.md) for the accep
 
 **Exit:** a learner can start without an institution, generate and edit a personal learning plan, begin a text tutoring session, and resume genuine saved work; all AI outputs and failure states are truthful; no official curricula, canonical global KCs, mastery scores, or recommendations are fabricated.
 
+## Admin Foundation — AI Configuration
+
+This slice extends the deployed `/admin` control centre. It stores routing preferences and reports credential presence; it does not integrate or activate any model.
+
+- [ ] Add reviewed, additive persistence for task/provider/model preferences and administrative audit events.
+- [ ] Add an admin-only API that returns provider credential-presence booleans, never secret values.
+- [ ] Add validated admin mutations that write routing preferences and an audit event atomically.
+- [ ] Add responsive configuration UI for Gemini, Groq, and Mistral with explicit inactive-runtime states.
+- [ ] Verify unauthorized access, malformed inputs, persistence after refresh, credential redaction, audit creation, and responsive layouts.
+- [ ] Generate/review/apply the migration before deploying code that queries the new tables.
+
+**Exit:** admins can save per-task provider/model preferences and see actual server-side credential presence; no raw key is exposed or stored in the application database; routing remains visibly inactive until provider adapters are separately implemented and benchmarked.
+
 ## Phase 3 — Multimodal problem input
 
 - [ ] Add private image upload and structured extraction.

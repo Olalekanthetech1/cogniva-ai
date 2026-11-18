@@ -371,3 +371,236 @@
     font-size: 10px;
   }
 }
+
+
+.admin-nav-item:focus-visible,
+.admin-task-actions button:focus-visible,
+.admin-config-fields input:focus-visible,
+.admin-config-fields select:focus-visible {
+  outline: 2px solid #56836c;
+  outline-offset: 2px;
+}
+
+.admin-notice a {
+  width: fit-content;
+  margin-top: 4px;
+  color: #1c6148;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.admin-provider-card,
+.admin-task-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e3e9e4;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.admin-provider-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.admin-provider-card > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-provider-card h3,
+.admin-task-card h3 {
+  margin: 0;
+  color: #26372e;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-config-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.admin-config-status.is-configured {
+  background: #edf5ef;
+  color: #235d43;
+}
+
+.admin-config-status.is-missing {
+  background: #f5f1e9;
+  color: #80643d;
+}
+
+.admin-provider-card code {
+  width: fit-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 5px 7px;
+  border-radius: 5px;
+  background: #f3f5f3;
+  color: #56645d;
+  font-size: 10px;
+}
+
+.admin-provider-card p,
+.admin-task-heading p {
+  margin: 0;
+  color: #77847b;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.admin-config-boundary {
+  margin-bottom: 14px;
+  border-color: #eadfc8;
+  background: #fffcf5;
+}
+
+.admin-task-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-task-card {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-task-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.admin-task-heading > div {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-runtime-state {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border-radius: 99px;
+  background: #f1f3f1;
+  color: #68766e;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.admin-config-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 13px;
+}
+
+.admin-config-fields label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.admin-config-fields label > span {
+  color: #56645d;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.admin-config-fields input,
+.admin-config-fields select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #dce4de;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: #24352c;
+  font: inherit;
+  font-size: 12px;
+}
+
+.admin-config-fields input:focus,
+.admin-config-fields select:focus {
+  border-color: #56836c;
+  box-shadow: 0 0 0 3px rgb(86 131 108 / 12%);
+}
+
+.admin-task-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-task-actions > span {
+  color: #7a877f;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.admin-task-actions button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 8px;
+  background: #174936;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-task-actions button:disabled {
+  background: #e6ebe7;
+  color: #9aa49e;
+  cursor: not-allowed;
+}
+
+.admin-form-feedback {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.admin-form-feedback.is-success {
+  color: #236044;
+}
+
+.admin-form-feedback.is-error {
+  color: #9b3f36;
+}
+
+@media (max-width: 1050px) {
+  .admin-provider-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-provider-grid,
+  .admin-config-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-task-heading {
+    flex-direction: column;
+  }
+}

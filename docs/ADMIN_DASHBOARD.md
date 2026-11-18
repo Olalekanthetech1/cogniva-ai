@@ -1,57 +1,70 @@
 # Cogniva — Admin Dashboard Foundation
 
-**Status:** First implementation slice. This document describes the foundation and its current capability boundary; it is not evidence that later administration modules are implemented.
+**Status:** The Admin Foundation is deployed. The AI Configuration slice adds protected credential-status visibility, saved task-routing preferences, and audit events; provider execution remains separate work.
 
 ## 1. Purpose
 
-The Admin Dashboard is a separate, server-protected platform control centre. It must expose real administrative operations and telemetry, not decorative controls or sample metrics.
-
-The initial route is `/admin`. Student workspace navigation remains separate.
+The Admin Dashboard is a separate, server-protected platform control centre. It exposes real administrative operations and telemetry, not decorative controls or sample metrics. The initial route is `/admin`; student workspace navigation remains separate.
 
 ## 2. Authentication and roles
 
 - Better Auth's Admin plugin provides the initial role field and administrative server APIs.
 - New and existing accounts default to the `user` role.
-- Only an explicitly provisioned account with a verified email and the `admin` role can access the dashboard overview.
+- Only an explicitly provisioned account with a verified email and the `admin` role can access administration pages and APIs.
 - Public registration never accepts a role field.
-- The first release uses the single `admin` role. More granular roles and per-module permissions require a separately reviewed change.
 - Both page rendering and admin API routes verify the current server-side session and role. A hidden navigation item is not an authorization boundary.
-
-The Admin plugin's schema additions are additive: user role/ban metadata and the session impersonation reference. Existing accounts remain ordinary users after migration.
 
 ## 3. First live capability
 
-Implemented in this slice:
+Implemented and deployed:
 
 - `GET /api/v1/admin/overview` — administrator-only live counts for user accounts, learning plans, and tutor sessions, plus database query availability.
 - `/admin` — protected, responsive dashboard overview.
 - Database query failures are shown as unavailable; counts are never replaced with estimates or sample values.
 
-## 4. Planned modules — not yet enabled
+## 4. AI Configuration slice
 
-1. AI provider and task/model configuration for Gemini, Groq, and Mistral.
-2. Versioned system-prompt management and controlled publishing.
-3. Student account administration and support operations.
-4. Learning-plan and tutoring policy configuration.
-5. Academic catalogue governance and source verification.
-6. Usage, cost, latency, error, and provider health analytics.
-7. Role/permission management and security review.
-8. Append-only administrative audit history.
+The AI Configuration module stores provider-routing preferences for two text tasks:
 
-Each module needs a defined data model, server-side permission checks, validation, audit events, and tests before its controls are enabled.
+- `learning_plan_generation`
+- `socratic_tutor_response`
 
-## 5. Secret management
+Provider options are Gemini, Groq, and Mistral. The model identifier is stored as the exact string entered by an administrator; this avoids presenting a stale hardcoded catalogue as current provider inventory.
 
-Provider API keys and other credentials must remain in server-side environment variables or a dedicated secret manager. The dashboard may later report whether a credential is configured, but must never return or display the secret itself. Do not store raw provider keys in browser-readable configuration or ordinary settings records.
+Implemented in this slice:
+
+- `GET /api/v1/admin/ai-config` — administrator-only provider credential-presence status and saved task-routing preferences.
+- `PUT /api/v1/admin/ai-config` — validates and persists one task's provider/model preference.
+- Credential presence is derived on the server from `GEMINI_API_KEY`, `GROQ_API_KEY`, and `MISTRAL_API_KEY`. Only a boolean status and environment-variable name are returned. Secret values are never returned, logged, or written to the database.
+- Each saved routing change writes an `admin_audit_events` record in the same database transaction, including actor, task, and before/after non-secret routing metadata.
+- `ai_task_routes` stores provider/model preferences and the administrator who last updated them.
+- The application exposes no update/delete operation for audit events.
+
+**Capability boundary:** saved routing preferences are not active runtime routing. This slice does not call any provider API, validate credentials with an external request, list live models, benchmark model quality/latency/cost, or generate learner content. The UI explicitly reports that runtime adapters are not integrated. A later PR must implement provider-neutral adapters, live connection checks, structured-output validation, budget/timeout controls, and benchmark evidence before any task can be marked active.
+
+To provide credentials, add the appropriate variable in the Render web service's Environment settings. Never paste API keys into the admin page, GitHub, source code, screenshots, or chat. After changing an environment variable, restart/redeploy the service so the running process receives it.
+
+## 5. Planned modules — not yet enabled
+
+1. Versioned system-prompt management and controlled publishing.
+2. Student account administration and support operations.
+3. Learning-plan and tutoring policy configuration.
+4. Academic catalogue governance and source verification.
+5. Usage, cost, latency, error, and provider health analytics.
+6. Role/permission management and security review.
+7. Audit history browsing and filtering.
+
+Each module needs a defined data model, server-side permission checks, audit events, validation, and tests before its controls are enabled.
 
 ## 6. Release order
 
-1. Review the application/schema changes and CI.
-2. Generate a new migration from the committed Drizzle schema.
-3. Inspect the SQL for additive role and session fields only.
-4. Apply the migration to Neon through the explicit production migration workflow.
-5. Provision the first administrator through a controlled operational procedure; never expose public admin registration.
-6. Manually deploy the application after the migration and administrator provisioning are complete.
-7. Verify that a normal student receives 403 from the admin overview API and cannot view dashboard data, while a provisioned administrator can access real counts.
+1. Review application/schema changes and CI.
+2. Merge the reviewed schema change to `main`.
+3. Generate a migration using the separate generation workflow.
+4. Inspect generated SQL for only intended additive enums, tables, indexes, and constraints.
+5. Apply the reviewed committed migration to Neon through the explicit production migration workflow.
+6. Deploy application code only after the migration succeeds.
+7. Verify administrator access, student denial, API validation, persistence after refresh, credential redaction, and audit event creation.
+8. Implement provider adapters and benchmark them before activating task routes.
 
-Do not mark the admin dashboard as production-ready until these deployment and access-boundary checks have passed.
+Do not mark any AI task as active until it has a real configured provider adapter, validated model ID, bounded execution, truthful failure handling, and repeatable evaluation evidence.
