@@ -1,6 +1,6 @@
 # Cogniva — Learning Workspace Data Model
 
-**Status:** Proposed Drizzle schema in the `feat/learning-workspace-persistence` branch. These tables are not yet generated into a SQL migration or applied to Neon. This document describes the proposed model, not live production state.
+**Status:** Implemented Drizzle schema. The seven personal-plan tables and tutor session/message tables are included in migration `0002_futuristic_alex_power.sql`; the project owner previously confirmed migration history through `0003_lean_gateway.sql` on Neon. The current repository also contains later migrations; do not infer their production application from file presence alone. The plan-generation API in this implementation uses the existing `0002` plan structures and adds no migration.
 
 ## 1. Design boundaries
 
@@ -42,11 +42,11 @@ Better Auth continues to own account identity and authentication sessions. Cogni
 - A tutor message written by Cogniva must record provider, model, and prompt version. Student messages must not claim AI provenance.
 - Server queries must enforce ownership from the authenticated session. Foreign keys alone do not authorise access.
 - When starting a session from a plan, the server must verify that the plan revision and unit belong to the signed-in student and to one another.
-- A session's student responses are persisted as messages in this slice. First-class attempt/evaluation evidence is deferred to the guided-feedback and learning-intelligence phases.
+- Explicit learner attempts are persisted separately in `tutor_attempts` (introduced by migration `0006_cultured_lila_cheney.sql`) and linked to the owning student, session, and source message. A bounded deterministic evaluation may mark an attempt `evaluated`; that status does not imply whole-solution correctness or mastery.
 
 ## 4. Generation and failure semantics
 
-The plan container records the actual generation state: `pending`, `running`, `succeeded`, `failed`, or `unavailable`. Provider failures must not create a valid plan revision. The original learner input remains stored on the plan so the learner can retry without re-entering it.
+The plan container records the actual generation state: `pending`, `running`, `succeeded`, `failed`, or `unavailable`. The generation API in this implementation claims the plan with a conditional state update, uses a two-minute lease to recover an abandoned `running` state, and does not hold a database transaction open while waiting for a provider. Provider or validation failures must not create a valid plan revision. The original learner input remains stored on the plan so the learner can retry without re-entering it.
 
 Each generated revision records the actual provider/model, prompt version, output schema version, and generation time. The generation route must runtime-validate structured output and enforce limits before writing revision and child records in a transaction. Do not infer a provider or report success from an unvalidated response.
 
@@ -54,13 +54,13 @@ Each generated revision records the actual provider/model, prompt version, outpu
 
 The initial state enum covers the intended tutoring lifecycle, including interpretation, confirmation, guiding, awaiting a student attempt, explaining, correction, completion, failure, and cancellation. Text-only v1 may not use every state, but the enum does not activate image/document capabilities.
 
-Each message has a monotonically increasing sequence number unique within its session. Session state, step index, version, and message writes must be changed transactionally. Do not hold a database transaction open while waiting for an AI provider. Use an idempotency strategy for retries before exposing write endpoints.
+Each message has a monotonically increasing sequence number unique within its session. Session state, step index, version, and message writes must be changed transactionally. Do not hold a database transaction open while waiting for an AI provider. Generation retries use an owner-scoped conditional state claim and lease. Initial plan creation is not yet deduplicated by an idempotency key; clients must not automatically replay that create request after a network timeout. Add durable create-request deduplication before enabling automated client retries.
 
 Clarification, hints, simplification, and examples must preserve the current step. Only a valid explicit continuation advances it.
 
 ## 6. Deliberately deferred tables and features
 
-This schema does not introduce canonical global `knowledge_components`, curriculum-to-KC mappings, student mastery estimates, document/vector tables, or first-class assessment attempts/evidence. Add those only after the relevant provenance, verification, privacy, and evaluation contracts are implemented.
+This schema does not introduce canonical global `knowledge_components`, curriculum-to-KC mappings, student mastery estimates, or document/vector tables. The existing tutor-attempt record is evidence of a submitted response and its bounded evaluation lifecycle; it is not a diagnostic assessment model or mastery estimate. Add global knowledge, progress, and document structures only after their provenance, verification, privacy, and evaluation contracts are implemented.
 
 ## 7. Migration and release order
 

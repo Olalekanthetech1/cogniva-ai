@@ -1,6 +1,6 @@
 # Cogniva AI provider runtime foundation
 
-**Status:** Provider-neutral connection-test adapters and the administrator-only persisted benchmark runner are implemented on PR #14. The runner is not yet deployed because its Neon schema migration must be generated, reviewed, and applied first. No provider benchmark has been run and learner-facing AI is not active.
+**Status:** Provider-neutral text-generation adapters, administrator connection tests, and the persisted benchmark workspace are implemented. The provider runtime is integrated into the learner-facing Socratic tutor response path; this implementation also integrates topic-based learning-plan generation. Task execution still requires a saved administrator provider/model route and the matching server credential. No comparative provider benchmark has been completed and no provider has been selected as a universal winner.
 
 ## Supported providers
 
@@ -54,18 +54,17 @@ The initial candidates are Gemini `gemini-3.8-flash`, Groq `openai/gpt-oss-120b`
 
 The evaluation set covers learning-plan generation and Socratic tutoring. It includes measurable review criteria and expected/failure signals. The protocol requires identical prompts, retained failures, token/latency evidence, timestamped pricing, and blinded human rubric review. Estimated cost must remain unavailable when usage data is incomplete.
 
-## Explicitly not enabled
+## Learner-facing integrations and limits
 
-This foundation does **not**:
-- route learner requests to any provider;
-- generate or save learner learning plans;
-- create or continue tutoring sessions;
-- stream model responses to students;
-- select a preferred provider automatically;
-- serve benchmark-generated outputs to learners;
-- activate any provider automatically or route learner requests.
+The configured text runtime is used by:
+- `socratic_tutor_response` for the persisted, text-first tutor response route;
+- `learning_plan_generation` for topic-based personal plan generation and strict proposed-revision persistence in this implementation.
 
-The Admin page labels learner runtime as inactive. Saved task preferences remain configuration data only. The benchmark workspace is a separate administrator-only tool: it records versioned run evidence and blinded human reviews, and does not serve learner requests. Deployment is gated on the reviewed Neon migration and a separate Render deploy.
+Each request reads the exact saved task route from `ai_task_routes` and uses its matching server-side credential. A missing route, missing/rejected credential, unsupported model, rate limit, timeout, or invalid output is surfaced as a failure/unavailable state. No hidden provider switch or canned fallback is used.
+
+Learning-plan generation is limited to text topics. It validates exact JSON structure, bounded counts/lengths, unique concept names, unit mappings, and proposed relation consistency before a single transaction saves the complete revision tree. It does not establish that the suggested content is factually correct or complete. Learners cannot yet edit/approve plans or start a tutor session from a plan unit through the UI.
+
+The Admin UI reports the task runtime as integrated, separately from whether a route is saved and its server credential is present. A successful connection test means only that the selected provider/model responded; it does not establish pedagogical quality. The benchmark workspace remains administrator-only, and no benchmark result exists until a real comparative run and blinded review are completed.
 
 ## Benchmark gate
 

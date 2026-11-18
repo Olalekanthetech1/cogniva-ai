@@ -99,7 +99,7 @@ export function AiConfigurationEditor({
         [task]: {
           kind: "success",
           message:
-            "Routing preference saved. It does not activate learner-facing AI."
+            "Routing preference saved. This task can use the selected model when its server credential is present; Cogniva does not silently fall back to another provider."
         }
       }));
     } catch (error) {
@@ -217,12 +217,13 @@ export function AiConfigurationEditor({
         </div>
 
         <div className="admin-notice admin-config-boundary">
-          <strong>Routing is not active yet</strong>
+          <strong>Task runtimes are integrated; each route still needs configuration</strong>
           <span>
-            Cogniva can now run an administrator-only connection test against a saved
-            provider/model pair. These tests do not serve learners, create plans, or
-            start tutoring sessions. Comparative benchmarks and activation controls
-            remain separate.
+            Socratic tutor responses and personal learning-plan generation use the
+            provider-neutral runtime. A learner request runs only when that task has
+            a saved provider/model preference and the matching server credential is
+            present. Connection tests verify provider response, not teaching quality;
+            comparative evaluation remains a separate gate. No automatic fallback is used.
           </span>
         </div>
 
@@ -245,7 +246,7 @@ export function AiConfigurationEditor({
                     <h3>{task.label}</h3>
                     <p>{task.description}</p>
                   </div>
-                  <span className="admin-runtime-state">Learner runtime inactive</span>
+                  <span className="admin-runtime-state">Runtime integrated</span>
                 </div>
 
                 <div className="admin-config-fields">

@@ -66,15 +66,17 @@ This implementation step replaces the interim multi-field onboarding form and in
 See [PHASE_2_LEARNING_WORKSPACE.md](PHASE_2_LEARNING_WORKSPACE.md) for the accepted product, data, provider, security, and acceptance contracts.
 
 - [ ] Audit the live database schema and migration history; choose and configure one initial text AI provider before enabling AI features.
-- [ ] Add reviewed, additive persistence for student-owned learning plans, ordered units, plan-scoped concepts/skills, tutoring sessions, and messages.
-- [ ] Implement structured, versioned plan generation from actual learner topic input; validate provider output before saving it as a proposal.
+- [x] Add and reuse the existing student-owned learning-plan, revision, ordered unit/objective, concept/relation, tutor-session, and message persistence (plan/tutor workspace tables originate in migration `0002`; this implementation introduces no schema change).
+- [x] Implement topic-based, structured, versioned plan-generation API and owner-scoped retrieval; validate provider output before transactionally saving a proposed revision.
 - [ ] Let learners edit, reorder, remove, and approve proposed plans; preserve edits and previous revisions.
 - [ ] Implement resumable text-first Socratic sessions from a plan unit or direct question/problem.
 - [ ] Enforce one-step tutoring, clarification-without-advancement, progressive hints, and explicit continuation.
 - [ ] Connect Home, Learn, plan review, and Tutor to real persisted student-owned records.
 - [ ] Test provider/database failures, schema validation, idempotency, concurrency, ownership, and responsive behaviour.
 
-**Exit:** a learner can start without an institution, generate and edit a personal learning plan, begin a text tutoring session, and resume genuine saved work; all AI outputs and failure states are truthful; no official curricula, canonical global KCs, mastery scores, or recommendations are fabricated.
+**Current boundary:** tutor session creation, history, resume, and provider-backed responses already exist for direct text prompts. This implementation adds plan generation and retrieval APIs, not a completed learner workspace. Plan edit/reorder/remove/approve UI, unit-to-tutor navigation, explicit Socratic controls/step advancement, and Home/Learn integration remain open. The generated relationship graph is a revision-scoped proposal; structural validation does not prove its academic correctness.
+
+**Exit:** a learner can start without an institution, generate and edit a personal learning plan, begin a text tutoring session from a plan unit, and resume genuine saved work; all AI outputs and failure states are truthful; no official curricula, canonical global KCs, mastery scores, or recommendations are fabricated.
 
 ## Admin Foundation — AI Configuration
 
@@ -100,12 +102,12 @@ This slice extends the deployed `/admin` control centre. It stores routing prefe
 
 ## Phase 4 — Guided learning and feedback
 
-- [ ] Persist explicitly submitted learner attempts atomically with their student messages; distinguish attempts from follow-up questions.
-- [ ] Expose recorded attempt history and evaluation status without implying correctness or mastery before a supported verifier exists.
-- [ ] Persist student attempts before evaluation.
-- [ ] Add constructive error classification and correction guidance.
-- [ ] Add supported answer checking with explicit verification provenance.
-- [ ] Add summaries, examples, alternatives, and session recovery.
+- [x] Persist explicitly submitted learner attempts atomically with their student messages; distinguish attempts from follow-up questions.
+- [x] Expose recorded attempt history and evaluation status without implying correctness or mastery.
+- [x] Persist student attempts before evaluation.
+- [x] Add evidence-bounded arithmetic mismatch classification and correction guidance; do not infer the learner's cognitive cause.
+- [x] Add supported numeric answer/pair checks with explicit verification provenance and documented notation limits.
+- [ ] Add session summaries, alternative explanations, worked examples, and complete recovery/continuation tests. Saved session history/resume exists, but these richer learning aids are not yet implemented.
 
 **Exit:** full mathematics vertical slice passes, including incorrect attempt, correction, and resume.
 

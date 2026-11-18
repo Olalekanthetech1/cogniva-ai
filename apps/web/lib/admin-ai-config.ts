@@ -55,7 +55,7 @@ export type AiConfigurationSnapshot = {
     id: AiTaskKey;
     label: string;
     description: string;
-    runtimeStatus: "not_integrated";
+    runtimeStatus: "integrated";
     route: {
       provider: AiProviderId;
       model: string;
@@ -90,7 +90,7 @@ export async function getAdminAiConfiguration(): Promise<AiConfigurationSnapshot
       return {
         id,
         ...taskDetails[id],
-        runtimeStatus: "not_integrated" as const,
+        runtimeStatus: "integrated" as const,
         route: route
           ? {
               provider: route.provider,

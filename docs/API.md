@@ -7,7 +7,7 @@
 - Prefix application endpoints with `/api/v1`.
 - Validate input and structured output at runtime.
 - Require authentication and enforce record ownership for student data.
-- Use idempotency keys for retriable state-changing requests.
+- Use idempotency keys or an equivalent persisted state claim for retriable state-changing requests. Initial learning-plan creation is not yet idempotency-key deduplicated; see the learning-plan API limitation above.
 - Use cursor pagination for growing collections.
 - Return stable error codes and safe messages; never expose provider secrets or raw stack traces.
 - Distinguish accepted/pending work from completed work.
@@ -55,9 +55,26 @@ Implemented in this change:
 - Choosing Skip completes onboarding without requiring institution data. It clears institution selection while preserving programme/year fields; a changed catalogue institution clears faculty/department links that would no longer be valid.
 - Institution search returns `countryCode` so the UI can disambiguate records. Cogniva does not infer country or recognition status when the source has not supplied it.
 
-## 5. Sessions and tutoring
+## 5. Learning plans
 
-## 5.1 Implemented tutor session API
+### 5.1 Implemented personal learning-plan API
+
+The topic-based personal plan API reuses the existing learning-plan tables introduced in migration `0002`; it does not create catalogue courses or canonical Knowledge Components.
+
+- `GET /api/v1/learning-plans` — lists up to 50 plans owned by the signed-in learner, with the latest revision summary.
+- `POST /api/v1/learning-plans` — accepts exactly `{ "topic": "..." }`, saves the learner's topic, and synchronously requests a proposed plan using the saved `learning_plan_generation` provider/model route.
+- `GET /api/v1/learning-plans/:planId` — returns an owned plan, revision history, and the selected revision content. An optional `revisionId` query parameter selects another revision belonging to that plan.
+- `POST /api/v1/learning-plans/:planId/generate` — retries a plan in `pending`, `failed`, or `unavailable` state, or reclaims a `running` generation after its two-minute lease expires. It does not overwrite a successfully generated revision.
+
+Generation is available only when an administrator has saved a provider/model route for `learning_plan_generation` and the matching server credential is present. No default model or automatic provider fallback is used. A provider response must be strict JSON matching the versioned output contract; malformed, truncated, or inconsistent plans are rejected before a revision is saved. The learner input remains on the plan when generation fails. Units, objectives, concepts, and relationships are persisted transactionally, and generated relationships remain `proposed`.
+
+The output validator enforces bounded collection sizes, exact object fields, unique names, valid unit-to-concept references, and acyclic prerequisite suggestions. This is structural validation; it does not establish the factual correctness or completeness of the generated teaching sequence. Plan editing, review, approval, and starting tutor sessions from a plan unit are not yet exposed by the learner UI.
+
+Initial `POST /api/v1/learning-plans` creation is not currently deduplicated by an idempotency key. Clients must not automatically replay a timed-out create request; they can recover by listing the learner's plans. The separate generation retry endpoint uses a server-side state claim.
+
+## 6. Sessions and tutoring
+
+## 6.1 Implemented tutor session API
 
 The following learner-authenticated routes are implemented in the current Phase 4 vertical slice:
 
@@ -80,6 +97,7 @@ Use `"question"` for a follow-up question. When omitted, `messageType` defaults 
 
 An attempt record and its student message are committed in the same database transaction before a provider request begins. The session response exposes the attempt number, linked message, submission time, and evaluation status. New records are saved as `not_evaluated`; the Socratic tutor reply is not an independent answer verification and must not be presented as a correctness or mastery result.
 
+The following are proposed future interaction/problem endpoints, not implemented routes:
 - `POST /api/v1/sessions`
 - `GET /api/v1/sessions`
 - `GET /api/v1/sessions/:sessionId`
@@ -97,7 +115,7 @@ An attempt record and its student message are committed in the same database tra
 
 Suggested interaction actions: `WHY_THIS_STEP`, `HINT`, `SIMPLIFY`, `EXAMPLE`, `SUBMIT_ATTEMPT`, `CHECK_ANSWER`, `CONTINUE`, `REPEAT`, `END_SESSION`. Validate these at runtime. WHY/HINT/SIMPLIFY/EXAMPLE must not advance the step; only valid explicit continuation may do so.
 
-## 6. Documents and progress
+## 7. Documents and progress
 
 Documents:
 - `POST /api/v1/documents/upload-intent`
@@ -115,16 +133,16 @@ Potential progress routes, after evidence models exist:
 
 Progress must disclose the evidence/window behind a mastery estimate.
 
-## 7. Concurrency and failure semantics
+## 8. Concurrency and failure semantics
 
 Use expected state versions or equivalent concurrency tokens on state-changing requests. Return conflict for stale writes rather than overwriting newer state. Attempts and uploads need idempotency. Suggested errors: `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT`, `RATE_LIMITED`, `UNSUPPORTED_CAPABILITY`, `PROVIDER_UNAVAILABLE`, `VERIFICATION_UNAVAILABLE`, `PROCESSING_FAILED`.
 
 Do not return completed success when work has only been queued. Return an explicit pending/accepted resource. A partially streamed tutor response must not be treated as a completed step.
 
-## 8. Upload and SSRF safety
+## 9. Upload and SSRF safety
 
 Prefer direct-to-private-storage signed uploads with strict expiry, file size, and content-type validation. Never accept an arbitrary URL and fetch it server-side without SSRF protection, redirect validation, DNS/IP checks, and response-size limits.
 
-## 9. Implementation gate
+## 10. Implementation gate
 
-Finalise authentication, validation library, database access, ownership strategy, and error semantics before implementing routes. This document does not claim that these endpoints exist.
+This document distinguishes implemented endpoints from proposed future routes; proposed routes are not evidence of implementation.
