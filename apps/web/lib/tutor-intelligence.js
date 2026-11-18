@@ -270,15 +270,15 @@ function lastQuestion(text) {
   if (questionEnd < 0) return "";
 
   const sentenceStart = Math.max(
-    source.lastIndexOf(".", questionEnd),
+    source.lastIndexOf("\n", questionEnd)
     source.lastIndexOf("!", questionEnd),
     source.lastIndexOf("?", questionEnd - 1),
     source.lastIndexOf("\\n", questionEnd)
   );
   return source.slice(sentenceStart + 1, questionEnd + 1)
     .toLowerCase()
-    .replace(/[^a-z0-9\\s]/g, " ")
-    .replace(/\\s+/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
