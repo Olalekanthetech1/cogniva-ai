@@ -299,16 +299,14 @@ const PAIR_VARIABLE_PATTERN = "[A-Za-z](?:\\s*_\\s*\\{?\\d+\\}?|\\d+)?";
 
 function normalizePairVariable(value) {
   return String(value ?? "")
-    .replace(/\\s+/g, "")
-    .replace(/_\\{?(\\d+)\\}?/g, "_$1")
+    .replace(/\s+/g, "")
+    .replace(/_\{?(\d+)\}?/g, "_$1")
     .toLowerCase();
 }
-
 function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^$()|[\\]\\\\]/g, "\\\\
-export function analyzeTutorTurn({ messages, latestSubmissionType }) {");
+  // Variable names are constrained to letters, digits, and underscores.
+  return String(value);
 }
-
 function formatNumericValue(value) {
   if (Number.isInteger(value)) return String(value);
   return Number(value.toPrecision(12)).toString();
@@ -323,17 +321,17 @@ function formatNumericValue(value) {
 function findRealPairFeasibility(messages) {
   const text = (Array.isArray(messages) ? messages : [])
     .map((message) => String(message?.content ?? ""))
-    .join("\\n");
+    .join("\n");
   const normalizedText = text
-    .replace(/\\$/g, "")
-    .replace(/\\\\left|\\\\right/g, "")
-    .replace(/\\\\times/g, "×")
-    .replace(/\\\\cdot/g, "·");
+    .replace(/\$/g, "")
+    .replace(/\\left|\\right/g, "")
+    .replace(/\\times/g, "×")
+    .replace(/\\cdot/g, "·");
 
   const pairCandidates = new Map();
   const sumSquaresPattern = new RegExp(
-    "(" + PAIR_VARIABLE_PATTERN + ")\\\\s*(?:\\\\^\\\\s*\\\\{?2\\\\}?|²)\\\\s*\\\\+\\\\s*" +
-    "(" + PAIR_VARIABLE_PATTERN + ")\\\\s*(?:\\\\^\\\\s*\\\\{?2\\\\}?|²)\\\\s*=\\\\s*(" +
+    "(" + PAIR_VARIABLE_PATTERN + ")\\s*(?:\\^\\s*\\{?2\\}?|²)\\s*\\+\\s*" +
+    "(" + PAIR_VARIABLE_PATTERN + ")\\s*(?:\\^\\s*\\{?2\\}?|²)\\s*=\\s*(" +
     PAIR_NUMBER_PATTERN + ")",
     "gi"
   );
@@ -347,7 +345,7 @@ function findRealPairFeasibility(messages) {
     const key = variables.join("|");
     const existing = pairCandidates.get(key) ?? {
       variables,
-      displayVariables: [match[1].replace(/\\s+/g, ""), match[2].replace(/\\s+/g, "")],
+      displayVariables: [match[1].replace(/\s+/g, ""), match[2].replace(/\s+/g, "")],
       sumSquaresValues: new Set()
     };
     existing.sumSquaresValues.add(Number(match[3].replace(/,/g, "")));
@@ -360,10 +358,10 @@ function findRealPairFeasibility(messages) {
 
     const [first, second] = candidate.variables;
     const productPattern = new RegExp(
-      escapeRegExp(first) + "\\\\s*(?:(?:\\\\*|×|·)\\\\s*)?\\\\s*" +
-      escapeRegExp(second) + "\\\\s*=\\\\s*(" + PAIR_NUMBER_PATTERN + ")|" +
-      escapeRegExp(second) + "\\\\s*(?:(?:\\\\*|×|·)\\\\s*)?\\\\s*" +
-      escapeRegExp(first) + "\\\\s*=\\\\s*(" + PAIR_NUMBER_PATTERN + ")",
+      first + "\\s*(?:(?:\\*|×|·)\\s*)?\\s*" +
+      second + "\\s*=\\s*(" + PAIR_NUMBER_PATTERN + ")|" +
+      second + "\\s*(?:(?:\\*|×|·)\\s*)?\\s*" +
+      first + "\\s*=\\s*(" + PAIR_NUMBER_PATTERN + ")",
       "gi"
     );
     const productValues = new Set();
@@ -382,7 +380,7 @@ function findRealPairFeasibility(messages) {
     const sumSquare = sumSquares + 2 * product;
     const tolerance = Math.max(1e-10, Math.abs(sumSquares) * 1e-12);
     const hasRealPair = sumSquares >= 2 * Math.abs(product) - tolerance;
-    const forceMagnitudeContext = /\\b(force|forces|magnitude|magnitudes)\\b/i.test(text);
+    const forceMagnitudeContext = /\b(force|forces|magnitude|magnitudes)\b/i.test(text);
     const hasNonnegativePair = hasRealPair && product >= -tolerance;
     const possible = forceMagnitudeContext ? hasNonnegativePair : hasRealPair;
 
@@ -409,11 +407,10 @@ function findRealPairFeasibility(messages) {
 
   return resolved.length === 1 ? resolved[0] : null;
 }
-
 function extractExplicitPromptExpression(text) {
   const source = lastQuestion(String(text ?? "")) || String(text ?? "");
   const matches = [...source.matchAll(
-    /\\b(?:compute|calculate|evaluate|work\\s+out|simplify)\\s+(?:the\\s+expression\\s*)?([0-9][0-9,.\\s()+\\-*/×·÷^°]*?)(?=\\s*(?:\\$|[?!;,]|$))/gi
+    /\b(?:compute|calculate|evaluate|work\s+out|simplify)\s+(?:the\s+expression\s*)?([0-9][0-9,.\s()+\-*/×·÷^°]*?)(?=\s*(?:\$|[?!;,]|$))/gi
   )];
   if (matches.length !== 1) return null;
 
@@ -421,7 +418,6 @@ function extractExplicitPromptExpression(text) {
   if (!expression || evaluateNumericExpression(expression) === null) return null;
   return expression;
 }
-
 function extractSingleLearnerNumericAnswer(text) {
   const source = String(text ?? "").trim().replace(/^[$]+|[$]+$/g, "").trim();
   const numberPattern = "[+-]?(?:(?:\\\\d{1,3}(?:,\\\\d{3})+|\\\\d+)(?:\\\\.\\\\d+)?|\\\\.\\\\d+)";
@@ -438,10 +434,9 @@ function extractSingleLearnerNumericAnswer(text) {
 
 function isRealFeasibilityQuestion(text) {
   const source = String(text ?? "");
-  return /\\b(?:can|could|do|does|would)\\b[\\s\\S]{0,90}\\b(?:real|real-valued)\\b[\\s\\S]{0,70}\\b(?:solution|values?|roots?|numbers?|forces?|magnitudes?)\\b/i.test(source) ||
-    /\\b(?:any|no)\\s+real\\s+(?:solution|values?|roots?|numbers?|forces?|magnitudes?)\\b/i.test(source);
+  return /\b(?:can|could|do|does|would)\b[\s\S]{0,90}\b(?:real|real-valued)\b[\s\S]{0,70}\b(?:solution|values?|roots?|numbers?|forces?|magnitudes?)\b/i.test(source) ||
+    /\b(?:any|no)\s+real\s+(?:solution|values?|roots?|numbers?|forces?|magnitudes?)\b/i.test(source);
 }
-
 function resolveNumericAnswerEvaluation(input) {
   if (input.latestSubmissionType !== "attempt") return null;
   const latestTutorMessage = input.previousTutorMessages.at(-1);
