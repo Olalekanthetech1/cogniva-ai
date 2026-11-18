@@ -604,3 +604,30 @@
     flex-direction: column;
   }
 }
+
+
+.admin-task-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-task-actions button.is-secondary {
+  border: 1px solid #dce5de;
+  background: #f1f5f2;
+  color: #315642;
+}
+
+.admin-task-actions button.is-secondary:disabled {
+  border-color: #e6ebe7;
+}
+
+.admin-task-actions button:focus-visible {
+  outline: 2px solid #56836c;
+  outline-offset: 2px;
+}
+
+.admin-form-feedback.is-warning {
+  color: #80643d;
+}
