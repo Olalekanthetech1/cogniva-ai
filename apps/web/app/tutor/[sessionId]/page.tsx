@@ -25,7 +25,7 @@ export default async function TutorSessionPage({ params }: TutorSessionPageProps
       <main className="workspace-main">
         <header className="workspace-page-heading tutor-session-page-heading">
           <p className="workspace-eyebrow">COGNIVA / TUTOR SESSION</p>
-          <h1>Let's work through it.</h1>
+          <h1>Let&apos;s work through it.</h1>
           <p>Think aloud, share your attempt and ask follow-up questions. Your conversation is saved to your account.</p>
           <Link className="workspace-browse-link" href="/tutor">
             <span aria-hidden="true">←</span> All tutor sessions
