@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   analyzeTutorTurn,
   buildAdaptiveTutorInstructions,
+  buildNumericAnswerFeedback,
+  buildRealPairInconsistencyResponse,
   buildVerifiedCorrectionResponse,
   evaluateNumericExpression,
   findIncorrectNumericClaims,
@@ -274,4 +276,148 @@ test("handles exact displayed precision for independent claims", () => {
   assert.deepEqual(findIncorrectNumericClaims("Result: 0.1 + 0.2 = 0.3"), []);
   assert.equal(findIncorrectNumericClaims("Result: 2^3^2 = 64")[0]?.expectedText, "512");
   assert.equal(findIncorrectNumericClaims("Result: sin(90°) = 0.9")[0]?.expectedText, "1.0");
+});
+
+
+test("recognizes a correct numeric answer to the previous sum-of-squares question and detects infeasible real forces", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "student", content: "Find the magnitudes of two forces." },
+      { role: "tutor", content: "For perpendicular forces, F_1^2 + F_2^2 = 100." },
+      { role: "tutor", content: "The second condition gives F_1F_2 = 69." },
+      {
+        role: "tutor",
+        content: "Using (F_1 + F_2)^2 = F_1^2 + F_2^2 + 2F_1F_2, what is (F_1 + F_2)^2?"
+      },
+      { role: "student", content: "238" }
+    ]
+  });
+
+  assert.equal(analysis.realPairFeasibility?.sumSquares, 100);
+  assert.equal(analysis.realPairFeasibility?.product, 69);
+  assert.equal(analysis.realPairFeasibility?.differenceSquare, -38);
+  assert.equal(analysis.realPairFeasibility?.possible, false);
+  assert.equal(analysis.numericAnswerEvaluation?.method, "verified_sum_of_squares_product_identity");
+  assert.equal(analysis.numericAnswerEvaluation?.expectedValue, 238);
+  assert.equal(analysis.numericAnswerEvaluation?.isCorrect, true);
+
+  const response = buildRealPairInconsistencyResponse(
+    analysis.realPairFeasibility,
+    analysis.numericAnswerEvaluation
+  );
+  assert.match(response, /Your answer is correct/i);
+  assert.match(response, /238/);
+  assert.match(response, /-38/);
+  assert.match(response, /A square of a real number cannot be negative/i);
+  assert.match(response, /no real values satisfy both equations/i);
+  assert.equal((response.match(/\?/g) ?? []).length, 1);
+  assert.doesNotMatch(response, /mastered|mastery/i);
+});
+
+test("evaluates a discriminant answer from a supported pair of constraints", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "student", content: "Find two real force magnitudes." },
+      { role: "tutor", content: "F_1^2 + F_2^2 = 100." },
+      { role: "tutor", content: "F_1 F_2 = 69." },
+      { role: "tutor", content: "What is the discriminant for the quadratic formed from the sum and product?" },
+      { role: "student", content: "-38" }
+    ]
+  });
+
+  assert.equal(analysis.numericAnswerEvaluation?.method, "verified_quadratic_discriminant_from_pair_constraints");
+  assert.equal(analysis.numericAnswerEvaluation?.expectedValue, -38);
+  assert.equal(analysis.numericAnswerEvaluation?.isCorrect, true);
+  assert.equal(analysis.realPairFeasibility?.possible, false);
+});
+
+test("evaluates a plain numeric attempt against an explicit calculation in the tutor question", () => {
+  const correct = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "What do you get when you compute 100 + 2(69)?" },
+      { role: "student", content: "238" }
+    ]
+  });
+  const incorrect = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "What do you get when you compute 100 + 2(69)?" },
+      { role: "student", content: "237" }
+    ]
+  });
+
+  assert.equal(correct.numericAnswerEvaluation?.isCorrect, true);
+  assert.equal(correct.numericAnswerEvaluation?.expectedValue, 238);
+  assert.equal(incorrect.numericAnswerEvaluation?.isCorrect, false);
+  assert.equal(incorrect.numericAnswerEvaluation?.expectedValue, 238);
+  assert.match(buildNumericAnswerFeedback(correct.numericAnswerEvaluation), /move forward instead of repeating it/i);
+  assert.match(buildNumericAnswerFeedback(incorrect.numericAnswerEvaluation), /not 237/i);
+});
+
+test("detects a direct question about whether the documented pair has real solutions", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "student", content: "Find two real force magnitudes." },
+      { role: "tutor", content: "F_1^2 + F_2^2 = 100." },
+      { role: "tutor", content: "F_1F_2 = 69." },
+      { role: "student", content: "Can two real force magnitudes satisfy these equations?" }
+    ]
+  });
+
+  assert.equal(analysis.realFeasibilityQuestion, true);
+  assert.equal(analysis.realPairFeasibility?.possible, false);
+});
+
+test("does not report an inconsistency for a feasible real pair", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "student", content: "Find two real numbers." },
+      { role: "tutor", content: "x^2 + y^2 = 25." },
+      { role: "tutor", content: "xy = 6." },
+      { role: "student", content: "Can real values satisfy these equations?" }
+    ]
+  });
+
+  assert.equal(analysis.realPairFeasibility?.hasRealPair, true);
+  assert.equal(analysis.realPairFeasibility?.possible, true);
+  assert.equal(analysis.realFeasibilityQuestion, true);
+});
+
+test("fails closed when either member of the two-variable constraint pair is missing or ambiguous", () => {
+  const missing = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "tutor", content: "F_1^2 + F_2^2 = 100." },
+      { role: "student", content: "Can two real values satisfy this?" }
+    ]
+  });
+  const ambiguous = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "tutor", content: "x^2 + y^2 = 25." },
+      { role: "tutor", content: "x^2 + y^2 = 36." },
+      { role: "tutor", content: "xy = 20." },
+      { role: "student", content: "Can real values satisfy these equations?" }
+    ]
+  });
+
+  assert.equal(missing.realPairFeasibility, null);
+  assert.equal(ambiguous.realPairFeasibility, null);
+});
+
+test("does not evaluate an arbitrary bare number when the tutor did not ask a supported numeric question", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "What relationship would you use next?" },
+      { role: "student", content: "238" }
+    ]
+  });
+
+  assert.equal(analysis.numericAnswerEvaluation, null);
 });

@@ -293,6 +293,239 @@ function lastQuestion(text) {
     .trim();
 }
 
+
+const PAIR_NUMBER_PATTERN = "[+-]?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+)";
+const PAIR_VARIABLE_PATTERN = "[A-Za-z](?:\\s*_\\s*\\{?\\d+\\}?|\\d+)?";
+
+function normalizePairVariable(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, "")
+    .replace(/_\{?(\d+)\}?/g, "_$1")
+    .toLowerCase();
+}
+function formatNumericValue(value) {
+  if (Number.isInteger(value)) return String(value);
+  return Number(value.toPrecision(12)).toString();
+}
+
+/**
+ * Recognize only the explicit two-variable constraint pair:
+ * x^2 + y^2 = A and xy = B.
+ * This supports a necessary-and-sufficient real-pair feasibility check,
+ * but is deliberately not a general symbolic algebra parser.
+ */
+function findRealPairFeasibility(messages) {
+  const text = (Array.isArray(messages) ? messages : [])
+    .map((message) => String(message?.content ?? ""))
+    .join("\n");
+  const normalizedText = text
+    .replace(/\$/g, "")
+    .replace(/\\left|\\right/g, "")
+    .replace(/\\times/g, "×")
+    .replace(/\\cdot/g, "·");
+
+  const pairCandidates = new Map();
+  const sumSquaresPattern = new RegExp(
+    "(" + PAIR_VARIABLE_PATTERN + ")\\s*(?:\\^\\s*\\{?2\\}?|²)\\s*\\+\\s*" +
+    "(" + PAIR_VARIABLE_PATTERN + ")\\s*(?:\\^\\s*\\{?2\\}?|²)\\s*=\\s*(" +
+    PAIR_NUMBER_PATTERN + ")",
+    "gi"
+  );
+
+  for (const match of normalizedText.matchAll(sumSquaresPattern)) {
+    const first = normalizePairVariable(match[1]);
+    const second = normalizePairVariable(match[2]);
+    if (!first || !second || first === second) continue;
+
+    const variables = [first, second].sort();
+    const key = variables.join("|");
+    const existing = pairCandidates.get(key) ?? {
+      variables,
+      displayVariables: [match[1].replace(/\s+/g, ""), match[2].replace(/\s+/g, "")],
+      sumSquaresValues: new Set()
+    };
+    existing.sumSquaresValues.add(Number(match[3].replace(/,/g, "")));
+    pairCandidates.set(key, existing);
+  }
+
+  const resolved = [];
+  for (const candidate of pairCandidates.values()) {
+    if (candidate.sumSquaresValues.size !== 1) continue;
+
+    const [first, second] = candidate.variables;
+    const productPattern = new RegExp(
+      first + "\\s*(?:(?:\\*|×|·)\\s*)?\\s*" +
+      second + "\\s*=\\s*(" + PAIR_NUMBER_PATTERN + ")|" +
+      second + "\\s*(?:(?:\\*|×|·)\\s*)?\\s*" +
+      first + "\\s*=\\s*(" + PAIR_NUMBER_PATTERN + ")",
+      "gi"
+    );
+    const productValues = new Set();
+
+    for (const match of normalizedText.matchAll(productPattern)) {
+      const valueText = match[1] ?? match[2];
+      if (valueText !== undefined) productValues.add(Number(valueText.replace(/,/g, "")));
+    }
+
+    if (productValues.size !== 1) continue;
+    const sumSquares = [...candidate.sumSquaresValues][0];
+    const product = [...productValues][0];
+    if (!Number.isFinite(sumSquares) || !Number.isFinite(product)) continue;
+
+    const differenceSquare = sumSquares - 2 * product;
+    const sumSquare = sumSquares + 2 * product;
+    const tolerance = Math.max(1e-10, Math.abs(sumSquares) * 1e-12);
+    const hasRealPair = sumSquares >= 2 * Math.abs(product) - tolerance;
+    const forceMagnitudeContext = /\b(force|forces|magnitude|magnitudes)\b/i.test(text);
+    const hasNonnegativePair = hasRealPair && product >= -tolerance;
+    const possible = forceMagnitudeContext ? hasNonnegativePair : hasRealPair;
+
+    let impossibleReason = null;
+    if (sumSquares < -tolerance || !hasRealPair) {
+      impossibleReason = "sum_of_squares_incompatible_with_product";
+    } else if (forceMagnitudeContext && product < -tolerance) {
+      impossibleReason = "negative_product_incompatible_with_nonnegative_magnitudes";
+    }
+
+    resolved.push({
+      variables: candidate.displayVariables,
+      sumSquares,
+      product,
+      sumSquare,
+      differenceSquare,
+      hasRealPair,
+      hasNonnegativePair,
+      forceMagnitudeContext,
+      possible,
+      impossibleReason
+    });
+  }
+
+  return resolved.length === 1 ? resolved[0] : null;
+}
+function extractExplicitPromptExpression(text) {
+  const source = String(text ?? "");
+  const matches = [...source.matchAll(
+    /\b(?:compute|calculate|evaluate|work\s+out|simplify)\s+(?:the\s+expression\s*)?([0-9][0-9,.\s()+\-*/×·÷^°]*?)(?=\s*(?:\$|[?!;,]|$))/gi
+  )];
+  if (matches.length !== 1) return null;
+
+  const expression = matches[0][1].trim().replace(/[.,;]+$/, "").trim();
+  if (!expression || evaluateNumericExpression(expression) === null) return null;
+  return expression;
+}
+function extractSingleLearnerNumericAnswer(text) {
+  const source = String(text ?? "").trim().replace(/^[$]+|[$]+$/g, "").trim();
+  const bareAnswer = source.match(/^([+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+))[.!]?$/);
+  if (bareAnswer) return normalizeNumber(bareAnswer[1]);
+
+  const labelledValues = extractLearnerProposedValues(source);
+  if (labelledValues.length === 1) return labelledValues[0];
+
+  const claims = findNumericClaims(source);
+  if (claims.length === 1) return claims[0].claimedValue;
+  return null;
+}
+function isRealFeasibilityQuestion(text) {
+  const source = String(text ?? "");
+  return /\b(?:can|could|do|does|would)\b[\s\S]{0,90}\b(?:real|real-valued)\b[\s\S]{0,70}\b(?:solution|values?|roots?|numbers?|forces?|magnitudes?)\b/i.test(source) ||
+    /\b(?:any|no)\s+real\s+(?:solution|values?|roots?|numbers?|forces?|magnitudes?)\b/i.test(source);
+}
+function resolveNumericAnswerEvaluation(input) {
+  if (input.latestSubmissionType !== "attempt") return null;
+  const latestTutorMessage = input.previousTutorMessages.at(-1);
+  if (!latestTutorMessage) return null;
+
+  const tutorText = String(latestTutorMessage.content ?? "");
+  const pair = input.realPairFeasibility;
+  let expression = extractExplicitPromptExpression(tutorText);
+  let expectedValue = expression === null ? null : evaluateNumericExpression(expression);
+  let method = "explicit_prompt_expression";
+
+  if (expectedValue === null && pair) {
+    const [first, second] = pair.variables;
+    const firstSecondPattern = new RegExp(
+      "\\(\\s*" + first + "\\s*\\+\\s*" + second + "\\s*\\)\\s*\\^\\s*\\{?2\\}?",
+      "i"
+    );
+    const secondFirstPattern = new RegExp(
+      "\\(\\s*" + second + "\\s*\\+\\s*" + first + "\\s*\\)\\s*\\^\\s*\\{?2\\}?",
+      "i"
+    );
+    if (/\b(?:what|calculate|compute|find|determine)\b/i.test(tutorText) &&
+        (firstSecondPattern.test(tutorText) || secondFirstPattern.test(tutorText))) {
+      expression = formatNumericValue(pair.sumSquares) + " + 2(" +
+        formatNumericValue(pair.product) + ")";
+      expectedValue = pair.sumSquare;
+      method = "verified_sum_of_squares_product_identity";
+    } else if (/\bdiscriminant\b/i.test(tutorText) &&
+        /\b(?:what|calculate|compute|find|determine)\b/i.test(tutorText)) {
+      expression = formatNumericValue(pair.sumSquares) + " - 2(" +
+        formatNumericValue(pair.product) + ")";
+      expectedValue = pair.differenceSquare;
+      method = "verified_quadratic_discriminant_from_pair_constraints";
+    }
+  }
+
+  if (expectedValue === null || !Number.isFinite(expectedValue)) return null;
+  const submittedValue = extractSingleLearnerNumericAnswer(input.latestStudentMessage);
+  if (submittedValue === null || !Number.isFinite(submittedValue)) return null;
+
+  const tolerance = Math.max(1e-9, Math.abs(expectedValue) * 1e-10);
+  return {
+    method,
+    expression,
+    expectedValue,
+    expectedText: formatNumericValue(expectedValue),
+    submittedValue,
+    submittedText: formatNumericValue(submittedValue),
+    isCorrect: Math.abs(submittedValue - expectedValue) <= tolerance
+  };
+}
+export function buildNumericAnswerFeedback(evaluation) {
+  if (evaluation.isCorrect) {
+    return "Correct — " + evaluation.expression + " = " + evaluation.expectedText +
+      ". That answers the calculation Cogniva just asked you to do, so we will move forward instead of repeating it. What would you do next with this result?";
+  }
+
+  return "Not quite. " + evaluation.expression + " evaluates to " + evaluation.expectedText +
+    ", not " + evaluation.submittedText +
+    ". Recheck the arithmetic and order of operations. What result do you get after recalculating?";
+}
+
+export function buildRealPairInconsistencyResponse(pair, answerEvaluation = null) {
+  const first = pair.variables[0];
+  const second = pair.variables[1];
+  const sumSquares = formatNumericValue(pair.sumSquares);
+  const product = formatNumericValue(pair.product);
+  let opening = "";
+
+  if (answerEvaluation) {
+    opening = (answerEvaluation.isCorrect
+      ? "Your answer is correct: "
+      : "The requested calculation evaluates to " + answerEvaluation.expectedText +
+        ", rather than " + answerEvaluation.submittedText + ". ") +
+      answerEvaluation.expression + " = " + answerEvaluation.expectedText + ". ";
+  }
+
+  if (pair.differenceSquare < 0) {
+    return opening +
+      "There is an important consistency check: the equations require (" + first + " - " + second +
+      ")^2 = " + sumSquares + " - 2(" + product + ") = " +
+      formatNumericValue(pair.differenceSquare) +
+      ". A square of a real number cannot be negative, so no real values satisfy both equations. Could one of the values in the original question be a typo?";
+  }
+
+  if (pair.impossibleReason === "negative_product_incompatible_with_nonnegative_magnitudes") {
+    return opening +
+      "The two quantities are force magnitudes, so both must be nonnegative. But their product is " +
+      product + ", which is negative. No pair of nonnegative force magnitudes can satisfy both equations. Could one of the stated values be a typo?";
+  }
+
+  return opening +
+    "For any two real values, the sum of their squares must be at least twice the absolute value of their product. The given equations violate that condition, so no real pair satisfies them. Could one of the values in the original question be a typo?";
+}
+
 export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   const safeMessages = Array.isArray(messages) ? messages : [];
   let latestStudentIndex = -1;
@@ -338,6 +571,14 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
     ? unresolvedClaims.values().next().value
     : null;
 
+  const realPairFeasibility = findRealPairFeasibility(safeMessages);
+  const realFeasibilityQuestion = isRealFeasibilityQuestion(latestStudentMessage);
+  const numericAnswerEvaluation = resolveNumericAnswerEvaluation({
+    previousTutorMessages,
+    latestStudentMessage,
+    latestSubmissionType,
+    realPairFeasibility
+  });
   const learnerNumericMismatches = findIncorrectNumericClaims(latestStudentMessage);
   const learnerProposedValues = extractLearnerProposedValues(latestStudentMessage);
   for (const mismatch of learnerNumericMismatches) {
@@ -387,6 +628,9 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
     learnerValueMatches,
     learnerValueDiffers,
     correctionRequired,
+    realPairFeasibility,
+    realFeasibilityQuestion,
+    numericAnswerEvaluation,
     repeatedQuestionCount,
     previousTutorMessageCount: previousTutorMessages.length,
     latestSubmissionType: latestSubmissionType ?? "question"
@@ -425,6 +669,20 @@ export function buildAdaptiveTutorInstructions(analysis) {
   if (analysis.repeatedQuestionCount >= 2) {
     instructions.push(
       "The recent tutor history contains a repeated question. Do not ask it again. Explicitly change approach: explain the operation, demonstrate a smaller example, or give a worked micro-step before asking a new question."
+    );
+  }
+
+  if (analysis.numericAnswerEvaluation) {
+    const evaluation = analysis.numericAnswerEvaluation;
+    instructions.push(
+      "A bounded numeric-answer check compared the learner's single-number attempt with the explicit target in the immediately preceding tutor question. The expected value is " +
+      evaluation.expectedText + " from " + evaluation.expression + ". Acknowledge the verified result, do not repeat the answered calculation, and do not claim mastery."
+    );
+  }
+
+  if (analysis.realPairFeasibility && !analysis.realPairFeasibility.possible) {
+    instructions.push(
+      "The available conversation contains a supported pair of constraints that is inconsistent with real values. Explain only the derived contradiction shown by the bounded consistency check; do not invent a solution or generalize this check to unsupported equations."
     );
   }
 

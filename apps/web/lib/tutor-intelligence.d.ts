@@ -15,6 +15,29 @@ export type NumericClaimMismatch = {
   isCorrect: boolean;
 };
 
+export type RealPairFeasibility = {
+  variables: [string, string];
+  sumSquares: number;
+  product: number;
+  sumSquare: number;
+  differenceSquare: number;
+  hasRealPair: boolean;
+  hasNonnegativePair: boolean;
+  forceMagnitudeContext: boolean;
+  possible: boolean;
+  impossibleReason: string | null;
+};
+
+export type NumericAnswerEvaluation = {
+  method: string;
+  expression: string;
+  expectedValue: number;
+  expectedText: string;
+  submittedValue: number;
+  submittedText: string;
+  isCorrect: boolean;
+};
+
 export type TutorTurnAnalysis = {
   learnerIntent: "correction_challenge" | "direct_answer_request" | "work_attempt" | "clarification" | "follow_up";
   latestStudentMessage: string;
@@ -24,6 +47,9 @@ export type TutorTurnAnalysis = {
   learnerValueMatches: boolean;
   learnerValueDiffers: boolean;
   correctionRequired: boolean;
+  realPairFeasibility: RealPairFeasibility | null;
+  realFeasibilityQuestion: boolean;
+  numericAnswerEvaluation: NumericAnswerEvaluation | null;
   repeatedQuestionCount: number;
   previousTutorMessageCount: number;
   latestSubmissionType: string;
@@ -43,3 +69,8 @@ export function buildVerifiedCorrectionResponse(input: {
   contextText: string;
 }): string;
 export function buildNumericOutputCorrectionResponse(claim: NumericClaimMismatch): string;
+export function buildNumericAnswerFeedback(evaluation: NumericAnswerEvaluation): string;
+export function buildRealPairInconsistencyResponse(
+  pair: RealPairFeasibility,
+  answerEvaluation?: NumericAnswerEvaluation | null
+): string;
