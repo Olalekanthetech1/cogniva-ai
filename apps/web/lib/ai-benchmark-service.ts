@@ -297,8 +297,7 @@ export async function getAiBenchmarkSnapshot(runId: string, reviewerId: string) 
   ).length;
   const identitiesRevealed =
     run.status !== "running" &&
-    succeeded.length > 0 &&
-    reviewedCount === succeeded.length;
+    (succeeded.length === 0 || reviewedCount === succeeded.length);
 
   const resultCards = results.map((result) => {
     const review = reviewsByResult.get(result.id);
