@@ -19,9 +19,9 @@ The adaptive instructions are derived from the current conversation. They do not
 
 A bounded arithmetic parser checks explicit numeric equalities and approximations that it can safely interpret. Supported forms include basic arithmetic, parentheses, common multiplication symbols and juxtaposition, powers, square roots, and trigonometric functions with an explicit degree symbol.
 
-The parser does not use eval or execute learner text. It enforces expression length, token count, and numeric bounds. It applies precision-aware rounding tolerance.
+The parser does not use eval or execute learner text. It enforces expression length, token count, and numeric bounds. It evaluates a complete supported expression, or a complete expression after a small set of explicit labels; it does not salvage a parseable suffix from arbitrary prose. Results are compared after rounding to the precision stated in the numeric claim. Units and physical-model validity are outside this arithmetic check.
 
-When it detects an incorrect numeric claim in a tutor response, Cogniva replaces that response with a correction based on the computed value before saving it. When a learner challenges an earlier claim, Cogniva independently checks whether the tutor or learner is correct: it corrects a wrong tutor claim, or explains why a verified tutor result stands when the learner's reported value differs. This check can find an unresolved numeric claim even when later tutor messages repeated the same question. The response metadata records whether the answer came from the configured provider or the deterministic verifier, plus any upstream provider evidence.
+When exactly one explicit numeric mismatch is found in a generated tutor response, Cogniva can replace that response with an arithmetic-only correction. When a learner challenges prior work, the deterministic path is used only if recent tutor history contains exactly one distinct unresolved numeric claim. Ambiguous multi-claim history is left to the configured tutor rather than selecting an arbitrary calculation. Ordinary mentions of an answer, or simply reporting a learner answer, do not by themselves trigger deterministic correction. The response metadata records whether the answer came from the configured provider or the bounded arithmetic checker. A deterministic arithmetic result does not verify units, physical interpretation, or the surrounding explanation.
 
 ## Evidence boundary
 
@@ -31,4 +31,4 @@ No provider routing preference, database schema, mastery status, learner progres
 
 ## Regression coverage
 
-The native Node test suite covers square-root verification, arithmetic and trigonometric parsing, incorrect and correctly rounded claims, a learner correcting an earlier tutor error, explicit worked-answer requests, repeated-question adaptation, learner arithmetic diagnosis, and unsupported expressions.
+The native Node test suite includes regression cases from a real learner session alongside independent arithmetic, trigonometric, precedence, rounding, ambiguity, false-positive challenge, and unsupported-expression cases. These tests exercise the declared grammar; they do not establish general mathematical reasoning capability.
