@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
   check,
-  foreignKey,
   index,
   integer,
   jsonb,
@@ -15,6 +14,7 @@ import {
   varchar
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
+import { aiProvider, aiTaskKey } from "./admin";
 
 const timestampWithTimezone = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
@@ -94,10 +94,10 @@ export const aiBenchmarkResults = pgTable(
       .references(() => aiBenchmarkRuns.id, { onDelete: "cascade" }),
     position: integer("position").notNull(),
     candidateId: varchar("candidate_id", { length: 80 }).notNull(),
-    provider: text("provider").notNull(),
+    provider: aiProvider("provider").notNull(),
     model: varchar("model", { length: 160 }).notNull(),
     blindLabel: varchar("blind_label", { length: 8 }).notNull(),
-    task: text("task").notNull(),
+    task: aiTaskKey("task").notNull(),
     caseId: varchar("case_id", { length: 100 }).notNull(),
     caseTitle: text("case_title").notNull(),
     systemPrompt: text("system_prompt").notNull(),
