@@ -100,6 +100,8 @@ This slice extends the deployed `/admin` control centre. It stores routing prefe
 
 ## Phase 4 — Guided learning and feedback
 
+- [ ] Persist explicitly submitted learner attempts atomically with their student messages; distinguish attempts from follow-up questions.
+- [ ] Expose recorded attempt history and evaluation status without implying correctness or mastery before a supported verifier exists.
 - [ ] Persist student attempts before evaluation.
 - [ ] Add constructive error classification and correction guidance.
 - [ ] Add supported answer checking with explicit verification provenance.
