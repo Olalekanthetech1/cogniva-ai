@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import {
   adminAuditEvents,
   aiBenchmarkResults,
@@ -75,7 +75,7 @@ export async function createAiBenchmarkRun(adminUserId: string) {
     shuffledCandidates.map((candidate, index) => [
       candidate.id,
       String.fromCharCode(65 + index)
-    ])
+    ] as const)
   );
 
   const allCases = [
