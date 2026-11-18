@@ -303,10 +303,6 @@ function normalizePairVariable(value) {
     .replace(/_\{?(\d+)\}?/g, "_$1")
     .toLowerCase();
 }
-function escapeRegExp(value) {
-  // Variable names are constrained to letters, digits, and underscores.
-  return String(value);
-}
 function formatNumericValue(value) {
   if (Number.isInteger(value)) return String(value);
   return Number(value.toPrecision(12)).toString();
