@@ -41,6 +41,9 @@ jobs:
             pnpm install --no-frozen-lockfile
           fi
 
+      - name: Tutor intelligence regression tests
+        run: pnpm test:tutor-intelligence
+
       - name: Lint
         run: pnpm lint
 

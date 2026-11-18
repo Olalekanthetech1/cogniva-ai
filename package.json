@@ -17,6 +17,7 @@
     "check": "pnpm lint && pnpm typecheck",
     "db:generate": "pnpm --filter @cogniva/database generate",
     "db:migrate": "pnpm --filter @cogniva/database migrate",
-    "db:studio": "pnpm --filter @cogniva/database studio"
+    "db:studio": "pnpm --filter @cogniva/database studio",
+    "test:tutor-intelligence": "node --test apps/web/lib/tutor-intelligence.test.mjs"
   }
 }
