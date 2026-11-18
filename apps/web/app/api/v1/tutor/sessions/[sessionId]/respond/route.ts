@@ -88,7 +88,7 @@ function buildSystemPrompt(): string {
 function buildConversationPrompt(input: {
   intent: string;
   initialPrompt: string;
-  latestSubmissionType: "attempt" | "question" | "retry";
+  latestSubmissionType: "attempt" | "question" | "initial_prompt";
   messages: Array<{ role: "student" | "tutor"; content: string }>;
 }): string {
   let remaining = MAX_CONTEXT_CHARACTERS;
@@ -109,7 +109,9 @@ function buildConversationPrompt(input: {
     `Latest learner turn type: ${input.latestSubmissionType}`,
     input.latestSubmissionType === "attempt"
       ? "The learner has explicitly submitted an attempt. Respond constructively to the reasoning or answer, but do not claim independent verification or mastery."
-      : "The learner has submitted a follow-up question or requested a retry. Continue the Socratic dialogue without treating it as a formal assessment.",
+      : input.latestSubmissionType === "initial_prompt"
+        ? "This is the learner's initial learning prompt, not a submitted assessment attempt. Begin the Socratic dialogue without claiming that the learner has demonstrated mastery."
+        : "The learner has submitted a follow-up question. Continue the Socratic dialogue without treating it as a formal assessment.",
     "Recent conversation, in chronological order:",
     ...selected,
     "Now respond to the latest learner message. Do not repeat the conversation or provide a complete worked solution."
@@ -268,7 +270,7 @@ export async function POST(
     claimedVersion: number;
     responseSequenceNumber: number;
     messages: Array<{ role: "student" | "tutor"; content: string }>;
-    latestSubmissionType: "attempt" | "question" | "retry";
+    latestSubmissionType: "attempt" | "question" | "initial_prompt";
     attemptNumber: number | null;
   };
 
@@ -308,6 +310,7 @@ export async function POST(
 
       const [lastMessage] = await tx
         .select({
+          id: tutorMessages.id,
           role: tutorMessages.role,
           sequenceNumber: tutorMessages.sequenceNumber
         })
@@ -318,6 +321,30 @@ export async function POST(
 
       if (!lastMessage) return { kind: "empty_session" as const };
 
+      let pendingSubmissionType: "attempt" | "question" | "initial_prompt" =
+        lastMessage.sequenceNumber === 1 ? "initial_prompt" : "question";
+      let attemptNumber: number | null = null;
+
+      if (!learnerMessage) {
+        const [existingAttempt] = await tx
+          .select({
+            attemptNumber: tutorAttempts.attemptNumber
+          })
+          .from(tutorAttempts)
+          .where(
+            and(
+              eq(tutorAttempts.sessionId, session.id),
+              eq(tutorAttempts.messageId, lastMessage.id)
+            )
+          )
+          .limit(1);
+
+        if (existingAttempt) {
+          pendingSubmissionType = "attempt";
+          attemptNumber = existingAttempt.attemptNumber;
+        }
+      }
+
       if (learnerMessage && lastMessage.role !== "tutor") {
         return { kind: "unanswered_turn" as const };
       }
@@ -327,7 +354,6 @@ export async function POST(
       }
 
       let nextSequenceNumber = lastMessage.sequenceNumber + 1;
-      let attemptNumber: number | null = null;
       if (learnerMessage) {
         const [savedLearnerMessage] = await tx
           .insert(tutorMessages)
@@ -398,7 +424,7 @@ export async function POST(
         previousState: session.state,
         claimedVersion: updated.version,
         responseSequenceNumber: nextSequenceNumber,
-        latestSubmissionType: learnerMessage ? submissionType : "retry",
+        latestSubmissionType: learnerMessage ? submissionType : pendingSubmissionType,
         attemptNumber,
         messages: recentMessages.reverse()
       };
