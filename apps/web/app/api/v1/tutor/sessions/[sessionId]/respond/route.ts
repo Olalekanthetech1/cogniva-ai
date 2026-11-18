@@ -690,6 +690,7 @@ export async function POST(
   }
 
   const singleLearnerArithmeticMismatch =
+    generated.resolvedModel === "bounded-arithmetic-attempt-check-v1" &&
     turnAnalysis.learnerErrorAnalysis?.classification === "arithmetic_result_mismatch"
       ? turnAnalysis.learnerErrorAnalysis.mismatches[0]
       : null;
@@ -755,7 +756,13 @@ export async function POST(
                     classification: turnAnalysis.learnerErrorAnalysis.classification,
                     method: turnAnalysis.learnerErrorAnalysis.method,
                     mismatchCount: turnAnalysis.learnerErrorAnalysis.mismatchCount,
-                    omittedMismatchCount: turnAnalysis.learnerErrorAnalysis.omittedMismatchCount
+                    omittedMismatchCount: turnAnalysis.learnerErrorAnalysis.omittedMismatchCount,
+                    evidence: turnAnalysis.learnerErrorAnalysis.mismatches.map((mismatch) => ({
+                      expression: mismatch.expression,
+                      operator: mismatch.operator,
+                      submittedValue: mismatch.claimedText,
+                      computedValue: mismatch.expectedText
+                    }))
                   }
                 : null
             }
