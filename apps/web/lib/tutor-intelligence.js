@@ -177,7 +177,22 @@ export function findIncorrectNumericClaims(text) {
     const expression = match[1].trim().replace(/^[\s:;,]+/, "");
     const operator = match[2];
     const claimedText = match[3];
-    const computedValue = evaluateNumericExpression(expression);
+    let verifiedExpression = expression;
+    let computedValue = evaluateNumericExpression(verifiedExpression);
+    if (computedValue === null) {
+      // Tutor prose often prefixes equations with labels such as "Hint:".
+      // Try complete suffixes only; never evaluate arbitrary natural language.
+      for (let start = 1; start < expression.length; start += 1) {
+        const candidate = expression.slice(start).trim();
+        if (!/^[\d√(+\-]|^(sqrt|sin|cos|tan)\b/i.test(candidate)) continue;
+        const candidateValue = evaluateNumericExpression(candidate);
+        if (candidateValue !== null) {
+          verifiedExpression = candidate;
+          computedValue = candidateValue;
+          break;
+        }
+      }
+    }
     if (computedValue === null) continue;
 
     const claimedValue = normalizeNumber(claimedText);
@@ -188,12 +203,12 @@ export function findIncorrectNumericClaims(text) {
     const difference = Math.abs(computedValue - claimedValue);
     if (difference <= tolerance + Math.abs(computedValue) * 1e-12) continue;
 
-    const key = expression + operator + claimedText;
+    const key = verifiedExpression + operator + claimedText;
     if (seen.has(key)) continue;
     seen.add(key);
 
     findings.push({
-      expression,
+      expression: verifiedExpression,
       operator,
       claimedText,
       claimedValue,
