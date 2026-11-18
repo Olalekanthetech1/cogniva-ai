@@ -32,6 +32,13 @@ type BenchmarkResult = {
   myNotes: string | null;
   provider?: string;
   model?: string;
+  pricing?: {
+    inputUsdPerMillion: string;
+    outputUsdPerMillion: string;
+    reviewedAt: string;
+    effectiveThrough: string | null;
+    source: string;
+  };
 };
 
 type BenchmarkSnapshot = {
@@ -168,6 +175,80 @@ function ReviewForm({
         <p className="benchmark-review-saved">Review saved. Provider identity is now revealed after all successful outputs have been scored.</p>
       )}
     </div>
+  );
+}
+
+
+type ProviderTaskSummary = {
+  provider: string;
+  model: string;
+  task: string;
+  total: number;
+  succeeded: number;
+  failed: number;
+  scoreTotal: number;
+  scoreCount: number;
+  latencyTotal: number;
+  latencyCount: number;
+  costTotal: number;
+  costCount: number;
+  formatPassed: number;
+  formatChecked: number;
+};
+
+function buildProviderTaskSummaries(results: BenchmarkResult[]): ProviderTaskSummary[] {
+  const groups = new Map<string, ProviderTaskSummary>();
+  for (const result of results) {
+    if (!result.provider || !result.model) continue;
+    const key = `${result.provider}|${result.model}|${result.task}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        provider: result.provider,
+        model: result.model,
+        task: result.task,
+        total: 0,
+        succeeded: 0,
+        failed: 0,
+        scoreTotal: 0,
+        scoreCount: 0,
+        latencyTotal: 0,
+        latencyCount: 0,
+        costTotal: 0,
+        costCount: 0,
+        formatPassed: 0,
+        formatChecked: 0
+      };
+      groups.set(key, group);
+    }
+    group.total += 1;
+    if (result.status === "failed") group.failed += 1;
+    if (result.status === "succeeded") {
+      group.succeeded += 1;
+      if (result.myScores) {
+        for (const value of Object.values(result.myScores)) {
+          if (Number.isInteger(value) && value >= 1 && value <= 5) {
+            group.scoreTotal += value;
+            group.scoreCount += 1;
+          }
+        }
+      }
+      if (result.latencyMs !== null) {
+        group.latencyTotal += result.latencyMs;
+        group.latencyCount += 1;
+      }
+      if (result.estimatedCostUsd !== null) {
+        group.costTotal += Number(result.estimatedCostUsd);
+        group.costCount += 1;
+      }
+      if (result.mechanicalCheck) {
+        group.formatChecked += 1;
+        if (result.mechanicalCheck.valid) group.formatPassed += 1;
+      }
+    }
+  }
+  return [...groups.values()].sort((a, b) =>
+    a.provider.localeCompare(b.provider) || a.task.localeCompare(b.task)
   );
 }
 
@@ -404,6 +485,52 @@ export function AiBenchmarkWorkspace() {
           {error ? <p className="admin-form-feedback is-error" role="alert">{error}</p> : null}
         </div>
       </section>
+
+
+      {snapshot && run?.identitiesRevealed ? (
+        <section className="admin-section" aria-labelledby="benchmark-summary-title">
+          <div className="admin-section-heading">
+            <h2 id="benchmark-summary-title">Provider comparison summary</h2>
+            <span>Task-specific results · equal-weight human rubric mean</span>
+          </div>
+          <div className="benchmark-summary-note">
+            This first suite uses three cases per task and is directional evidence, not a statistically conclusive ranking.
+            A stronger production decision should repeat cases with multiple runs and reviewers.
+          </div>
+          <div className="benchmark-summary-scroll">
+            <table className="benchmark-summary-table">
+              <thead>
+                <tr>
+                  <th>Provider / model</th>
+                  <th>Task</th>
+                  <th>Human score / 5</th>
+                  <th>Average latency</th>
+                  <th>Estimated cost*</th>
+                  <th>Format checks</th>
+                  <th>Failures</th>
+                </tr>
+              </thead>
+              <tbody>
+                {buildProviderTaskSummaries(snapshot.results).map((item) => (
+                  <tr key={`${item.provider}-${item.model}-${item.task}`}>
+                    <td><strong>{item.provider}</strong><small>{item.model}</small></td>
+                    <td>{item.task === "learning_plan_generation" ? "Learning plan" : "Socratic tutor"}</td>
+                    <td>{item.scoreCount ? `${(item.scoreTotal / item.scoreCount).toFixed(2)} / 5` : "Unavailable"}</td>
+                    <td>{item.latencyCount ? `${Math.round(item.latencyTotal / item.latencyCount)} ms` : "Unavailable"}</td>
+                    <td>{item.costCount === item.succeeded && item.succeeded > 0 ? formatCost(item.costTotal.toFixed(10)) : "Incomplete"}</td>
+                    <td>{item.formatChecked ? `${item.formatPassed} / ${item.formatChecked}` : "Unavailable"}</td>
+                    <td>{item.failed} / {item.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="benchmark-summary-footnote">
+            *Cost is estimated only for successful requests with provider-reported token usage, using the retained price snapshot.
+            It excludes any unreported billing components and is not an invoice.
+          </p>
+        </section>
+      ) : null}
 
       {snapshot && snapshot.results.length > 0 ? (
         <section className="admin-section" aria-labelledby="benchmark-results-title">
