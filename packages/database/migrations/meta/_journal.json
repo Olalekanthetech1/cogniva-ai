@@ -36,6 +36,13 @@
       "when": 1794985287617,
       "tag": "0004_classy_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794995354552,
+      "tag": "0005_faithful_zodiak",
+      "breakpoints": true
     }
   ]
 }
