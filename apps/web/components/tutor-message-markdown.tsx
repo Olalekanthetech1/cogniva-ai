@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, type ComponentProps } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
@@ -15,7 +15,9 @@ const katexOptions = {
   maxSize: 20,
   output: "htmlAndMathml" as const
 };
-const rehypePlugins = [[rehypeKatex, katexOptions]] as const;
+const rehypePlugins: ComponentProps<typeof ReactMarkdown>["rehypePlugins"] = [
+  [rehypeKatex, katexOptions]
+];
 
 const markdownComponents: Components = {
   a({ href, children }) {
