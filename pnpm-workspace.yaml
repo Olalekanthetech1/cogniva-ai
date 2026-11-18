@@ -7,3 +7,12 @@ packages:
 # esbuild is required by the Next.js/SWC tooling and is the only approved build.
 allowBuilds:
   esbuild: true
+
+# Use a patched KaTeX version while upstream plugins update their peer ranges.
+packageExtensions:
+  micromark-extension-math@3.1.0:
+    peerDependencies:
+      katex: ">=0.18.2"
+  rehype-katex@7.0.1:
+    peerDependencies:
+      katex: ">=0.18.2"

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { TutorMessageMarkdown } from "./tutor-message-markdown";
 
 type TutorMessage = {
   id: string;
@@ -285,7 +286,7 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
             <p className="tutor-message-author">
               {message.role === "student" ? "You" : "Cogniva"}
             </p>
-            <p className="tutor-message-content">{message.content}</p>
+            <TutorMessageMarkdown content={message.content} />
             {attempt && (
               <p className="tutor-attempt-status">
                 Attempt #{attempt.attemptNumber} · {formatAttemptStatus(attempt.evaluationStatus)}

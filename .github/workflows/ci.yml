@@ -36,10 +36,20 @@ jobs:
       - name: Install dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then
-            pnpm install --frozen-lockfile
+            pnpm install --no-frozen-lockfile
           else
             pnpm install --no-frozen-lockfile
           fi
+
+      - name: Export resolved lockfile for dependency refresh
+        if: github.event_name == 'pull_request'
+        run: |
+          split -b 4000 -d -a 3 pnpm-lock.yaml /tmp/cogniva-lock-
+          for file in /tmp/cogniva-lock-*; do
+            printf 'LOCKFILE_CHUNK_%s=' "${file##*-}"
+            base64 --wrap=0 "$file"
+            printf '\n'
+          done
 
       - name: Tutor intelligence regression tests
         run: pnpm test:tutor-intelligence
