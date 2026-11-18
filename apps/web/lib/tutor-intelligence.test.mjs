@@ -36,7 +36,7 @@ test("does not flag a correctly rounded square-root result", () => {
   assert.deepEqual(findIncorrectNumericClaims("√61,525.12 ≈ 248.04."), []);
 });
 
-test("detects a learner correction and confirms the matching value", () => {
+test("detects a learner challenge to a correct tutor calculation", () => {
   const analysis = analyzeTutorTurn({
     latestSubmissionType: "attempt",
     messages: [
@@ -55,7 +55,7 @@ test("detects a learner correction and confirms the matching value", () => {
   assert.equal(analysis.latestTutorClaim.expectedText, "248.04");
 });
 
-test("produces an explicit correction when the learner's value is verified", () => {
+test("explains why the tutor's verified value stands when the learner reports a different value", () => {
   const [claim] = findNumericClaims("√61,525.12 ≈ 248.04");
   const response = buildVerifiedCorrectionResponse({
     claim,
