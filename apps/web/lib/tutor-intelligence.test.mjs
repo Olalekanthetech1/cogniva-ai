@@ -69,11 +69,11 @@ test("explains why the tutor's verified value stands when the learner reports a 
     contextText: "The forces are measured in N."
   });
 
-  assert.match(response, /previous hint/i);
+  assert.match(response, /previous tutor value|previous numeric claim/i);
   assert.match(response, /248\.04/);
   assert.match(response, /247\.03/);
-  assert.match(response, /was correct/i);
-  assert.match(response, /show this calculation step by step/i);
+  assert.match(response, /agrees at the displayed precision/i);
+  assert.match(response, /show the arithmetic step by step/i);
   assert.doesNotMatch(response, /square-root input/i);
   assert.equal((response.match(/\?/g) ?? []).length, 1);
   assert.ok(response.endsWith("?"));
@@ -88,7 +88,7 @@ test("corrects an actually incorrect prior tutor calculation when the learner su
     contextText: "The forces are measured in N."
   });
 
-  assert.match(response, /previous hint/i);
+  assert.match(response, /previous tutor value|previous numeric claim/i);
   assert.match(response, /248\.04/);
   assert.match(response, /not 247\.03/);
   assert.equal((response.match(/\?/g) ?? []).length, 1);
