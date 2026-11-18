@@ -393,6 +393,10 @@ export const tutorSessions = pgTable(
       table.state,
       table.updatedAt
     ),
+    uniqueIndex("tutor_sessions_id_student_unique").on(
+      table.id,
+      table.studentId
+    ),
     index("tutor_sessions_plan_revision_idx").on(table.learningPlanRevisionId),
     index("tutor_sessions_plan_unit_idx").on(table.learningPlanUnitId),
     check(
@@ -428,6 +432,10 @@ export const tutorMessages = pgTable(
       table.sessionId,
       table.sequenceNumber
     ),
+    uniqueIndex("tutor_messages_session_id_unique").on(
+      table.sessionId,
+      table.id
+    ),
     index("tutor_messages_session_created_idx").on(
       table.sessionId,
       table.createdAt
@@ -457,15 +465,9 @@ export const tutorAttempts = pgTable(
   "tutor_attempts",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    sessionId: uuid("session_id")
-      .notNull()
-      .references(() => tutorSessions.id, { onDelete: "cascade" }),
-    studentId: text("student_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    messageId: uuid("message_id")
-      .notNull()
-      .references(() => tutorMessages.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id").notNull(),
+    studentId: text("student_id").notNull(),
+    messageId: uuid("message_id").notNull(),
     attemptNumber: integer("attempt_number").notNull(),
     evaluationStatus: tutorAttemptEvaluationStatus("evaluation_status")
       .notNull()
@@ -474,6 +476,16 @@ export const tutorAttempts = pgTable(
     evaluatedAt: timestampWithTimezone("evaluated_at")
   },
   (table) => [
+    foreignKey({
+      name: "tutor_attempts_session_student_fk",
+      columns: [table.sessionId, table.studentId],
+      foreignColumns: [tutorSessions.id, tutorSessions.studentId]
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "tutor_attempts_session_message_fk",
+      columns: [table.sessionId, table.messageId],
+      foreignColumns: [tutorMessages.sessionId, tutorMessages.id]
+    }).onDelete("cascade"),
     uniqueIndex("tutor_attempts_message_unique").on(table.messageId),
     uniqueIndex("tutor_attempts_session_number_unique").on(
       table.sessionId,
