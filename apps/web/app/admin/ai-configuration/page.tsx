@@ -46,7 +46,7 @@ export default async function AdminAiConfigurationPage() {
     );
   }
 
-  let configuration = null;
+  let configuration: Awaited<ReturnType<typeof getAdminAiConfiguration>> | null = null;
   try {
     configuration = await getAdminAiConfiguration();
   } catch {
