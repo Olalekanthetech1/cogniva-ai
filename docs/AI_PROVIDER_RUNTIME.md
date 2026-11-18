@@ -1,6 +1,6 @@
 # Cogniva AI provider runtime foundation
 
-**Status:** Provider-neutral connection-test adapters are implemented. The versioned benchmark protocol and fixed evaluation cases are defined, but benchmark execution, persisted results, and learner-facing AI are not active.
+**Status:** Provider-neutral connection-test adapters and the administrator-only persisted benchmark runner are implemented on PR #14. The runner is not yet deployed because its Neon schema migration must be generated, reviewed, and applied first. No provider benchmark has been run and learner-facing AI is not active.
 
 ## Supported providers
 
@@ -62,10 +62,10 @@ This foundation does **not**:
 - create or continue tutoring sessions;
 - stream model responses to students;
 - select a preferred provider automatically;
-- persist comparative benchmark runs or human reviews;
-- present benchmark results or activate a provider.
+- serve benchmark-generated outputs to learners;
+- activate any provider automatically or route learner requests.
 
-The Admin page labels learner runtime as inactive. Saved task preferences remain configuration data only.
+The Admin page labels learner runtime as inactive. Saved task preferences remain configuration data only. The benchmark workspace is a separate administrator-only tool: it records versioned run evidence and blinded human reviews, and does not serve learner requests. Deployment is gated on the reviewed Neon migration and a separate Render deploy.
 
 ## Benchmark gate
 
