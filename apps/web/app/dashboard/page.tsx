@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SignOutButton } from "@/components/sign-out-button";
+import { TutorStartForm } from "@/components/tutor-start-form";
 import { WorkspaceNavigation } from "@/components/workspace-navigation";
 import { requireCompletedStudent } from "@/lib/workspace";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const { student, profile } = await requireCompletedStudent();
-  const firstName = student.name?.trim().split(/\s+/)[0] || "learner";
+  const firstName = student.name?.trim().split(/\\s+/)[0] || "learner";
   const institution = profile.institutionName ?? profile.selfReportedInstitution;
   const institutionIsSelfReported = Boolean(profile.selfReportedInstitution);
 
@@ -45,19 +46,7 @@ export default async function DashboardPage() {
           <p className="workspace-section-kicker">YOUR LEARNING STARTS HERE</p>
           <h2 id="learning-entry-title">What would you like to learn?</h2>
           <p>Ask a question, work through a problem or explore a topic.</p>
-          <div className="workspace-composer" aria-describedby="tutor-availability">
-            <span aria-hidden="true">◌</span>
-            <input
-              aria-label="Ask your AI tutor"
-              disabled
-              placeholder="The guided AI tutor is being prepared"
-              type="text"
-            />
-            <button disabled type="button">Coming soon</button>
-          </div>
-          <p className="workspace-capability-note" id="tutor-availability">
-            The tutoring session engine is not live yet. Your learning prompt will become available when session creation and persistence are ready.
-          </p>
+          <TutorStartForm compact />
           <Link className="workspace-browse-link" href="/learn">
             Browse available learning areas <span aria-hidden="true">→</span>
           </Link>
