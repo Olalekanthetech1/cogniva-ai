@@ -1,10 +1,11 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
   aiTaskRoutes,
   tutorMessages,
   tutorSessions
 } from "@cogniva/database";
 import { getSignedInStudent, getStudentDatabase, isUuid } from "@/lib/student-data";
+import type { AiProviderId } from "@/lib/admin-ai-config";
 import {
   AiProviderRuntimeError,
   generateTextWithProvider
@@ -174,9 +175,41 @@ export async function POST(
   request: Request,
   { params }: RouteContext
 ): Promise<Response> {
-  const student = await getSignedInStudent();
-  if (!student) {
-    return errorResponse("UNAUTHENTICATED", "Sign in to use the AI tutor.", 401);
+  let student: NonNullable<Awaited<ReturnType<typeof getSignedInStudent>>>;
+  let db: ReturnType<typeof getStudentDatabase>;
+  let route: { provider: AiProviderId; model: string } | undefined;
+
+  try {
+    const signedInStudent = await getSignedInStudent();
+    if (!signedInStudent) {
+      return errorResponse("UNAUTHENTICATED", "Sign in to use the AI tutor.", 401);
+    }
+    student = signedInStudent;
+    db = getStudentDatabase();
+
+    const [configuredRoute] = await db
+      .select({
+        provider: aiTaskRoutes.provider,
+        model: aiTaskRoutes.model
+      })
+      .from(aiTaskRoutes)
+      .where(eq(aiTaskRoutes.task, "socratic_tutor_response"))
+      .limit(1);
+    route = configuredRoute;
+  } catch {
+    return errorResponse(
+      "TUTOR_DATA_UNAVAILABLE",
+      "Tutor sessions are temporarily unavailable. Please try again.",
+      503
+    );
+  }
+
+  if (!route) {
+    return errorResponse(
+      "AI_ROUTE_NOT_CONFIGURED",
+      "The AI tutor has not been configured by a Cogniva administrator yet.",
+      503
+    );
   }
 
   const { sessionId } = await params;
@@ -212,25 +245,6 @@ export async function POST(
         400
       );
     }
-  }
-
-  const db = getStudentDatabase();
-
-  const [route] = await db
-    .select({
-      provider: aiTaskRoutes.provider,
-      model: aiTaskRoutes.model
-    })
-    .from(aiTaskRoutes)
-    .where(eq(aiTaskRoutes.task, "socratic_tutor_response"))
-    .limit(1);
-
-  if (!route) {
-    return errorResponse(
-      "AI_ROUTE_NOT_CONFIGURED",
-      "The AI tutor has not been configured by a Cogniva administrator yet.",
-      503
-    );
   }
 
   let claim: {
@@ -323,7 +337,7 @@ export async function POST(
         )
         .returning({ version: tutorSessions.version });
 
-      if (!updated) return { kind: "busy" as const };
+      if (!updated) throw new Error("Tutor session changed before generation could start.");
 
       const recentMessages = await tx
         .select({
