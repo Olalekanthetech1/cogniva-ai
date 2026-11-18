@@ -525,7 +525,7 @@ export async function POST(
         systemPrompt: [
           buildSystemPrompt(),
           buildAdaptiveTutorInstructions(turnAnalysis)
-        ].join("\\n\\n"),
+        ].join("\n\n"),
         userPrompt: buildConversationPrompt({
           intent: claim.intent,
           initialPrompt: claim.initialPrompt,
