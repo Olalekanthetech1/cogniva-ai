@@ -451,23 +451,21 @@ function resolveNumericAnswerEvaluation(input) {
   if (expectedValue === null && pair) {
     const [first, second] = pair.variables;
     const firstSecondPattern = new RegExp(
-      "\\\\(\\\\s*" + escapeRegExp(first) + "\\\\s*\\\\+\\\\s*" +
-      escapeRegExp(second) + "\\\\s*\\\\)\\\\s*\\\\^\\\\s*\\\\{?2\\\\}?",
+      "\\(\\s*" + first + "\\s*\\+\\s*" + second + "\\s*\\)\\s*\\^\\s*\\{?2\\}?",
       "i"
     );
     const secondFirstPattern = new RegExp(
-      "\\\\(\\\\s*" + escapeRegExp(second) + "\\\\s*\\\\+\\\\s*" +
-      escapeRegExp(first) + "\\\\s*\\\\)\\\\s*\\\\^\\\\s*\\\\{?2\\\\}?",
+      "\\(\\s*" + second + "\\s*\\+\\s*" + first + "\\s*\\)\\s*\\^\\s*\\{?2\\}?",
       "i"
     );
-    if (/\\b(?:what|calculate|compute|find|determine)\\b/i.test(tutorText) &&
+    if (/\b(?:what|calculate|compute|find|determine)\b/i.test(tutorText) &&
         (firstSecondPattern.test(tutorText) || secondFirstPattern.test(tutorText))) {
       expression = formatNumericValue(pair.sumSquares) + " + 2(" +
         formatNumericValue(pair.product) + ")";
       expectedValue = pair.sumSquare;
       method = "verified_sum_of_squares_product_identity";
-    } else if (/\\bdiscriminant\\b/i.test(tutorText) &&
-        /\\b(?:what|calculate|compute|find|determine)\\b/i.test(tutorText)) {
+    } else if (/\bdiscriminant\b/i.test(tutorText) &&
+        /\b(?:what|calculate|compute|find|determine)\b/i.test(tutorText)) {
       expression = formatNumericValue(pair.sumSquares) + " - 2(" +
         formatNumericValue(pair.product) + ")";
       expectedValue = pair.differenceSquare;
@@ -490,7 +488,6 @@ function resolveNumericAnswerEvaluation(input) {
     isCorrect: Math.abs(submittedValue - expectedValue) <= tolerance
   };
 }
-
 export function buildNumericAnswerFeedback(evaluation) {
   if (evaluation.isCorrect) {
     return "Correct — " + evaluation.expression + " = " + evaluation.expectedText +
