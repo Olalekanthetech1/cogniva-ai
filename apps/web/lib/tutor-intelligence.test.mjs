@@ -164,7 +164,7 @@ test("does not interpret an ordinary question about the tutor's answer as a corr
   const analysis = analyzeTutorTurn({
     latestSubmissionType: "question",
     messages: [
-      { role: "tutor", content: "The product is 3 * 4 = 12." },
+      { role: "tutor", content: "Result: 3 * 4 = 12." },
       { role: "student", content: "What is your answer?" }
     ]
   });
@@ -177,7 +177,7 @@ test("does not auto-correct when the learner simply reports the same answer", ()
   const analysis = analyzeTutorTurn({
     latestSubmissionType: "attempt",
     messages: [
-      { role: "tutor", content: "The product is 3 * 4 = 12." },
+      { role: "tutor", content: "Result: 3 * 4 = 12." },
       { role: "student", content: "My answer is 12." }
     ]
   });
