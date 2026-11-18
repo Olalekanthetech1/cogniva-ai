@@ -508,12 +508,16 @@ export async function POST(
       upstreamProvider: null,
       upstreamModel: null,
       verification: {
-        status: "previous_tutor_numeric_claim_corrected",
+        status: turnAnalysis.latestTutorClaim.isCorrect
+          ? "previous_tutor_numeric_claim_verified_after_challenge"
+          : "previous_tutor_numeric_claim_corrected",
         method: "bounded_numeric_expression",
         expression: turnAnalysis.latestTutorClaim.expression,
-        incorrectValue: turnAnalysis.latestTutorClaim.claimedText,
+        previousClaimedValue: turnAnalysis.latestTutorClaim.claimedText,
+        previousClaimWasCorrect: turnAnalysis.latestTutorClaim.isCorrect,
         verifiedValue: turnAnalysis.latestTutorClaim.expectedText,
-        learnerValueMatches: turnAnalysis.learnerValueMatches
+        learnerValueMatches: turnAnalysis.learnerValueMatches,
+        learnerValueDiffers: turnAnalysis.learnerValueDiffers
       }
     };
   } else {
