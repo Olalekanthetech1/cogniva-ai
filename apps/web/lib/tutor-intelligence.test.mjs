@@ -1,4 +1,5 @@
 import test from "node:test";
+import { shouldPersistDeterministicAttemptEvaluation } from "./tutor-attempt-evaluation.js";
 import assert from "node:assert/strict";
 import {
   analyzeTutorTurn,
@@ -420,4 +421,92 @@ test("does not evaluate an arbitrary bare number when the tutor did not ask a su
   });
 
   assert.equal(analysis.numericAnswerEvaluation, null);
+});
+
+
+test("persists correctness for deterministic numeric attempts, whether correct or incorrect", () => {
+  for (const isCorrect of [true, false]) {
+    assert.equal(
+      shouldPersistDeterministicAttemptEvaluation({
+        latestSubmissionType: "attempt",
+        responseSource: "deterministic_verifier",
+        evaluation: {
+          method: "explicit_prompt_expression",
+          expectedValue: 238,
+          submittedValue: isCorrect ? 238 : 237,
+          isCorrect
+        }
+      }),
+      true
+    );
+  }
+});
+
+test("does not mark provider feedback as independently evaluated", () => {
+  assert.equal(
+    shouldPersistDeterministicAttemptEvaluation({
+      latestSubmissionType: "attempt",
+      responseSource: "provider",
+      evaluation: {
+        method: "provider_feedback",
+        expectedValue: 238,
+        submittedValue: 237,
+        isCorrect: false
+      }
+    }),
+    false
+  );
+});
+
+test("does not mark follow-up questions as evaluated attempts", () => {
+  assert.equal(
+    shouldPersistDeterministicAttemptEvaluation({
+      latestSubmissionType: "question",
+      responseSource: "deterministic_verifier",
+      evaluation: {
+        method: "explicit_prompt_expression",
+        expectedValue: 238,
+        submittedValue: 238,
+        isCorrect: true
+      }
+    }),
+    false
+  );
+});
+
+test("leaves ambiguous or unsupported attempts unevaluated", () => {
+  assert.equal(
+    shouldPersistDeterministicAttemptEvaluation({
+      latestSubmissionType: "attempt",
+      responseSource: "deterministic_verifier",
+      evaluation: null
+    }),
+    false
+  );
+  assert.equal(
+    shouldPersistDeterministicAttemptEvaluation({
+      latestSubmissionType: "attempt",
+      responseSource: "deterministic_verifier",
+      evaluation: {
+        method: "",
+        expectedValue: 238,
+        submittedValue: 238,
+        isCorrect: true
+      }
+    }),
+    false
+  );
+  assert.equal(
+    shouldPersistDeterministicAttemptEvaluation({
+      latestSubmissionType: "attempt",
+      responseSource: "deterministic_verifier",
+      evaluation: {
+        method: "explicit_prompt_expression",
+        expectedValue: Number.NaN,
+        submittedValue: 238,
+        isCorrect: true
+      }
+    }),
+    false
+  );
 });

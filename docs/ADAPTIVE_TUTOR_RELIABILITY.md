@@ -34,6 +34,8 @@ For that specific constraint form, the verifier derives \((x-y)^2 = A - 2B\) and
 
 The checker fails closed when a required equation is missing, multiple conflicting values are present, the learner submits an ambiguous multi-number response, or the notation is outside the supported form. It does not parse arbitrary symbolic algebra, solve general systems, or grade multi-step working. Its deterministic feedback does not mark an attempt as mastered or change mastery/progress records.
 
+When a supported numeric evaluation is produced for an explicitly submitted attempt, the attempt record transitions from `not_evaluated` to `evaluated` in the same database transaction that saves the deterministic tutor reply. The reply metadata retains the verification method and expected/submitted values. Provider-only feedback, unsupported notation, ambiguous responses, and ordinary follow-up questions do not trigger this transition. `evaluated` means only that this bounded numeric check ran; it does not mean the learner has mastered the concept.
+
 ## Evidence boundary
 
 This is not a general theorem prover, symbolic algebra system, or subject-wide fact checker. It deliberately ignores unsupported notation and expressions it cannot parse. It does not independently verify non-numeric scientific, historical, or factual claims. For those, the adaptive prompt requires the tutor to distinguish supported reasoning from uncertainty rather than claiming verification it has not performed.
