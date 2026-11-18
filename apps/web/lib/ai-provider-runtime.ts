@@ -263,7 +263,7 @@ export async function generateTextWithProvider(
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   const startedAt = Date.now();
 
-  let response: Response;
+  let responseBody: unknown;
 
   try {
     const url =
@@ -305,14 +305,20 @@ export async function generateTextWithProvider(
             stream: false
           };
 
-    response = await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
       cache: "no-store",
       signal: controller.signal
     });
+
+    if (!response.ok) await readProviderError(response);
+
+    responseBody = await response.json();
   } catch (error) {
+    if (error instanceof AiProviderRuntimeError) throw error;
+
     if (controller.signal.aborted) {
       throw new AiProviderRuntimeError(
         "UPSTREAM_TIMEOUT",
@@ -324,23 +330,10 @@ export async function generateTextWithProvider(
     throw new AiProviderRuntimeError(
       "UPSTREAM_UNAVAILABLE",
       502,
-      "Cogniva could not reach the AI provider."
+      "Cogniva could not reach the AI provider or read its response."
     );
   } finally {
     clearTimeout(timeoutId);
-  }
-
-  if (!response.ok) return readProviderError(response);
-
-  let responseBody: unknown;
-  try {
-    responseBody = await response.json();
-  } catch {
-    throw new AiProviderRuntimeError(
-      "INVALID_UPSTREAM_RESPONSE",
-      502,
-      "The AI provider returned an invalid response."
-    );
   }
 
   if (!isObject(responseBody)) {
