@@ -109,12 +109,12 @@ test("rejects lesson sections that are present but out of order", () => {
 
 test("requires two to four list-form learning objectives", () => {
   const oneObjective = validLesson.replace(
-    "- Calculate a derivative using the power rule.\\n",
+    "- Calculate a derivative using the power rule.\n",
     ""
   );
   const fiveObjectives = validLesson.replace(
-    "\\n## Detailed explanation",
-    "\\n- Apply the derivative to a rate-of-change problem.\\n- Interpret the derivative in context.\\n- Check a derivative using a second method.\\n## Detailed explanation"
+    "\n## Detailed explanation",
+    "\n- Apply the derivative to a rate-of-change problem.\n- Interpret the derivative in context.\n- Check a derivative using a second method.\n## Detailed explanation"
   );
 
   assert.match(
