@@ -81,5 +81,6 @@ Do not run migrations against production without reviewing the generated SQL and
 - [Tutor Learning Framework](docs/TUTOR_LEARNING_FRAMEWORK.md)
 - [ZeroMock policy](docs/ZERO_MOCK.md)
 - [Global academic architecture](docs/GLOBAL_ACADEMIC_ARCHITECTURE.md)
+- [Phase 1.1 schema audit and migration plan](docs/PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md)
 - [Mobile and web product experience](docs/PRODUCT_EXPERIENCE.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
