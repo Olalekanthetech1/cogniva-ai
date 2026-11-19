@@ -48,7 +48,7 @@ test("renders inline and display LaTeX as accessible mathematical markup", () =>
   assert.match(html, /class="katex"/);
   assert.match(html, /class="katex-display"/);
   assert.match(html, /mathml/);
-  assert.doesNotMatch(html, /\\$F_1\\^2/);
+  assert.doesNotMatch(html, /\$F_1\^2/);
 });
 
 test("renders GitHub-flavoured Markdown including tables and emphasis", () => {
@@ -61,7 +61,7 @@ test("renders GitHub-flavoured Markdown including tables and emphasis", () => {
     "| 60 degrees | 13 N |"
   ].join("\n"));
 
-  assert.match(html, /<strong>Known values<\\/strong>/);
+  assert.match(html, /<strong>Known values<\/strong>/);
   assert.match(html, /<table>/);
   assert.match(html, /Perpendicular/);
   assert.match(html, /60 degrees/);
@@ -69,7 +69,7 @@ test("renders GitHub-flavoured Markdown including tables and emphasis", () => {
 
 test("does not render untrusted raw HTML or remote images", () => {
   const html = renderMarkdown(
-    "Before <script>alert(1)</script> after.\\n\\n![tracking pixel](https://example.invalid/pixel.png)"
+    "Before <script>alert(1)</script> after.\n\n![tracking pixel](https://example.invalid/pixel.png)"
   );
 
   assert.doesNotMatch(html, /<script/i);
@@ -99,6 +99,6 @@ test("renders a piecewise cases environment as display mathematical markup", () 
 
   assert.match(html, /class="katex-display"/);
   assert.match(html, /class="katex"/);
-  assert.doesNotMatch(html, /\\\\begin\\{cases\\}/);
-  assert.doesNotMatch(html, /\\\\end\\{cases\\}/);
+  assert.doesNotMatch(html, /\\begin\{cases\}/);
+  assert.doesNotMatch(html, /\\end\{cases\}/);
 });
