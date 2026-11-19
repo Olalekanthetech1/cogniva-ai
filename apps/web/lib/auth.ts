@@ -32,11 +32,14 @@ function buildAuth(
     trustedOrigins,
     database: drizzleAdapter(db, {
       provider: "pg",
-      schema: { user, session, account, verification }
+      schema: { user, session, account, verification },
+      transaction: true
     }),
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
+      revokeSessionsOnPasswordReset: true,
+      resetPasswordTokenExpiresIn: 60 * 60,
       minPasswordLength: 12,
       maxPasswordLength: 128,
       customSyntheticUser: ({ coreFields, additionalFields, id }) => ({

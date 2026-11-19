@@ -17,6 +17,23 @@ jobs:
     name: Lint, typecheck, and build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cogniva_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cogniva_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/cogniva_test
+      DATABASE_MIGRATION_URL: postgresql://postgres:postgres@127.0.0.1:5432/cogniva_test
 
     steps:
       - name: Check out repository
@@ -40,6 +57,12 @@ jobs:
           else
             pnpm install --no-frozen-lockfile
           fi
+
+      - name: Apply migrations to isolated integration-test database
+        run: pnpm db:migrate
+
+      - name: Authentication and student-profile integration tests
+        run: pnpm test:auth-lifecycle
 
       - name: Tutor intelligence regression tests
         run: pnpm test:tutor-intelligence

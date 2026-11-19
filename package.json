@@ -22,7 +22,8 @@
     "test:tutor-learning-framework": "node --test apps/web/lib/tutor-learning-framework.test.mjs",
     "test:tutor-markdown": "node --test apps/web/lib/tutor-message-markdown.test.mjs",
     "test:learning-plan-output": "node --test apps/web/lib/learning-plan-output.test.mjs",
-    "test:learning-plan-review": "node --test apps/web/lib/learning-plan-review.test.mjs"
+    "test:learning-plan-review": "node --test apps/web/lib/learning-plan-review.test.mjs",
+    "test:auth-lifecycle": "node --test tests/integration/auth-lifecycle.test.mjs"
   },
   "pnpm": {
     "overrides": {
