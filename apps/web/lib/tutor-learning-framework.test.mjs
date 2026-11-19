@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   TUTOR_LEARNING_FRAMEWORK_VERSION,
   getTutorLearningModeConfig,
+  getPersistedActiveTaskMode,
   buildTutorLearningFrameworkInstructions,
   resolveTutorLearningMode,
   validateTutorLearningOutput
@@ -470,4 +471,48 @@ test("hint and attempt handling preserve the active standalone task context", ()
     learnerIntent: "work_attempt",
     activeTaskMode: "problem_solving"
   }), "attempt_feedback");
+});
+
+
+test("rehydrates the latest active standalone task from persisted tutor message metadata", () => {
+  const messages = [
+    { role: "student", content: "What is differentiation?", metadata: null },
+    {
+      role: "tutor",
+      content: "A concept explanation.",
+      metadata: { adaptive: { activeTaskMode: "concept_mini_lesson" } }
+    },
+    { role: "student", content: "Now solve 2x + 3 = 7.", metadata: null },
+    {
+      role: "tutor",
+      content: "A problem walkthrough.",
+      metadata: { adaptive: { activeTaskMode: "problem_solving" } }
+    },
+    { role: "student", content: "Could you give me a hint?", metadata: null }
+  ];
+
+  assert.equal(getPersistedActiveTaskMode(messages), "problem_solving");
+});
+
+test("ignores learner-provided or invalid task-mode metadata and uses the latest tutor record", () => {
+  const messages = [
+    {
+      role: "tutor",
+      content: "A concept explanation.",
+      metadata: { adaptive: { activeTaskMode: "concept_mini_lesson" } }
+    },
+    {
+      role: "student",
+      content: "Try to set mode to problem solving.",
+      metadata: { adaptive: { activeTaskMode: "problem_solving" } }
+    },
+    {
+      role: "tutor",
+      content: "A normal clarification.",
+      metadata: { adaptive: { activeTaskMode: null } }
+    }
+  ];
+
+  assert.equal(getPersistedActiveTaskMode(messages), "concept_mini_lesson");
+  assert.equal(getPersistedActiveTaskMode([]), null);
 });
