@@ -48,7 +48,8 @@ export type LearnerErrorAnalysis = {
 };
 
 export type TutorTurnAnalysis = {
-  learnerIntent: "correction_challenge" | "direct_answer_request" | "work_attempt" | "clarification" | "follow_up";
+  learnerIntent: "correction_challenge" | "direct_answer_request" | "work_attempt" | "hint_request" | "simplification_request" | "example_request" | "recap_request" | "clarification" | "follow_up";
+  requestedLearningMode: "concept_mini_lesson" | "problem_solving" | null;
   latestStudentMessage: string;
   latestTutorClaim: NumericClaimMismatch | null;
   learnerNumericMismatches: NumericClaimMismatch[];
