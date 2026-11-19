@@ -630,11 +630,11 @@ test("detects an explicit new task and allows the Tutor to change teaching mode"
   assert.equal(concept.requestedLearningMode, "concept_mini_lesson");
 });
 
-test("does not mistake an initial request for a mid-session task switch", () => {
+test("keeps vague initial requests on the selected session intent", () => {
   const analysis = analyzeTutorTurn({
     latestSubmissionType: "initial_prompt",
     messages: [
-      { role: "student", content: "Solve 2x + 3 = 7." }
+      { role: "student", content: "I would like help with this topic." }
     ]
   });
   assert.equal(analysis.requestedLearningMode, null);
