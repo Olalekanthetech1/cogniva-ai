@@ -68,7 +68,7 @@ The topic-based personal plan API reuses the existing learning-plan tables intro
 
 Generation is available only when an administrator has saved a provider/model route for `learning_plan_generation` and the matching server credential is present. No default model or automatic provider fallback is used. A provider response must be strict JSON matching the versioned output contract; malformed, truncated, or inconsistent plans are rejected before a revision is saved. The learner input remains on the plan when generation fails. Units, objectives, concepts, and relationships are persisted transactionally, and generated relationships remain `proposed`.
 
-The output validator enforces bounded collection sizes, exact object fields, unique names, valid unit-to-concept references, and acyclic prerequisite suggestions. This is structural validation; it does not establish the factual correctness or completeness of the generated teaching sequence. Learners can review each proposed concept relationship and approve the latest revision using the review endpoints below. Editing plan content and starting tutor sessions from a plan unit are not yet exposed by the learner UI.
+The output validator enforces bounded collection sizes, exact object fields, unique names, valid unit-to-concept references, and acyclic prerequisite suggestions. This is structural validation; it does not establish the factual correctness or completeness of the generated teaching sequence. Learners can review each proposed concept relationship and approve the latest revision using the review endpoints below. Editing plan content remains unavailable. Approved units now expose a Tutor launch form, which passes revision/unit references to session creation.
 
 Additional learner review endpoints:
 - `PATCH /api/v1/learning-plans/:planId/relationships/:relationshipId` — accepts exactly `{ "expectedVersion": 1, "decision": "accepted" | "rejected" }`. The relationship must belong to the latest proposed revision of a plan owned by the signed-in learner and still be in `proposed` review state. The server saves the decision and increments the parent plan version in one transaction.
@@ -85,7 +85,7 @@ Initial `POST /api/v1/learning-plans` creation is not currently deduplicated by 
 The following learner-authenticated routes are implemented in the current Phase 4 vertical slice:
 
 - `GET /api/v1/tutor/sessions` — list sessions owned by the signed-in learner.
-- `POST /api/v1/tutor/sessions` — create a session and persist its initial learner message atomically.
+- `POST /api/v1/tutor/sessions` — create a session and persist its initial learner message atomically. Optional `learningPlanRevisionId` and `learningPlanUnitId` associate a session with a plan unit. When a unit is supplied, the API validates that the unit and revision belong to the learner and requires the parent plan to be `active` and the revision to be `approved`; mismatched revision/unit references are rejected.
 - `GET /api/v1/tutor/sessions/:sessionId` — retrieve an owned session, ordered messages, and explicitly submitted attempts.
 - `POST /api/v1/tutor/sessions/:sessionId/respond` — generate the next Socratic response or retry an unanswered learner turn.
 - `POST /api/v1/tutor/sessions/:sessionId/end` — cancel an active session; this does not mark it completed or mastered.
