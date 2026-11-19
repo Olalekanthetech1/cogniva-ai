@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import { normalizeTutorMathMarkdown } from "./tutor-markdown-normalize.js";
 
 const remarkPlugins = [remarkGfm, remarkMath];
 const rehypePlugins = [[rehypeKatex, {
@@ -29,8 +30,12 @@ function renderMarkdown(content) {
         }
       }
     },
-    content
+    normalizeTutorMathMarkdown(content)
   ));
+}
+
+function withoutMathSourceAnnotations(html) {
+  return html.replace(/<annotation\b[^>]*>[\s\S]*?<\/annotation>/g, "");
 }
 
 test("renders inline and display LaTeX as accessible mathematical markup", () => {
@@ -101,4 +106,68 @@ test("renders a piecewise cases environment as accessible display mathematics", 
   assert.match(html, /class="katex"/);
   assert.match(html, /class="katex-html"/);
   assert.match(html, /<math[^>]+display="block"/);
+});
+
+
+test("normalizes TeX inline and display delimiters used by providers", () => {
+  const markdown = [
+    "Inline notation: \\(f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}\\).",
+    "",
+    "Display notation:",
+    "\\[",
+    "f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}",
+    "\\]"
+  ].join("\n");
+  const html = renderMarkdown(markdown);
+
+  assert.match(html, /class="katex"/);
+  assert.match(html, /class="katex-display"/);
+  assert.doesNotMatch(withoutMathSourceAnnotations(html), /\\frac/);
+});
+
+test("renders square-bracket-wrapped provider TeX and moves sentence punctuation outside", () => {
+  const markdown = [
+    "The speed is [\\frac{s(t+h)-s(t)}{h}.]",
+    "",
+    "The derivative is [f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}]."
+  ].join("\n");
+  const html = renderMarkdown(markdown);
+
+  assert.equal((html.match(/class="katex"/g) ?? []).length >= 2, true);
+  assert.doesNotMatch(withoutMathSourceAnnotations(html), /\\frac/);
+  assert.match(html, /<\/p>/);
+});
+
+test("does not reinterpret ordinary references, Markdown links, or code examples as math", () => {
+  const tick = String.fromCharCode(96);
+  const fence = tick.repeat(3);
+  const markdown = [
+    "See [1] and [read more](https://example.com).",
+    "",
+    "Inline code: " + tick + "[\\frac{x}{y}]" + tick + ".",
+    "",
+    fence + "tex",
+    "[\\frac{x}{y}]",
+    "\\[x^2\\]",
+    fence
+  ].join("\n");
+  const html = renderMarkdown(markdown);
+
+  assert.doesNotMatch(html, /class="katex"/);
+  assert.match(html, /href="https:\/\/example\.com"/);
+  assert.match(html, /<code>/);
+  assert.match(html, /<pre>/);
+  assert.match(html, /\\frac/);
+});
+
+test("renders legacy labeled algebra rules even when providers omit math delimiters", () => {
+  const markdown = [
+    "1. Constant Rule: (c)' = 0",
+    "2. Power Rule: (x^n)' = n x^{n-1}",
+    "3. Sum Rule: (f+g)' = f' + g'"
+  ].join("\n");
+  const html = renderMarkdown(markdown);
+
+  assert.equal((html.match(/class="katex"/g) ?? []).length >= 3, true);
+  assert.doesNotMatch(withoutMathSourceAnnotations(html), /x\\^n/);
 });

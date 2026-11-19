@@ -5,6 +5,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import { normalizeTutorMathMarkdown } from "@/lib/tutor-markdown-normalize";
 
 const remarkPlugins = [remarkGfm, remarkMath];
 const katexOptions = {
@@ -51,7 +52,7 @@ export const TutorMessageMarkdown = memo(function TutorMessageMarkdown({
         rehypePlugins={rehypePlugins}
         components={markdownComponents}
       >
-        {content}
+        {normalizeTutorMathMarkdown(content)}
       </ReactMarkdown>
     </div>
   );
