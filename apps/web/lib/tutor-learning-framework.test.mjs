@@ -383,7 +383,7 @@ test("validates adaptive Socratic output through the same framework contract", (
     mode: "adaptive_socratic"
   }), null);
   assert.match(validateTutorLearningOutput({
-    text: "This is an answer. ".repeat(12) + "What would you like to do next?",
+    text: "detail ".repeat(90) + "What would you like to do next?",
     finishReason: "stop",
     mode: "adaptive_socratic"
   }), /concise-response limit/);
