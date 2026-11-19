@@ -106,62 +106,6 @@ export const qualificationClassificationMappingStatus = pgEnum(
   ["proposed", "under_review", "accepted", "rejected"]
 );
 
-/**
- * Reference records are intentionally not seeded by migrations. ISO and
- * education-system records must enter through a reviewed, attributable source.
- */
-export const countries = pgTable(
-  "countries",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    isoAlpha2: varchar("iso_alpha_2", { length: 2 }),
-    isoAlpha3: varchar("iso_alpha_3", { length: 3 }),
-    isoNumeric: varchar("iso_numeric", { length: 3 }),
-    name: text("name").notNull(),
-    officialName: text("official_name"),
-    sourceRecordId: uuid("source_record_id")
-      .references(() => catalogueSourceRecords.id, { onDelete: "restrict" }),
-    validFrom: timestampWithTimezone("valid_from"),
-    validTo: timestampWithTimezone("valid_to"),
-    createdAt: timestampWithTimezone("created_at").notNull().defaultNow(),
-    updatedAt: timestampWithTimezone("updated_at").notNull().defaultNow()
-      .$onUpdate(() => new Date())
-  },
-  (table) => [
-    uniqueIndex("countries_iso_alpha_2_unique").on(table.isoAlpha2),
-    uniqueIndex("countries_iso_alpha_3_unique").on(table.isoAlpha3),
-    uniqueIndex("countries_iso_numeric_unique").on(table.isoNumeric),
-    check("countries_name_nonempty_check", sql.raw('length(btrim("countries"."name")) > 0')),
-    check("countries_iso_alpha_2_format_check", sql.raw('"countries"."iso_alpha_2" is null or "countries"."iso_alpha_2" ~ \'^[A-Z]{2}$\'')),
-    check("countries_iso_alpha_3_format_check", sql.raw('"countries"."iso_alpha_3" is null or "countries"."iso_alpha_3" ~ \'^[A-Z]{3}$\'')),
-    check("countries_iso_numeric_format_check", sql.raw('"countries"."iso_numeric" is null or "countries"."iso_numeric" ~ \'^[0-9]{3}$\'')),
-    check("countries_valid_period_check", sql.raw('"countries"."valid_to" is null or "countries"."valid_from" is null or "countries"."valid_to" > "countries"."valid_from"'))
-  ]
-);
-
-export const countryAliases = pgTable(
-  "country_aliases",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    countryId: uuid("country_id").notNull()
-      .references(() => countries.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    normalizedName: text("normalized_name").notNull(),
-    languageTag: varchar("language_tag", { length: 35 }),
-    aliasType: countryAliasType("alias_type").notNull().default("other"),
-    sourceRecordId: uuid("source_record_id")
-      .references(() => catalogueSourceRecords.id, { onDelete: "restrict" }),
-    createdAt: timestampWithTimezone("created_at").notNull().defaultNow()
-  },
-  (table) => [
-    uniqueIndex("country_aliases_country_normalized_language_unique")
-      .on(table.countryId, table.normalizedName, table.languageTag),
-    index("country_aliases_normalized_name_idx").on(table.normalizedName),
-    check("country_aliases_name_nonempty_check", sql.raw('length(btrim("country_aliases"."name")) > 0')),
-    check("country_aliases_normalized_name_nonempty_check", sql.raw('length(btrim("country_aliases"."normalized_name")) > 0'))
-  ]
-);
-
 export const catalogueSources = pgTable(
   "catalogue_sources",
   {
@@ -216,6 +160,62 @@ export const catalogueSourceRecords = pgTable(
       .on(table.sourceId, table.retrievedAt),
     check("catalogue_source_records_url_nonempty_check", sql.raw('length(btrim("catalogue_source_records"."source_url")) > 0')),
     check("catalogue_source_records_metadata_object_check", sql.raw('jsonb_typeof("catalogue_source_records"."metadata") = \'object\''))
+  ]
+);
+
+/**
+ * Reference records are intentionally not seeded by migrations. ISO and
+ * education-system records must enter through a reviewed, attributable source.
+ */
+export const countries = pgTable(
+  "countries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    isoAlpha2: varchar("iso_alpha_2", { length: 2 }),
+    isoAlpha3: varchar("iso_alpha_3", { length: 3 }),
+    isoNumeric: varchar("iso_numeric", { length: 3 }),
+    name: text("name").notNull(),
+    officialName: text("official_name"),
+    sourceRecordId: uuid("source_record_id")
+      .references(() => catalogueSourceRecords.id, { onDelete: "restrict" }),
+    validFrom: timestampWithTimezone("valid_from"),
+    validTo: timestampWithTimezone("valid_to"),
+    createdAt: timestampWithTimezone("created_at").notNull().defaultNow(),
+    updatedAt: timestampWithTimezone("updated_at").notNull().defaultNow()
+      .$onUpdate(() => new Date())
+  },
+  (table) => [
+    uniqueIndex("countries_iso_alpha_2_unique").on(table.isoAlpha2),
+    uniqueIndex("countries_iso_alpha_3_unique").on(table.isoAlpha3),
+    uniqueIndex("countries_iso_numeric_unique").on(table.isoNumeric),
+    check("countries_name_nonempty_check", sql.raw('length(btrim("countries"."name")) > 0')),
+    check("countries_iso_alpha_2_format_check", sql.raw('"countries"."iso_alpha_2" is null or "countries"."iso_alpha_2" ~ \'^[A-Z]{2}$\'')),
+    check("countries_iso_alpha_3_format_check", sql.raw('"countries"."iso_alpha_3" is null or "countries"."iso_alpha_3" ~ \'^[A-Z]{3}$\'')),
+    check("countries_iso_numeric_format_check", sql.raw('"countries"."iso_numeric" is null or "countries"."iso_numeric" ~ \'^[0-9]{3}$\'')),
+    check("countries_valid_period_check", sql.raw('"countries"."valid_to" is null or "countries"."valid_from" is null or "countries"."valid_to" > "countries"."valid_from"'))
+  ]
+);
+
+export const countryAliases = pgTable(
+  "country_aliases",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    countryId: uuid("country_id").notNull()
+      .references(() => countries.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    languageTag: varchar("language_tag", { length: 35 }),
+    aliasType: countryAliasType("alias_type").notNull().default("other"),
+    sourceRecordId: uuid("source_record_id")
+      .references(() => catalogueSourceRecords.id, { onDelete: "restrict" }),
+    createdAt: timestampWithTimezone("created_at").notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("country_aliases_country_normalized_language_unique")
+      .on(table.countryId, table.normalizedName, table.languageTag),
+    index("country_aliases_normalized_name_idx").on(table.normalizedName),
+    check("country_aliases_name_nonempty_check", sql.raw('length(btrim("country_aliases"."name")) > 0')),
+    check("country_aliases_normalized_name_nonempty_check", sql.raw('length(btrim("country_aliases"."normalized_name")) > 0'))
   ]
 );
 
