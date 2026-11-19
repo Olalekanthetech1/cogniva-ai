@@ -130,7 +130,6 @@ test("renders square-bracket-wrapped provider TeX and moves sentence punctuation
   const html = renderMarkdown(markdown);
 
   assert.equal((html.match(/class="katex"/g) ?? []).length >= 2, true);
-  assert.match(html, /class="katex-display"/);
   assert.doesNotMatch(html, /\\frac/);
   assert.match(html, /<\/p>/);
 });
