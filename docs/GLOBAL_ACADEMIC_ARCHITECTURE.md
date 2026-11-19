@@ -1,6 +1,6 @@
 # Cogniva — Global Academic Architecture
 
-**Status:** Proposed architecture for review; this document is not a claim that global catalogue ingestion or the target schema has been implemented.  
+**Status:** Proposed global architecture with a Phase 1.1 design baseline; no global catalogue ingestion or target-schema migration is claimed to be implemented.  
 **Decision:** Cogniva is a global learning platform from its first production release. Nigeria is an initial user context, not the product's data model.
 
 ## 1. Product and architecture decision
@@ -21,10 +21,12 @@ Use international standards as interoperability references, not as replacements 
 
 ### 2.1 Countries and territories
 
-- Use ISO 3166-1 alpha-2 country codes as the canonical country identifier where applicable.
+- Use ISO 3166-1 alpha-2 as the preferred external country code where applicable. Use an internal Cogniva ID for the country record so code/name lifecycle changes can be versioned without changing foreign keys.
 - Keep the student's country of study, the institution's country, locale, language, and time zone as distinct concepts. Do not infer one from another.
 - Keep a country/jurisdiction reference versioned and maintain aliases where needed.
 - Do not model the world as only the set of current sovereign states; education jurisdictions and territories may need separate representation.
+- ISO 3166-2 subdivision codes may identify a location, but a province/state is not automatically an education jurisdiction.
+- Country of study, residence, institution location, education jurisdiction, locale, language, and time zone remain separate values.
 
 ISO 3166-1 is the relevant country-code reference. The ISO catalogue currently identifies the 2020 edition as confirmed following its 2025 review.
 
@@ -375,3 +377,23 @@ Exact SQL, migration order and compatibility views are intentionally deferred un
 - WHED portal access/FAQ: https://whed.net/Contact.html
 
 **Architecture rule:** Global support is a property of Cogniva's data model and learning engine, not a claim that every country's catalogue has already been populated.
+
+
+## 12. Phase 1.1 implementation contract
+
+The detailed schema audit, normative domain decisions, source-usage policy, additive migration map, rollback strategy, and required acceptance tests are maintained in [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md).
+
+The following decisions are now normative for subsequent schema design:
+
+1. Country and education jurisdiction are distinct entities; use ISO codes as external reference identifiers and Cogniva IDs as stable foreign keys.
+2. Preserve local qualification names, framework versions, programme stages, and academic-period labels. Map ISCED-P, ISCED-A, and ISCED-F separately and only with evidence.
+3. Use namespaced institution identifiers and flexible institution units; do not make ROR or a provider's institution ID the Cogniva primary key.
+4. Recognition/accreditation is a time-bounded decision issued by a competent authority and scoped to an institution, unit/campus, programme, qualification, or delivery mode. Directory presence is not accreditation.
+5. Separate programme identity/version, academic periods, course identity, credit system, and course syllabus/content versions.
+6. Store source registries, source records, and claim-level assertions separately from canonical academic entities. Provider fetch time is not source validity time.
+7. Keep Cogniva KCs and their prerequisite graph independent of institution course taxonomies and ISCED field classification.
+8. Migrate additively, preserve legacy IDs and values, and do not infer verification from legacy presence.
+
+WHED/IAU is not an unrestricted bulk-data source: its terms state that copying all or substantial parts of the portal requires prior consent. ROR metadata is CC0, but ROR's scope is research organisations and does not cover every university subdivision. OpenAlex is useful for discovery and matching, not recognition or accreditation. The source adapter must encode these different legal and evidential roles.
+
+**Current implementation boundary:** no production schema changes, global catalogue ingestion, source adapter, or KC graph were added in Phase 1.1 design preparation. The read-only Neon audit must be run and reviewed before the migration is generated.

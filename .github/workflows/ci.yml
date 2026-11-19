@@ -61,6 +61,9 @@ jobs:
       - name: Apply migrations to isolated integration-test database
         run: pnpm db:migrate
 
+      - name: Verify isolated database migration ledger and schema audit
+        run: pnpm db:audit -- --assert-all-repository-migrations
+
       - name: Authentication and student-profile integration tests
         run: pnpm test:auth-lifecycle
 

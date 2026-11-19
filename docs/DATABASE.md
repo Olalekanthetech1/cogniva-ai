@@ -1,6 +1,6 @@
 # Cogniva — Database Design Baseline
 
-**Status:** Better Auth, academic/profile, Learning Workspace persistence, and migration history through `0003_lean_gateway.sql` have been applied to Neon. The deployed readiness endpoint has returned `status: ready` with `checks.database: available`. The AI administration schema in the current feature branch is proposed and must be generated, reviewed, and applied before its application code is deployed.
+**Status (reviewed 19 November 2026):** The repository contains Drizzle schema and migration files through 0006_cultured_lila_cheney.sql. The previously documented production confirmation covers Neon migrations through 0003_lean_gateway.sql; application of 0004–0006 to Neon is not verified by the available production evidence. Render's latest observed live deployment is commit a0266a571cae9737ebc78696da84cdcaf05e1b3f, with automatic deployment disabled. The readiness endpoint previously confirmed database connectivity only; it does not establish migration history or individual constraints. A new read-only Neon schema audit is available in .github/workflows/audit-neon-schema.yml and must be reviewed before any Phase 1.1 schema migration.
 
 ## 1. Decisions
 
@@ -24,7 +24,7 @@ Drizzle uses the `postgres.js` driver in this repository. The connection factory
 
 ### Academic catalogue and student profile
 
-The academic schema contains institutions, faculties, departments, subjects, courses, topics, curriculum versions, and course-topic mappings. Student profiles store optional catalogue or self-reported institution context and optional academic details. Academic affiliation is optional; a student can use Cogniva without selecting a university or course.
+The academic schema contains institutions, faculties, departments, subjects, courses, topics, curriculum versions, and course-topic mappings. Student profiles store optional catalogue or self-reported institution context and optional academic details. Academic affiliation is optional; a student can use Cogniva without selecting a university or course. This is a first-release hierarchy, not yet a global academic reference model: it has no country/jurisdiction reference, external institution identifier namespace, flexible institution-unit tree, recognition evidence, programme/version model, academic-period model, explicit credit-system semantics, or claim-level catalogue provenance.
 
 There are no seeded or fabricated university, course, or subject catalogue records. Catalogue entries must be sourced or explicitly created as real data.
 
@@ -54,7 +54,7 @@ The production migration history confirmed by the project owner is:
 - `0002_futuristic_alex_power.sql` — Learning Workspace persistence tables and enums.
 - `0003_lean_gateway.sql` — Better Auth Admin plugin role, ban metadata, and impersonation reference.
 
-The project owner confirmed successful application of migrations through `0003` to Neon. The deployed Render readiness endpoint returned `status: ready` with `checks.database: available`; readiness verifies application-to-database connectivity, not every individual constraint.
+The project owner previously confirmed successful application of migrations through 0003 to Neon. The deployed Render readiness endpoint returned status ready with checks.database available; readiness verifies application-to-database connectivity, not every individual constraint. Migrations 0004 through 0006 are present in the repository, but their production application remains unverified pending the read-only Neon audit.
 
 The database package exposes `createDatabase(databaseUrl)`. Importing it does not access process environment variables or create a live connection. The application resolves its pooled `DATABASE_URL` only when a data request needs the database.
 
@@ -88,3 +88,12 @@ The Better Auth secret must be at least 32 characters of high-entropy random dat
 Canonical Knowledge Components and mastery estimates require their own versioned provenance and evaluation contracts. Document entities, extracted text, embeddings, and vector columns come only after selecting and validating the actual document/embedding pipeline; do not reserve guessed vector dimensions.
 
 Before public launch, define retention and deletion across relational rows, uploaded source objects, extracted text, embeddings, search indexes, caches, analytics identifiers, and queued jobs.
+
+
+## 8. Phase 1.1 production schema audit
+
+Use the manually triggered **Read-only Neon schema audit** workflow before designing a production migration. It requires the GitHub Actions secret DATABASE_MIGRATION_URL, opens a read-only transaction, and inspects only the Drizzle migration ledger and academic schema metadata. It does not read learner records or mutate production data.
+
+The audit compares applied Drizzle migration timestamps with the repository journal and reports academic tables, columns, and relevant constraints. An absent migration row or missing table must be reconciled before any schema generation/application. Do not use a successful CI migration run as evidence about Neon.
+
+See [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md) for the current schema-gap analysis and the additive migration/rollback contract.
