@@ -1,0 +1,90 @@
+name: Read-only Neon schema audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_audit:
+        description: "Confirm a read-only inspection of Cogniva's Neon production schema."
+        required: true
+        type: choice
+        options:
+          - "NO"
+          - "AUDIT_READ_ONLY"
+        default: "NO"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cogniva-neon-read-only-schema-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Require explicit read-only audit confirmation
+        env:
+          CONFIRM_AUDIT: ${{ github.event.inputs.confirm_audit }}
+        shell: bash
+        run: |
+          if [[ "$CONFIRM_AUDIT" != "AUDIT_READ_ONLY" ]]; then
+            echo "::error::Read-only audit not confirmed. Select AUDIT_READ_ONLY to continue."
+            exit 1
+          fi
+
+      - name: Check out main
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.1.1
+        with:
+          version: 12.21.0
+          run_install: false
+
+      - name: Confirm the read-only database credential is configured
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_MIGRATION_URL" ]; then
+            echo "::error::Configure DATABASE_MIGRATION_URL in repository Actions secrets before running this audit."
+            exit 1
+          fi
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run read-only schema and migration audit
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+        run: pnpm db:audit > "$RUNNER_TEMP/phase-1.1-production-schema-audit.json"
+
+      - name: Add audit report to workflow summary
+        shell: bash
+        run: |
+          {
+            echo "## Neon production schema audit"
+            echo
+            echo "The report was generated in a PostgreSQL READ ONLY transaction. No application table or migration state was changed."
+            echo
+            echo "Audit JSON follows:"
+            cat "$RUNNER_TEMP/phase-1.1-production-schema-audit.json"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preserve the schema audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-1.1-production-schema-audit
+          path: ${{ runner.temp }}/phase-1.1-production-schema-audit.json
+          if-no-files-found: error
+          retention-days: 14
