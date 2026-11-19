@@ -1,4 +1,4 @@
-export const TUTOR_LEARNING_FRAMEWORK_VERSION = "ctl-1.1.0";
+export const TUTOR_LEARNING_FRAMEWORK_VERSION = "ctl-1.2.0";
 
 const STRUCTURED_SECTIONS = [
   "Learning objectives",
@@ -21,6 +21,87 @@ const PROBLEM_SECTIONS = [
   "Verify and interpret",
   "Transfer check"
 ];
+
+const MODE_OUTPUT_CONFIG = Object.freeze({
+  adaptive_socratic: {
+    label: "The adaptive Socratic response",
+    maxOutputTokens: 240,
+    maxWords: 80,
+    maxCharacters: 1_200,
+    responseLengthInstruction: "For ordinary adaptive Socratic turns, use up to 80 words.",
+    requiredSections: null,
+    rejectNumericMismatches: false,
+    limitMessage: "The tutor response exceeded its concise-response limit."
+  },
+  structured_lesson_opening: {
+    label: "The structured lesson opening",
+    maxOutputTokens: 1_100,
+    maxWords: 480,
+    maxCharacters: 4_200,
+    responseLengthInstruction: "For this structured lesson opening, use up to 480 words and include the required lesson sections.",
+    requiredSections: STRUCTURED_SECTIONS,
+    rejectNumericMismatches: true,
+    limitMessage: "The structured lesson opening exceeded Cogniva's lesson-response limit.",
+    mismatchMessage: "The structured lesson contains a numeric claim that did not pass Cogniva's bounded arithmetic check."
+  },
+  structured_lesson_continuation: {
+    label: "The structured lesson reply",
+    maxOutputTokens: 560,
+    maxWords: 220,
+    maxCharacters: 2_400,
+    responseLengthInstruction: "For this linked-unit lesson continuation, use up to 220 words.",
+    requiredSections: null,
+    rejectNumericMismatches: false,
+    limitMessage: "The structured lesson reply exceeded Cogniva's response limit."
+  },
+  concept_mini_lesson: {
+    label: "The concept mini-lesson",
+    maxOutputTokens: 700,
+    maxWords: 260,
+    maxCharacters: 2_500,
+    responseLengthInstruction: "For this standalone concept mini-lesson, use up to 260 words and include the required concise teaching sections.",
+    requiredSections: CONCEPT_SECTIONS,
+    rejectNumericMismatches: true,
+    limitMessage: "The concept mini-lesson exceeded Cogniva's response limit.",
+    mismatchMessage: "The concept mini-lesson contains a numeric claim that did not pass Cogniva's bounded arithmetic check."
+  },
+  problem_solving: {
+    label: "The problem-solving response",
+    maxOutputTokens: 900,
+    maxWords: 360,
+    maxCharacters: 3_500,
+    responseLengthInstruction: "For this problem-solving walkthrough, use up to 360 words and show the required reasoning and verification sections.",
+    requiredSections: PROBLEM_SECTIONS,
+    rejectNumericMismatches: true,
+    limitMessage: "The problem-solving response exceeded Cogniva's response limit.",
+    mismatchMessage: "The problem-solving response contains a numeric claim that did not pass Cogniva's bounded arithmetic check."
+  },
+  attempt_feedback: {
+    label: "The attempt-feedback response",
+    maxOutputTokens: 450,
+    maxWords: 190,
+    maxCharacters: 1_700,
+    responseLengthInstruction: "For this attempt-feedback turn, use up to 190 words.",
+    requiredSections: null,
+    rejectNumericMismatches: true,
+    limitMessage: "The attempt-feedback response exceeded Cogniva's response limit.",
+    mismatchMessage: "The attempt-feedback response contains a numeric claim that did not pass Cogniva's bounded arithmetic check."
+  },
+  quick_clarification: {
+    label: "The clarification response",
+    maxOutputTokens: 280,
+    maxWords: 120,
+    maxCharacters: 1_100,
+    responseLengthInstruction: "For this focused assistance turn, use up to 120 words.",
+    requiredSections: null,
+    rejectNumericMismatches: false,
+    limitMessage: "The clarification response exceeded Cogniva's response limit."
+  }
+});
+
+export function getTutorLearningModeConfig(mode) {
+  return MODE_OUTPUT_CONFIG[mode] ?? MODE_OUTPUT_CONFIG.adaptive_socratic;
+}
 
 function isTruncated(finishReason) {
   const normalized = typeof finishReason === "string"
@@ -63,7 +144,8 @@ export function resolveTutorLearningMode({
   latestSubmissionType,
   learnerIntent = "follow_up",
   sessionIntent = "",
-  latestStudentMessage = ""
+  latestStudentMessage = "",
+  requestedLearningMode = null
 }) {
   if (hasLinkedUnit) {
     return latestSubmissionType === "initial_prompt"
@@ -77,9 +159,13 @@ export function resolveTutorLearningMode({
   if (latestSubmissionType === "attempt" || learnerIntent === "work_attempt") {
     return "attempt_feedback";
   }
-  if (latestSubmissionType !== "initial_prompt" && learnerIntent === "clarification") {
+  if (
+    latestSubmissionType !== "initial_prompt" &&
+    ["clarification", "hint_request", "simplification_request", "example_request", "recap_request"].includes(learnerIntent)
+  ) {
     return "quick_clarification";
   }
+  if (requestedLearningMode) return requestedLearningMode;
 
   if (sessionIntent === "solve_problem") return "problem_solving";
 
@@ -102,6 +188,30 @@ export function resolveTutorLearningMode({
   ) return "concept_mini_lesson";
 
   return "adaptive_socratic";
+}
+
+function appendTurnActionGuidance(instructions, learnerIntent) {
+  const actionGuidance = {
+    hint_request: [
+      "The learner explicitly asks for a hint. Give only the next useful hint, not the complete solution, unless they also clearly request the full answer.",
+      "Use the visible conversation to choose an appropriate next level: direction, recall of a relevant principle, a smaller scaffold, then a near-solution step. Do not repeat a hint already given.",
+      "This progression is inferred from conversation context; do not claim a persisted hint stage or mastery record."
+    ],
+    simplification_request: [
+      "The learner asks for a simpler explanation. Re-explain the same point using plainer language, a different representation, or a smaller step.",
+      "Do not merely repeat the previous wording or remove important technical conditions."
+    ],
+    example_request: [
+      "The learner asks for an example. Provide a new, relevant example that is not already used in the conversation, and explain the key reasoning.",
+      "Label a constructed numerical scenario as illustrative; do not invent measurements or real-world findings."
+    ],
+    recap_request: [
+      "The learner asks for a recap. Summarize only what the conversation actually covered, identify any unresolved point, and ask one useful recall question.",
+      "Do not infer that the learner has mastered or completed the material."
+    ]
+  };
+  const guidance = actionGuidance[learnerIntent];
+  return guidance ? instructions + " " + guidance.join(" ") : instructions;
 }
 
 export function buildTutorLearningFrameworkInstructions({ mode, learnerIntent }) {
