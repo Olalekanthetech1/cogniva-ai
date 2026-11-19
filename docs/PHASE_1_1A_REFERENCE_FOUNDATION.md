@@ -1,8 +1,8 @@
 # Cogniva — Phase 1.1a Reference and Provenance Foundation
 
-**Status:** Implemented on the feature branch; awaiting review and CI.  
+**Status:** Merged to `main` via PR #39; post-merge CI verified through the subsequent Phase 1.1b merge.  
 **Migration:** `0007_global_academic_reference_foundation.sql`.  
-**Production:** Not applied.  
+**Production:** Migration 0007 has not been applied to Neon in this workflow.  
 **Scope:** Additive reference and provenance schema only. No catalogue seed data, external fetches, source adapters, API routes, or production writes.
 
 ## 1. Migration contents
