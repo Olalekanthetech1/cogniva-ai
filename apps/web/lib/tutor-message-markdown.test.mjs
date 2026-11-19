@@ -107,50 +107,52 @@ test("renders a piecewise cases environment as accessible display mathematics", 
 
 test("normalizes TeX inline and display delimiters used by providers", () => {
   const markdown = [
-    "Inline notation: \\\\(f'(x)=\\\\lim_{h\\\\to 0}\\\\frac{f(x+h)-f(x)}{h}\\\\).",
+    "Inline notation: \\(f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}\\).",
     "",
     "Display notation:",
-    "\\\\[",
-    "f'(x)=\\\\lim_{h\\\\to 0}\\\\frac{f(x+h)-f(x)}{h}",
-    "\\\\]"
+    "\\[",
+    "f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}",
+    "\\]"
   ].join("\n");
   const html = renderMarkdown(markdown);
 
   assert.match(html, /class="katex"/);
   assert.match(html, /class="katex-display"/);
-  assert.doesNotMatch(html, /\\\\frac/);
+  assert.doesNotMatch(html, /\\frac/);
 });
 
 test("renders square-bracket-wrapped provider TeX and moves sentence punctuation outside", () => {
   const markdown = [
-    "The speed is [\\\\frac{s(t+h)-s(t)}{h}.]",
+    "The speed is [\\frac{s(t+h)-s(t)}{h}.]",
     "",
-    "The derivative is [f'(x)=\\\\lim_{h\\\\to 0}\\\\frac{f(x+h)-f(x)}{h}]."
+    "The derivative is [f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}]."
   ].join("\n");
   const html = renderMarkdown(markdown);
 
   assert.equal((html.match(/class="katex"/g) ?? []).length >= 2, true);
   assert.match(html, /class="katex-display"/);
-  assert.doesNotMatch(html, /\\\\frac/);
-  assert.match(html, /<\\\\/p>/);
+  assert.doesNotMatch(html, /\\frac/);
+  assert.match(html, /<\/p>/);
 });
 
 test("does not reinterpret ordinary references, Markdown links, or code examples as math", () => {
+  const tick = String.fromCharCode(96);
+  const fence = tick.repeat(3);
   const markdown = [
     "See [1] and [read more](https://example.com).",
     "",
-    "Inline code: \`[\\\\frac{x}{y}]\`.",
+    "Inline code: " + tick + "[\\frac{x}{y}]" + tick + ".",
     "",
-    "\`\`\`tex",
-    "[\\\\frac{x}{y}]",
-    "\\\\[x^2\\\\]",
-    "\`\`\`"
+    fence + "tex",
+    "[\\frac{x}{y}]",
+    "\\[x^2\\]",
+    fence
   ].join("\n");
   const html = renderMarkdown(markdown);
 
   assert.doesNotMatch(html, /class="katex"/);
-  assert.match(html, /href="https:\\/\\/example\\.com"/);
+  assert.match(html, /href="https:\/\/example\.com"/);
   assert.match(html, /<code>/);
   assert.match(html, /<pre>/);
-  assert.match(html, /\\\\frac/);
+  assert.match(html, /\\frac/);
 });
