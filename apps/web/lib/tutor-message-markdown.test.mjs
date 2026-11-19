@@ -85,7 +85,7 @@ test("invalid TeX is shown safely without breaking the tutor message", () => {
 });
 
 
-test("renders a piecewise cases environment as display mathematical markup", () => {
+test("renders a piecewise cases environment as accessible display mathematics", () => {
   const markdown = [
     "$$",
     "\\begin{cases}",
@@ -99,6 +99,6 @@ test("renders a piecewise cases environment as display mathematical markup", () 
 
   assert.match(html, /class="katex-display"/);
   assert.match(html, /class="katex"/);
-  const visibleMarkup = html.replace(/<annotation\b[^>]*>[\s\S]*?<\/annotation>/g, "");
-  assert.doesNotMatch(visibleMarkup, /\\(?:begin|end)\{cases\}/);
+  assert.match(html, /class="katex-html"/);
+  assert.match(html, /<math[^>]+display="block"/);
 });
