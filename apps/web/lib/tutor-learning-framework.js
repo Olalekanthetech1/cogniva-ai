@@ -114,6 +114,20 @@ export function getTutorLearningModeConfig(mode) {
   return MODE_OUTPUT_CONFIG[mode] ?? MODE_OUTPUT_CONFIG.adaptive_socratic;
 }
 
+export function getPersistedActiveTaskMode(messages) {
+  if (!Array.isArray(messages)) return null;
+  for (const message of [...messages].reverse()) {
+    if (message?.role !== "tutor") continue;
+    const metadata = message.metadata;
+    if (typeof metadata !== "object" || metadata === null || Array.isArray(metadata)) continue;
+    const adaptive = metadata.adaptive;
+    if (typeof adaptive !== "object" || adaptive === null || Array.isArray(adaptive)) continue;
+    const mode = adaptive.activeTaskMode;
+    if (mode === "concept_mini_lesson" || mode === "problem_solving") return mode;
+  }
+  return null;
+}
+
 function isTruncated(finishReason) {
   const normalized = typeof finishReason === "string"
     ? finishReason.trim().toLowerCase()
