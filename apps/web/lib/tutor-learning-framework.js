@@ -84,7 +84,8 @@ const MODE_OUTPUT_CONFIG = Object.freeze({
     responseLengthInstruction: "For this problem-solving continuation, use up to 220 words and focus on the learner's current step without restarting the full walkthrough.",
     requiredSections: null,
     rejectNumericMismatches: true,
-    limitMessage: "The problem-solving continuation exceeded Cogniva's response limit."
+    limitMessage: "The problem-solving continuation exceeded Cogniva's response limit.",
+    mismatchMessage: "The problem-solving continuation contains numeric claims that did not pass Cogniva's bounded arithmetic check."
   },
   attempt_feedback: {
     label: "The attempt-feedback response",
