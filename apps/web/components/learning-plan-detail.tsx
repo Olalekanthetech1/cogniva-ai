@@ -216,52 +216,65 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryError, setRetryError] = useState("");
 
-  const loadPlan = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const response = await fetch(
-        "/api/v1/learning-plans/" + encodeURIComponent(planId),
-        { cache: "no-store", signal }
+  const fetchPlan = useCallback(async (signal?: AbortSignal) => {
+    const response = await fetch(
+      "/api/v1/learning-plans/" + encodeURIComponent(planId),
+      { cache: "no-store", signal }
+    );
+    const payload: unknown = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        readApiError(payload, "This learning plan is unavailable right now.")
       );
-      const payload: unknown = await response.json().catch(() => null);
+    }
 
-      if (!response.ok) {
-        throw new Error(
-          readApiError(payload, "This learning plan is unavailable right now.")
-        );
-      }
+    if (!isRecord(payload) || !isRecord(payload.data)) {
+      throw new Error("Cogniva returned an unexpected learning-plan response.");
+    }
 
-      if (!isRecord(payload) || !isRecord(payload.data)) {
-        throw new Error("Cogniva returned an unexpected learning-plan response.");
-      }
+    return parsePlanDetail(payload.data);
+  }, [planId]);
 
-      const nextPlan = parsePlanDetail(payload.data);
-      if (!signal?.aborted) {
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchPlan(controller.signal)
+      .then((nextPlan) => {
+        if (controller.signal.aborted) return;
         setPlan(nextPlan);
         setLoadError("");
-      }
+      })
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
+        setLoadError(
+          cause instanceof Error
+            ? cause.message
+            : "This learning plan is unavailable right now."
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [fetchPlan]);
+
+  const loadPlan = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
+
+    try {
+      setPlan(await fetchPlan());
     } catch (cause) {
-      if (signal?.aborted) return;
       setLoadError(
         cause instanceof Error
           ? cause.message
           : "This learning plan is unavailable right now."
       );
     } finally {
-      if (!signal?.aborted) setIsLoading(false);
+      setIsLoading(false);
     }
-  }, [planId]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void loadPlan(controller.signal);
-    return () => controller.abort();
-  }, [loadPlan]);
-
-  async function refreshPlan() {
-    setIsLoading(true);
-    setLoadError("");
-    await loadPlan();
-  }
+  }, [fetchPlan]);
 
   async function handleRetry() {
     if (!plan || isRetrying) return;
@@ -281,14 +294,14 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
         );
       }
 
-      await refreshPlan();
+      await loadPlan();
     } catch (cause) {
       setRetryError(
         cause instanceof Error
           ? cause.message
           : "Cogniva could not confirm the retry result. Refresh the plan state."
       );
-      await refreshPlan();
+      await loadPlan();
     } finally {
       setIsRetrying(false);
     }
@@ -306,7 +319,7 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
     return (
       <div className="learning-plan-error" role="alert">
         <p>{loadError}</p>
-        <button type="button" onClick={() => void refreshPlan()}>
+        <button type="button" onClick={() => void loadPlan()}>
           Try loading again
         </button>
       </div>
@@ -366,7 +379,7 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
               <button
                 className="learning-plan-secondary-button"
                 type="button"
-                onClick={() => void refreshPlan()}
+                onClick={() => void loadPlan()}
                 disabled={isLoading}
               >
                 {isLoading ? "Refreshing..." : "Refresh status"}
