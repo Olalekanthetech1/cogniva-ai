@@ -81,7 +81,7 @@ test("routes standalone concept and topic starts to a concept mini-lesson", () =
   }
 });
 
-test("routes standalone problem starts and subsequent problem turns to problem-solving mode", () => {
+test("uses a structured problem-solving opening and adaptive continuations on later turns", () => {
   assert.equal(resolveTutorLearningMode({
     hasLinkedUnit: false,
     latestSubmissionType: "initial_prompt",
@@ -92,7 +92,25 @@ test("routes standalone problem starts and subsequent problem turns to problem-s
     latestSubmissionType: "question",
     sessionIntent: "solve_problem",
     learnerIntent: "follow_up"
+  }), "problem_solving_continuation");
+  assert.equal(resolveTutorLearningMode({
+    hasLinkedUnit: false,
+    latestSubmissionType: "question",
+    sessionIntent: "solve_problem",
+    learnerIntent: "direct_answer_request"
   }), "problem_solving");
+});
+
+
+test("continues from the current problem step without forcing the full opening template", () => {
+  const instructions = buildTutorLearningFrameworkInstructions({
+    mode: "problem_solving_continuation",
+    learnerIntent: "follow_up"
+  });
+  assert.match(instructions, /actual last agreed step/i);
+  assert.match(instructions, /do not repeat the full problem statement/i);
+  assert.match(instructions, /preserve the known givens/i);
+  assert.doesNotMatch(instructions, /Use these exact Markdown headings/i);
 });
 
 test("routes submitted attempts to feedback independently of the original session intent", () => {
@@ -358,6 +376,7 @@ test("centralizes mode budgets and provides a safe fallback for unregistered fut
     "structured_lesson_continuation",
     "concept_mini_lesson",
     "problem_solving",
+    "problem_solving_continuation",
     "attempt_feedback",
     "quick_clarification"
   ];
