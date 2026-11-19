@@ -26,7 +26,7 @@ export function LearningPlanUnitTutorLaunch({
     description ? "Unit description: " + description : "",
     objectives.length ? "Learning objectives:\n- " + objectives.join("\n- ") : "",
     concepts.length ? "Concepts in this unit: " + concepts.join(", ") : "",
-    "Guide me through this unit Socratically. Begin by checking what I understand, then teach and practice one meaningful step at a time. Do not simply provide a full lecture or skip ahead."
+    "Teach this unit using Cogniva's structured lesson approach: clear learning objectives, a detailed explanation, one fully worked example with reasoning, a practical application, and one guided-practice checkpoint. Continue with progressive hints, independent practice, and recap as my responses show what I understand. Answer clarifications directly without restarting the lesson. Do not claim mastery or verified syllabus coverage."
   ].filter(Boolean);
   const initialPrompt = promptParts.join("\n\n").slice(0, 4000);
 
