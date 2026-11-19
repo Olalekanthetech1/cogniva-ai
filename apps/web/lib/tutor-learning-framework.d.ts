@@ -45,3 +45,11 @@ export function validateTutorLearningOutput(input: {
   mode: TutorLearningMode;
   numericMismatchCount?: number;
 }): string | null;
+
+
+export function getPersistedActiveTaskMode(
+  messages: Array<{
+    role: "student" | "tutor";
+    metadata?: Record<string, unknown> | null;
+  }>
+): "concept_mini_lesson" | "problem_solving" | null;
