@@ -10,7 +10,7 @@
 2. **The tutor is central, not the entire product.** A prominent Home composer makes it easy to ask a question, while Learn organises courses and skills and Tutor provides the dedicated tutoring workspace.
 3. **Home adapts to the learner.** A new student sees a useful first-session entry point. A returning student sees genuine resumable work and learning areas derived from their activity.
 4. **The learner's work is the source of truth.** Courses, skills, activity, progress and recommendations must come from persisted student-owned records and actual evidence.
-5. **One place for each job.** Subject and topic discovery belong in Learn, not in a duplicate Home section. The Tutor tab remains a persistent destination for active and previous tutoring sessions.
+5. **One place for each job.** Subject and topic discovery belong in Learn, not in a duplicate Home section. The Tutor tab remains a persistent destination for active and previous tutoring sessions. The Tutor start form and active conversation must display a consistent, concise notice that Cogniva is AI-powered and can make mistakes in explanations, calculations, and feedback; learners should verify important answers.
 6. **Show only working capabilities.** A control must not imply that upload, subject discovery, tutoring, analytics or another function is available until its end-to-end behaviour is implemented and tested.
 7. **Mobile and web share one product model.** The information architecture, account data and action semantics stay consistent while layout adapts to screen size.
 
