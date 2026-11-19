@@ -65,6 +65,12 @@ async function requestJson(baseUrl, path, options = {}) {
   return { response, body };
 }
 
+async function requestPage(baseUrl, path, cookie) {
+  const headers = new Headers({ origin: baseUrl });
+  if (cookie) headers.set("cookie", cookie);
+  return fetch(baseUrl + path, { headers, redirect: "manual" });
+}
+
 async function waitForServer(baseUrl, child, getLogs) {
   for (let attempt = 0; attempt < 60; attempt += 1) {
     if (child.exitCode !== null) {
@@ -236,6 +242,12 @@ test("Better Auth lifecycle and student profile access are enforced end to end",
       assert.equal(unauthenticated.response.status, 401, path + " must require authentication.");
     }
 
+    const unauthenticatedOnboarding = await requestJson(baseUrl, "/api/v1/student/onboarding", {
+      method: "POST",
+      body: { choice: "skip" }
+    });
+    assert.equal(unauthenticatedOnboarding.response.status, 401, "Onboarding choices must require authentication.");
+
     const firstEmail = "cogniva-phase-one-" + randomUUID() + "@example.test";
     const secondEmail = "cogniva-phase-one-" + randomUUID() + "@example.test";
     const originalPassword = "Cogniva-Initial-Pass-2026!";
@@ -250,6 +262,16 @@ test("Better Auth lifecycle and student profile access are enforced end to end",
     assert.equal(initialProfile.response.status, 200);
     assert.equal(initialProfile.body.data, null);
 
+    const incompleteDashboard = await requestPage(baseUrl, "/dashboard", firstSession.cookie);
+    assert.ok([307, 308].includes(incompleteDashboard.status), "Incomplete students must be redirected away from Home.");
+    const incompleteDashboardLocation = incompleteDashboard.headers.get("location");
+    assert.ok(incompleteDashboardLocation);
+    assert.equal(new URL(incompleteDashboardLocation, baseUrl).pathname, "/onboarding");
+
+    const onboardingPage = await requestPage(baseUrl, "/onboarding", firstSession.cookie);
+    assert.equal(onboardingPage.status, 200);
+    assert.match(await onboardingPage.text(), /Which institution do you attend\?/);
+
     const catalogue = await requestJson(
       baseUrl,
       "/api/v1/academic/institutions?q=" + encodeURIComponent("Phase One Institution A"),
@@ -257,6 +279,37 @@ test("Better Auth lifecycle and student profile access are enforced end to end",
     );
     assert.equal(catalogue.response.status, 200);
     assert.ok(catalogue.body.data.some((record) => record.id === institutionA));
+    assert.equal(
+      catalogue.body.data.find((record) => record.id === institutionA)?.countryCode,
+      "NG",
+      "Institution search must return stored country metadata."
+    );
+
+    const invalidInstitutionChoice = await requestJson(baseUrl, "/api/v1/student/onboarding", {
+      method: "POST",
+      cookie: firstSession.cookie,
+      body: { choice: "catalogue", institutionId: randomUUID() }
+    });
+    assert.equal(invalidInstitutionChoice.response.status, 422);
+    assert.equal(invalidInstitutionChoice.body.error.code, "INSTITUTION_NOT_FOUND");
+
+    const catalogueChoice = await requestJson(baseUrl, "/api/v1/student/onboarding", {
+      method: "POST",
+      cookie: firstSession.cookie,
+      body: { choice: "catalogue", institutionId: institutionA }
+    });
+    assert.equal(catalogueChoice.response.status, 200);
+    assert.equal(catalogueChoice.body.data.institutionId, institutionA);
+    assert.equal(catalogueChoice.body.data.institutionName, "Phase One Institution A");
+    assert.equal(catalogueChoice.body.data.countryCode, "NG");
+    assert.equal(catalogueChoice.body.data.selfReportedInstitution, null);
+    assert.ok(catalogueChoice.body.data.onboardingCompletedAt);
+
+    const completedOnboardingPage = await requestPage(baseUrl, "/onboarding", firstSession.cookie);
+    assert.ok([307, 308].includes(completedOnboardingPage.status), "Completed onboarding must not be shown again.");
+    const completedOnboardingLocation = completedOnboardingPage.headers.get("location");
+    assert.ok(completedOnboardingLocation);
+    assert.equal(new URL(completedOnboardingLocation, baseUrl).pathname, "/dashboard");
 
     const faculties = await requestJson(
       baseUrl,
@@ -327,6 +380,90 @@ test("Better Auth lifecycle and student profile access are enforced end to end",
     assert.equal(savedProfile.body.data.facultyId, facultyA);
     assert.equal(savedProfile.body.data.departmentId, departmentA);
 
+    const selfReportedInstitutionName = "Cogniva Unlisted University " + suffix;
+    const selfReportedChoice = await requestJson(baseUrl, "/api/v1/student/onboarding", {
+      method: "POST",
+      cookie: firstSession.cookie,
+      body: { choice: "not_listed", institutionName: selfReportedInstitutionName }
+    });
+    assert.equal(selfReportedChoice.response.status, 200);
+    assert.equal(selfReportedChoice.body.data.institutionId, null);
+    assert.equal(selfReportedChoice.body.data.institutionName, null);
+    assert.equal(selfReportedChoice.body.data.selfReportedInstitution, selfReportedInstitutionName);
+    assert.ok(selfReportedChoice.body.data.onboardingCompletedAt);
+
+    const profileAfterSelfReport = await requestJson(baseUrl, "/api/v1/student/profile", {
+      cookie: firstSession.cookie
+    });
+    assert.equal(profileAfterSelfReport.response.status, 200);
+    assert.equal(profileAfterSelfReport.body.data.programme, validProfile.programme);
+    assert.equal(profileAfterSelfReport.body.data.yearOfStudy, validProfile.yearOfStudy);
+    assert.equal(profileAfterSelfReport.body.data.facultyId, null);
+    assert.equal(profileAfterSelfReport.body.data.departmentId, null);
+
+    const selfReportedCatalogueSearch = await requestJson(
+      baseUrl,
+      "/api/v1/academic/institutions?q=" + encodeURIComponent(selfReportedInstitutionName),
+      { cookie: firstSession.cookie }
+    );
+    assert.equal(selfReportedCatalogueSearch.response.status, 200);
+    assert.ok(
+      !selfReportedCatalogueSearch.body.data.some((record) => record.name === selfReportedInstitutionName),
+      "A self-reported institution must not be inserted into the global catalogue."
+    );
+
+    const activeSessionId = randomUUID();
+    const completedSessionId = randomUUID();
+    const approvedPlanId = randomUUID();
+    const approvedRevisionId = randomUUID();
+    const unapprovedPlanId = randomUUID();
+    const unapprovedRevisionId = randomUUID();
+
+    await sql.unsafe(
+      "INSERT INTO tutor_sessions (id, student_id, intent, initial_prompt, state) VALUES ($1,$2,'solve_problem',$3,'awaiting_attempt'),($4,$2,'learn_topic',$5,'completed')",
+      [
+        activeSessionId,
+        firstSession.userId,
+        "A private live tutoring topic for the dashboard",
+        completedSessionId,
+        "A completed session that must not appear on Home"
+      ]
+    );
+    await sql.unsafe(
+      "INSERT INTO learning_plans (id, student_id, intent, initial_input, status, generation_status) VALUES ($1,$2,'learn_topic',$3,'active','succeeded'),($4,$2,'learn_topic',$5,'draft','succeeded')",
+      [
+        approvedPlanId,
+        firstSession.userId,
+        "Fluid mechanics foundations",
+        unapprovedPlanId,
+        "Unapproved plan should stay in Learn"
+      ]
+    );
+    await sql.unsafe(
+      "INSERT INTO learning_plan_revisions (id, learning_plan_id, revision_number, title, summary, source_input, status) VALUES ($1,$2,1,$3,$4,$5,'approved'),($6,$7,1,$8,$9,$10,'proposed')",
+      [
+        approvedRevisionId,
+        approvedPlanId,
+        "Approved Fluid Mechanics Plan",
+        "A learner-reviewed outline for fluid mechanics fundamentals.",
+        "Fluid mechanics foundations",
+        unapprovedRevisionId,
+        unapprovedPlanId,
+        "Unapproved Proposal Must Not Appear",
+        "This proposal has not been approved.",
+        "Unapproved plan should stay in Learn"
+      ]
+    );
+
+    const adaptiveDashboard = await requestPage(baseUrl, "/dashboard", firstSession.cookie);
+    assert.equal(adaptiveDashboard.status, 200);
+    const adaptiveDashboardHtml = await adaptiveDashboard.text();
+    assert.match(adaptiveDashboardHtml, /Continue learning/);
+    assert.match(adaptiveDashboardHtml, /A private live tutoring topic for the dashboard/);
+    assert.match(adaptiveDashboardHtml, /Approved Fluid Mechanics Plan/);
+    assert.doesNotMatch(adaptiveDashboardHtml, /A completed session that must not appear on Home/);
+    assert.doesNotMatch(adaptiveDashboardHtml, /Unapproved Proposal Must Not Appear/);
+
     const forgedOwner = await requestJson(baseUrl, "/api/v1/student/profile", {
       method: "PUT",
       cookie: firstSession.cookie,
@@ -343,6 +480,18 @@ test("Better Auth lifecycle and student profile access are enforced end to end",
 
     await verifyAccount(baseUrl, emails, secondEmail, secondPassword, "Second Test Learner");
     const secondSession = await signIn(baseUrl, secondEmail, secondPassword);
+    const secondInitialProfile = await requestJson(baseUrl, "/api/v1/student/profile", {
+      cookie: secondSession.cookie
+    });
+    assert.equal(secondInitialProfile.response.status, 200);
+    assert.equal(secondInitialProfile.body.data, null, "A second account must not inherit the first learner's profile.");
+
+    const secondIncompleteDashboard = await requestPage(baseUrl, "/dashboard", secondSession.cookie);
+    assert.ok([307, 308].includes(secondIncompleteDashboard.status));
+    const secondIncompleteLocation = secondIncompleteDashboard.headers.get("location");
+    assert.ok(secondIncompleteLocation);
+    assert.equal(new URL(secondIncompleteLocation, baseUrl).pathname, "/onboarding");
+
     const secondProfile = await requestJson(baseUrl, "/api/v1/student/profile", {
       method: "PUT",
       cookie: secondSession.cookie,
@@ -350,6 +499,36 @@ test("Better Auth lifecycle and student profile access are enforced end to end",
     });
     assert.equal(secondProfile.response.status, 200);
     assert.equal(secondProfile.body.data.programme, "Second Account Private Programme");
+
+    const secondProfileEditDoesNotCompleteOnboarding = await requestPage(baseUrl, "/dashboard", secondSession.cookie);
+    assert.ok([307, 308].includes(secondProfileEditDoesNotCompleteOnboarding.status));
+    const secondProfileEditLocation = secondProfileEditDoesNotCompleteOnboarding.headers.get("location");
+    assert.ok(secondProfileEditLocation);
+    assert.equal(new URL(secondProfileEditLocation, baseUrl).pathname, "/onboarding");
+
+    const skipChoice = await requestJson(baseUrl, "/api/v1/student/onboarding", {
+      method: "POST",
+      cookie: secondSession.cookie,
+      body: { choice: "skip" }
+    });
+    assert.equal(skipChoice.response.status, 200);
+    assert.equal(skipChoice.body.data.institutionId, null);
+    assert.equal(skipChoice.body.data.selfReportedInstitution, null);
+    assert.ok(skipChoice.body.data.onboardingCompletedAt);
+    assert.equal(skipChoice.body.data.onboardingCompletedAt !== null, true);
+
+    const secondDashboard = await requestPage(baseUrl, "/dashboard", secondSession.cookie);
+    assert.equal(secondDashboard.status, 200);
+    const secondDashboardHtml = await secondDashboard.text();
+    assert.doesNotMatch(secondDashboardHtml, /A private live tutoring topic for the dashboard/);
+    assert.doesNotMatch(secondDashboardHtml, /Approved Fluid Mechanics Plan/);
+
+    const secondOnboardingPage = await requestPage(baseUrl, "/onboarding", secondSession.cookie);
+    assert.ok([307, 308].includes(secondOnboardingPage.status));
+    const secondCompletedLocation = secondOnboardingPage.headers.get("location");
+    assert.ok(secondCompletedLocation);
+    assert.equal(new URL(secondCompletedLocation, baseUrl).pathname, "/dashboard");
+
     await signOut(baseUrl, secondSession.cookie);
 
     const firstSessionAgain = await signIn(baseUrl, firstEmail, originalPassword);
