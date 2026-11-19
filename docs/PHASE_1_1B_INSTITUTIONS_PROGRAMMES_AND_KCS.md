@@ -2,7 +2,7 @@
 
 **Status:** Merged to `main` via PR #41; PR CI #44597076607 and post-merge CI #44598472862 passed.  
 **Migration:** `0008_global_academic_interoperability.sql`.  
-**Production:** Migration 0008 has not been applied to Neon in this workflow. The earlier read-only audit verified Neon through migration 0006.  
+**Production:** Migration 0008 was applied after migration 0007 on 19 November 2026 by [production migration run #44615863935](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44615863935) and verified by the subsequent [read-only audit, run #44610442501 attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501). The audit found all 31 Phase 1.1 target tables, including the 16 added by this migration, present.  
 **Dependency:** Migration 0008 depends on migration 0007 from PR #39. Merge/apply order is 0007, then 0008.  
 **Scope:** Additive academic interoperability schema. No catalogue seeds, ingestion, APIs, runtime adapters, or production writes.
 
