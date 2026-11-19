@@ -110,6 +110,8 @@ This area now includes persisted task/provider/model preferences, audit events, 
 
 - [x] Persist explicitly submitted learner attempts atomically with their student messages; distinguish attempts from follow-up questions.
 - [x] Expose recorded attempt history and evaluation status without implying correctness or mastery.
+- [ ] Add explicit production regressions for chained-equality arithmetic false positives, answer-only submissions, and malformed piecewise mathematical notation.
+- [ ] Add a concise AI-limitations notice and describe `not_evaluated` as `Not independently verified` in the learner-facing Tutor UI.
 - [x] Persist student attempts before evaluation.
 - [x] Add evidence-bounded arithmetic mismatch classification and correction guidance; do not infer the learner's cognitive cause.
 - [x] Add supported numeric answer/pair checks with explicit verification provenance and documented notation limits.
