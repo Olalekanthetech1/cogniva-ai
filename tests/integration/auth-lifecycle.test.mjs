@@ -123,9 +123,10 @@ async function signIn(baseUrl, email, password) {
 async function signOut(baseUrl, cookie) {
   const result = await requestJson(baseUrl, "/api/auth/sign-out", {
     method: "POST",
-    cookie
+    cookie,
+    body: {}
   });
-  assert.equal(result.response.status, 200, "Sign-out should be accepted.");
+  assert.equal(result.response.status, 200, "Sign-out should be accepted (HTTP " + result.response.status + ").");
 
   const session = await requestJson(baseUrl, "/api/auth/get-session", { cookie });
   assert.equal(session.body, null, "A signed-out session cookie must no longer resolve to a session.");
