@@ -356,7 +356,8 @@ export function buildTutorLearningFrameworkInstructions({ mode, learnerIntent })
     ].join(" ");
   }
 
-  return appendTurnActionGuidance(instructions, learnerIntent);
+  return appendTurnActionGuidance(instructions, learnerIntent) +
+    " Format every mathematical expression using Markdown math delimiters: use $...$ for inline mathematics and $...$ for display equations. Do not emit bare LaTeX commands or wrap formulas in square brackets. Keep ordinary sentence punctuation outside math delimiters. Apply this notation consistently in every response mode.";
 }
 
 export function validateTutorLearningOutput({
