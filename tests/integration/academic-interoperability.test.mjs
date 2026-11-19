@@ -315,6 +315,18 @@ test("global academic interoperability preserves institutional scope, provenance
         "23503",
         "A programme requirement period must belong to the programme institution."
       );
+      await expectDatabaseFailure(
+        tx,
+        (sp) => sp.unsafe(
+          "INSERT INTO programme_course_requirements " +
+          "(institution_id, programme_version_id, course_id, requirement_kind, position, source_record_id) " +
+          "VALUES ($1, $2, $3, 'core', 1, $4)",
+          [institutionA, programmeVersion, otherCourseId, sourceRecordId]
+        ),
+        "23514",
+        "A course already assigned to another institution cannot be added to this programme."
+      );
+
       const requirement = await tx.unsafe(
         "INSERT INTO programme_course_requirements " +
         "(institution_id, programme_version_id, course_id, course_content_version_id, academic_period_id, " +
