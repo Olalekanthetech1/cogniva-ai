@@ -1,6 +1,6 @@
 # Cogniva — Mobile and Web Product Experience
 
-**Status:** Proposed product experience and information architecture. This is a design specification, not a claim that these screens or capabilities are already implemented.
+**Status:** Product experience specification with the Phase 1.2 optional institution journey, authenticated workspace routing, catalogue-backed Learn view, Profile institution editor, and initial adaptive Home now implemented. The broader courses/skills organisation, evidence-backed Progress and adaptive recommendations remain future work.
 **Product direction:** Mobile-first, responsive, global, adaptive and evidence-driven.
 **Brand promise:** Understand More. Think Better.
 
@@ -209,3 +209,12 @@ Use account-scoped queries and enforce student ownership on the server. The UI m
 7. Validate mobile and desktop layouts, accessibility, ownership boundaries and empty/error states.
 
 The supplied mockup remains the visual foundation. The adaptive dashboard and navigation refinements above define the agreed product direction. Each area becomes visible as a working capability is delivered.
+
+
+## 10. Phase 1.2 implementation boundary (19 November 2026)
+
+The current workspace implements the optional first-run institution choice (catalogue selection, private self-report, or skip), owner-scoped persistence, completed/incomplete onboarding routing, a responsive Home entry composer, a catalogue-backed Learn view, an institution editor in Profile, and an active Tutor destination.
+
+Home's **Continue learning** section is derived only from the signed-in learner's persisted Tutor sessions in resumable states. It is omitted when no resumable sessions exist. The personal learning area shows only active plans with learner-approved revisions; draft plans and unapproved proposals remain in Learn. A Home activity query failure is presented as unavailable, not as an empty library.
+
+The following remain intentionally unavailable or incomplete: source-populated global institution catalogues, official course catalogue browsing beyond currently stored subject records, canonical KC/skill connections to learner evidence, plan content editing, evidence-backed Progress, mastery estimates, and adaptive recommendations. No seed data or fallback sample activity is used to fill these gaps.

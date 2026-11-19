@@ -54,17 +54,19 @@ This design step precedes further academic-catalogue implementation. See [GLOBAL
 
 This implementation step replaces the interim multi-field onboarding form and introduces the authenticated student workspace.
 
-- [ ] Add an additive migration for onboarding completion and self-reported institution data; preserve all existing profile values.
-- [ ] Add an authenticated onboarding endpoint supporting catalogue selection, self-reported institution-not-listed, and skip.
-- [ ] Replace first-run onboarding with one optional institution question and global search results that show source-provided country metadata.
-- [ ] Route completed students to an authenticated Home dashboard and incomplete students to onboarding.
-- [ ] Implement responsive Home with a primary learning entry area and truthful capability availability.
-- [ ] Add a real catalogue-backed Learn view and a working Profile institution editor.
-- [ ] Display Tutor and Progress as unavailable until the respective session and evidence models exist; do not simulate functionality.
-- [ ] Add automated tests for onboarding choices, account ownership, institution validation, and completion routing.
-- [ ] Apply the reviewed migration to production before deploying application code that uses its new columns.
+- [x] Reuse the additive onboarding fields from migration `0001_student_onboarding_state.sql` for completion and self-reported institution data; preserve existing profile values. No new migration is needed for Phase 1.2.
+- [x] Add an authenticated onboarding endpoint supporting catalogue selection, self-reported institution-not-listed, and skip.
+- [x] Replace first-run onboarding with one optional institution question; search the available catalogue and display its stored country metadata without fabricating missing results.
+- [x] Route completed students to authenticated Home and incomplete students to onboarding.
+- [x] Implement responsive Home with a primary learning entry area, genuine resumable Tutor sessions, and only learner-approved active learning plans. Omit unsupported courses, skills, mastery, and recommendations.
+- [x] Add a catalogue-backed Learn view and a working Profile institution editor. Empty catalogue results remain empty.
+- [x] Expose Tutor because persisted session APIs and routes exist; keep Progress unavailable until an evidence-backed progress model exists.
+- [x] Add automated integration coverage for onboarding choices, account ownership, institution validation, completion routing, self-report isolation, and owner-scoped adaptive Home content.
+- [x] Confirm onboarding migration `0001` is included in the verified 9/9 production migration ledger before relying on its columns.
 
-**Exit:** every signed-in student can choose an institution, self-report one not listed, or skip and reach Home; institution self-reports never pollute the global catalogue; the Home shell and Learn/Profile routes work on mobile and desktop; unfinished capabilities are explicitly unavailable rather than simulated.
+**Current status (19 November 2026):** the first-run institution choice supports selecting a persisted catalogue institution, recording a private self-report, or skipping. Self-reported names are stored only on the learner's profile and never inserted into the shared catalogue. The authenticated Home now displays up to five owner-scoped Tutor sessions in resumable states and up to four active plans with learner-approved revisions. Completed/failed/cancelled sessions and unapproved/draft plans are omitted. When there is no resumable session, the Continue learning section is omitted. A failed Home activity query is shown as unavailable rather than as an empty state. Learn reads the available subject catalogue and the learner's plan library; Profile reuses the institution editor. Tutor is available; Progress remains disabled because no evidence-backed progress model exists. The onboarding columns originate in migration `0001`, which is included in the verified production ledger; this slice adds no DDL. See [PRODUCT_EXPERIENCE.md](PRODUCT_EXPERIENCE.md) and [API.md](API.md).
+
+**Exit:** every signed-in student can choose a catalogue institution, self-report one not listed, or skip and reach Home; self-reports never pollute the global catalogue; Home adapts to real owner-scoped activity without inventing courses, skills, progress or recommendations; Learn and Profile work on mobile and desktop; unfinished capabilities remain explicitly unavailable rather than simulated.
 
 ## Phase 2 — Learning Workspace and first Socratic tutoring vertical slice
 
