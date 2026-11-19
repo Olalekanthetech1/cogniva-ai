@@ -25,6 +25,7 @@ import {
 import {
   TUTOR_LEARNING_FRAMEWORK_VERSION,
   getTutorLearningModeConfig,
+  getPersistedActiveTaskMode,
   buildTutorLearningFrameworkInstructions,
   resolveTutorLearningMode,
   validateTutorLearningOutput
@@ -57,22 +58,6 @@ function errorResponse(
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function getPersistedActiveTaskMode(
-  messages: Array<{
-    role: "student" | "tutor";
-    metadata?: Record<string, unknown> | null;
-  }>
-): "concept_mini_lesson" | "problem_solving" | null {
-  for (const message of [...messages].reverse()) {
-    if (message.role !== "tutor" || !isObject(message.metadata)) continue;
-    const adaptive = message.metadata.adaptive;
-    if (!isObject(adaptive)) continue;
-    const mode = adaptive.activeTaskMode;
-    if (mode === "concept_mini_lesson" || mode === "problem_solving") return mode;
-  }
-  return null;
 }
 
 function buildSystemPrompt(mode: TutorLearningMode): string {
