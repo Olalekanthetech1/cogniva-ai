@@ -588,3 +588,30 @@ BEFORE INSERT OR UPDATE OF "source_version_id", "target_version_id", "relation_k
 ON "public"."knowledge_component_relations"
 FOR EACH ROW
 EXECUTE FUNCTION "public"."guard_knowledge_component_prerequisite_cycle"();
+--> statement-breakpoint
+CREATE FUNCTION "public"."guard_programme_course_requirement_institution"()
+RETURNS trigger
+LANGUAGE plpgsql
+AS '
+DECLARE
+  course_institution uuid;
+BEGIN
+  SELECT "institution_id"
+    INTO course_institution
+    FROM "public"."courses"
+    WHERE "id" = NEW."course_id";
+
+  IF course_institution IS NOT NULL AND course_institution <> NEW."institution_id" THEN
+    RAISE EXCEPTION ''A programme requirement course must belong to the programme institution when the course has an institution assignment''
+      USING ERRCODE = ''23514'', CONSTRAINT = ''programme_course_requirement_course_institution_check'';
+  END IF;
+
+  RETURN NEW;
+END;
+';
+--> statement-breakpoint
+CREATE TRIGGER "programme_course_requirement_institution_guard"
+BEFORE INSERT OR UPDATE OF "institution_id", "course_id"
+ON "public"."programme_course_requirements"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."guard_programme_course_requirement_institution"();
