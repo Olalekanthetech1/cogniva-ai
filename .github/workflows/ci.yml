@@ -67,6 +67,9 @@ jobs:
       - name: Authentication and student-profile integration tests
         run: pnpm test:auth-lifecycle
 
+      - name: Global academic reference and provenance integration tests
+        run: pnpm test:academic-reference-foundation
+
       - name: Tutor intelligence regression tests
         run: pnpm test:tutor-intelligence
 

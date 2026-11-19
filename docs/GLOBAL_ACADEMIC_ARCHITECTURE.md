@@ -1,6 +1,6 @@
 # Cogniva — Global Academic Architecture
 
-**Status:** Proposed global architecture with a Phase 1.1 design baseline; no global catalogue ingestion or target-schema migration is claimed to be implemented.  
+**Status:** Global architecture approved; Phase 1.1a reference/provenance schema is implemented in the current review branch as migration 0007. No production application, catalogue ingestion, live source adapter, or complete global academic catalogue is claimed.  
 **Decision:** Cogniva is a global learning platform from its first production release. Nigeria is an initial user context, not the product's data model.
 
 ## 1. Product and architecture decision
@@ -396,4 +396,4 @@ The following decisions are now normative for subsequent schema design:
 
 WHED/IAU is not an unrestricted bulk-data source: its terms state that copying all or substantial parts of the portal requires prior consent. ROR metadata is CC0, but ROR's scope is research organisations and does not cover every university subdivision. OpenAlex is useful for discovery and matching, not recognition or accreditation. The source adapter must encode these different legal and evidential roles.
 
-**Current implementation boundary:** no production schema changes, global catalogue ingestion, source adapter, or KC graph were added in Phase 1.1 design preparation. The read-only Neon audit must be run and reviewed before the migration is generated.
+**Current implementation boundary (19 November 2026):** the read-only Neon audit completed at 15:34:20 UTC and verified all seven existing repository migrations (0000–0006), with no missing or unexpected migration entries. It found the nine existing academic tables and none of the 27 previously enumerated target tables. The current Phase 1.1a branch adds the first 15 reference/provenance tables in migration 0007; this is repository code awaiting review and has not been applied to Neon. No catalogue rows are seeded, no source adapters or ingestion jobs are active, and the programme/course/recognition/organisation/KC layers remain subsequent implementation work.

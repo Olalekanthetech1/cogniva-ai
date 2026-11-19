@@ -26,13 +26,16 @@ const academicTables = [
 
 const targetTables = [
   "countries",
+  "country_aliases",
   "education_jurisdictions",
   "education_systems",
   "qualification_frameworks",
   "qualification_framework_versions",
   "qualification_levels",
   "classification_schemes",
+  "classification_scheme_versions",
   "classification_codes",
+  "qualification_level_classification_mappings",
   "institution_identifiers",
   "institution_aliases",
   "institution_units",

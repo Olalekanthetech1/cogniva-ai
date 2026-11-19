@@ -34,7 +34,7 @@
 This design step precedes further academic-catalogue implementation. See [GLOBAL_ACADEMIC_ARCHITECTURE.md](GLOBAL_ACADEMIC_ARCHITECTURE.md) and [PRODUCT_EXPERIENCE.md](PRODUCT_EXPERIENCE.md).
 
 - [x] Approve the global academic domain model and distinguish institution identity, recognition, programme, course, curriculum version, local academic stage, ISCED mapping, and Knowledge Components.
-- [ ] Run and review the read-only production schema/migration audit; reconcile actual Neon state before generating DDL.
+- [x] Run and review the read-only production schema/migration audit; reconcile actual Neon state before generating DDL.
 - [x] Document the additive target migration map and rollback plan; no production DDL is included in this design step.
 - [x] Define country/jurisdiction, qualification-framework, ISCED-P/ISCED-A, and ISCED-F mappings without treating local labels as universal.
 - [x] Define institution identifiers, flexible institution-unit hierarchy, recognition evidence, and source provenance.
@@ -43,9 +43,9 @@ This design step precedes further academic-catalogue implementation. See [GLOBAL
 - [x] Define the Cogniva Knowledge Component graph and course-to-KC mapping contract independently of the university catalogue.
 - [x] Approve the mobile-first and responsive desktop information architecture in [PRODUCT_EXPERIENCE.md](PRODUCT_EXPERIENCE.md).
 - [x] Approve optional institution-only onboarding with self-reported and independent-learner paths.
-- [ ] Add integration tests for source provenance, verification-state boundaries, and cross-jurisdiction academic relationships.
+- [x] Add first-slice PostgreSQL integration coverage for country/jurisdiction relationships, version-scoped qualification/classification hierarchies, source-rights gates, typed source assertions, evidence-backed ISCED-P/ISCED-A mappings, and review history. Full programme/course/recognition/unit/KC coverage remains outstanding.
 
-**Current status:** The target semantics, source-rights boundaries, repository schema-gap map, additive migration sequence, and rollback contract are documented in [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md). The read-only Neon audit is still required; no global schema migration, source adapter, ingestion job, or KC persistence has been implemented.
+**Current status (19 November 2026):** The read-only production audit confirmed migrations 0000–0006 and the nine-table academic baseline. The Phase 1.1a branch adds migration 0007 and 15 reference/provenance tables, plus isolated PostgreSQL integration tests. Migration 0007 has not been applied to production. No catalogue data is seeded; live source adapters, ingestion, institution identifiers/units, recognition, programmes/courses, credit systems, complete syllabus interoperability, and canonical KC persistence remain future slices. See [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md) and [PHASE_1_1A_REFERENCE_FOUNDATION.md](PHASE_1_1A_REFERENCE_FOUNDATION.md).
 
 **Exit:** Cogniva's data model supports different education systems without country-specific assumptions; every catalogue claim has traceable provenance and a clear verification state; students can learn without a listed institution; the KC model can connect concepts across different local curricula.
 

@@ -1,6 +1,6 @@
 # Cogniva — Database Design Baseline
 
-**Status (reviewed 19 November 2026):** The repository contains Drizzle schema and migration files through 0006_cultured_lila_cheney.sql. The previously documented production confirmation covers Neon migrations through 0003_lean_gateway.sql; application of 0004–0006 to Neon is not verified by the available production evidence. Render's latest observed live deployment is commit a0266a571cae9737ebc78696da84cdcaf05e1b3f, with automatic deployment disabled. The readiness endpoint previously confirmed database connectivity only; it does not establish migration history or individual constraints. A new read-only Neon schema audit is available in .github/workflows/audit-neon-schema.yml and must be reviewed before any Phase 1.1 schema migration.
+**Status (reviewed 19 November 2026):** A read-only Neon audit completed at 15:34:20 UTC against PostgreSQL 18.7. It confirmed repository migrations 0000–0006 are all applied, with no missing or unexpected ledger entries, and found the nine existing academic tables. It found none of the 27 original Phase 1.1 target tables. The current implementation branch adds migration 0007 and 15 new reference/provenance tables; migration 0007 has not been applied to production. The audit read only migration/schema metadata and did not inspect learner rows. Production deployment state is tracked separately from migration state.
 
 ## 1. Decisions
 
@@ -28,6 +28,8 @@ The academic schema contains institutions, faculties, departments, subjects, cou
 
 There are no seeded or fabricated university, course, or subject catalogue records. Catalogue entries must be sourced or explicitly created as real data.
 
+The Phase 1.1a branch adds a separate global reference/provenance schema: `countries`, `country_aliases`, `education_jurisdictions`, `education_systems`, `qualification_frameworks`, `qualification_framework_versions`, `qualification_levels`, `classification_schemes`, `classification_scheme_versions`, `classification_codes`, `qualification_level_classification_mappings`, `catalogue_sources`, `catalogue_source_records`, `entity_source_assertions`, and `catalogue_review_events`. These tables hold definitions and evidence metadata only; no ISO, UNESCO, institution, regulator, or catalogue data is inserted by the migration. Source permissions remain explicitly unknown until reviewed, and a source cannot enter `approved` status until its rights-review timestamp and all four permission flags are recorded. Assertions are tied to a source record and exactly one typed subject. Accepted ISCED-P/ISCED-A mappings require a source record and review timestamp; a database trigger prevents mapping an ISCED-P relation to an attainment scheme or vice versa.
+
 ### Learning Workspace
 
 The repository includes student-owned plans and revision history, ordered units/objectives, plan-scoped concepts and relationships, resumable tutor sessions, and ordered tutor messages with provider/model/prompt provenance fields. The plan structures were introduced by migration `0002_futuristic_alex_power.sql`; the project owner previously confirmed production migration history through `0003_lean_gateway.sql`.
@@ -47,14 +49,17 @@ The tutor response route uses the provider runtime when its task route and crede
 
 ## 4. Production migration history and workflow
 
-The production migration history confirmed by the project owner is:
+The read-only production audit confirmed the following migration history in Neon at 2026-11-19 15:34:20 UTC:
 
 - `0000_dapper_vulture.sql` — initial identity and academic/profile baseline.
 - `0001_student_onboarding_state.sql` — onboarding completion and self-reported institution fields.
 - `0002_futuristic_alex_power.sql` — Learning Workspace persistence tables and enums.
 - `0003_lean_gateway.sql` — Better Auth Admin plugin role, ban metadata, and impersonation reference.
+- `0004_classy_freak.sql` — AI task routes and administrative audit events.
+- `0005_faithful_zodiak.sql` — AI benchmark runs, results, and reviews.
+- `0006_cultured_lila_cheney.sql` — Tutor attempt records and ownership/message constraints.
 
-The project owner previously confirmed successful application of migrations through 0003 to Neon. The deployed Render readiness endpoint returned status ready with checks.database available; readiness verifies application-to-database connectivity, not every individual constraint. Migrations 0004 through 0006 are present in the repository, but their production application remains unverified pending the read-only Neon audit.
+The audit reported 7 expected and 7 applied migrations, zero missing migrations, zero missing repository files, and zero unexpected applied migrations. The current branch adds `0007_global_academic_reference_foundation.sql`; it is not yet merged or applied to Neon.
 
 The database package exposes `createDatabase(databaseUrl)`. Importing it does not access process environment variables or create a live connection. The application resolves its pooled `DATABASE_URL` only when a data request needs the database.
 
@@ -92,8 +97,8 @@ Before public launch, define retention and deletion across relational rows, uplo
 
 ## 8. Phase 1.1 production schema audit
 
-Use the manually triggered **Read-only Neon schema audit** workflow before designing a production migration. It requires the GitHub Actions secret DATABASE_MIGRATION_URL, opens a read-only transaction, and inspects only the Drizzle migration ledger and academic schema metadata. It does not read learner records or mutate production data.
+The manually triggered **Read-only Neon schema audit** workflow was run on 19 November 2026 at 15:34:20 UTC. It used `DATABASE_MIGRATION_URL`, opened a PostgreSQL read-only transaction, and inspected only the Drizzle migration ledger and academic schema metadata. It did not read learner rows or mutate production data.
 
-The audit compares applied Drizzle migration timestamps with the repository journal and reports academic tables, columns, and relevant constraints. An absent migration row or missing table must be reconciled before any schema generation/application. Do not use a successful CI migration run as evidence about Neon.
+The report recorded database `neondb`, PostgreSQL 18.7, seven expected/applied migrations (0000–0006), all nine baseline academic tables, and zero of the original 27 target tables. The report artifact is retained in GitHub Actions run [44556239768](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44556239768). The audit script now also reports the Phase 1.1a additions and the remaining target-table presence on a subsequent run.
 
-See [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md) for the current schema-gap analysis and the additive migration/rollback contract.
+See [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md) for the detailed schema-gap analysis and [PHASE_1_1A_REFERENCE_FOUNDATION.md](PHASE_1_1A_REFERENCE_FOUNDATION.md) for migration 0007, its constraints, and rollback boundaries.
