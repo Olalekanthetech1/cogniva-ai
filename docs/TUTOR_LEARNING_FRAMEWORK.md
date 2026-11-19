@@ -1,6 +1,6 @@
 # Cogniva Tutor Learning Framework (CTL) v1
 
-**Status:** Accepted pedagogical contract. The unit-linked lesson opening and adaptive continuation rules are being implemented in the current Tutor unit-launch slice. A persisted lesson-stage state machine, explicit stage controls, and evidence-based mastery tracking are not part of v1.
+**Status:** Accepted and implemented in the Tutor response path; the latest GitHub Actions run passed tests, lint, type checking, and production build. A persisted lesson-stage state machine, explicit stage controls, and evidence-based mastery tracking are not part of v1. A persisted lesson-stage state machine, explicit stage controls, and evidence-based mastery tracking are not part of v1.
 
 ## 1. Purpose and scope
 
