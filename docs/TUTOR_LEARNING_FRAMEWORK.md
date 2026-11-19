@@ -92,7 +92,7 @@ The response route consumes this registry instead of maintaining a separate nest
 
 This is an extensible architecture, not a guarantee that future capabilities need no engineering. Every new teaching capability still requires an explicit policy, tests, operational limits, and evidence that the behavior is suitable.
 
-All responses must be non-empty, non-truncated, within the registered budgets, and end with exactly one learner-facing question. Structured openings and the concept/problem modes have ordered section validation. Structured openings require two to four list-form objectives. Applicable modes reject output containing numeric claims that fail Cogniva's bounded arithmetic check.
+All responses must be non-empty, non-truncated, within the registered budgets, and end with exactly one learner-facing question. Structured openings and the concept/problem modes have ordered section validation. Structured openings require two to four list-form objectives. Applicable modes reject output containing numeric claims that fail Cogniva's bounded arithmetic check. Tutor output is also rejected when a LaTeX environment such as `cases` has an unmatched `\\begin{...}` or `\\end{...}` command, preventing incomplete piecewise notation from being saved for display.
 
 ## 9. Quality and evidence rules
 
