@@ -155,6 +155,14 @@ export async function POST(request: Request): Promise<Response> {
           404
         );
       }
+
+      if (requestedUnitId && (ownedRevision.status !== "approved" || ownedRevision.planStatus !== "active")) {
+        return errorResponse(
+          "LEARNING_PLAN_NOT_ACTIVE",
+          "Tutor sessions from a unit require an approved, active learning plan.",
+          409
+        );
+      }
     }
 
     if (requestedUnitId) {
