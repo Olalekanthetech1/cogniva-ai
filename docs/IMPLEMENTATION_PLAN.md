@@ -82,14 +82,16 @@ See [PHASE_2_LEARNING_WORKSPACE.md](PHASE_2_LEARNING_WORKSPACE.md) for the accep
 
 This area now includes persisted task/provider/model preferences, audit events, server-side credential-presence reporting, provider-neutral Gemini/Groq/Mistral text adapters, fixed-prompt administrator connection tests, and the persisted administrator benchmark workflow. The text runtime is integrated into the Socratic tutor and personal learning-plan generation routes when each task has a saved provider/model preference and matching server credential. No comparative provider benchmark has been completed, no model has been selected as a winner, and runtime availability is not the same as pedagogical validation. Production schema/deployment state must be verified separately rather than inferred from repository files.
 
-- [ ] Add reviewed, additive persistence for task/provider/model preferences and administrative audit events.
-- [ ] Add an admin-only API that returns provider credential-presence booleans, never secret values.
-- [ ] Add validated admin mutations that write routing preferences and an audit event atomically.
-- [ ] Add responsive configuration UI for Gemini, Groq, and Mistral with explicit inactive-runtime states.
-- [ ] Verify unauthorized access, malformed inputs, persistence after refresh, credential redaction, audit creation, and responsive layouts.
-- [ ] Generate/review/apply the migration before deploying code that queries the new tables.
+- [x] Define and add persistence for task/provider/model preferences and administrative audit events (migration files 0004 and schema definitions are in the repository; production application must be verified separately).
+- [x] Add an admin-only API that returns provider credential-presence booleans, never secret values.
+- [x] Add validated admin mutations that write routing preferences and an audit event atomically.
+- [x] Add responsive configuration UI for Gemini, Groq, and Mistral, with runtime/configuration state distinguished.
+- [x] Implement provider-neutral text-generation adapters and fixed-prompt administrator connection tests.
+- [x] Implement the persisted administrator benchmark workflow and blinded-review data model.
+- [ ] Run the comparative provider benchmark and complete blinded human rubric review; preserve failed and incomplete evidence.
+- [ ] Verify production migration state, configured task routes/credentials, and the deployed learner-facing runtime.
 
-**Exit:** admins can save per-task provider/model preferences and see actual server-side credential presence; no raw key is exposed or stored in the application database; routing remains visibly inactive until provider adapters are separately implemented and benchmarked.
+**Exit:** administrators can save per-task provider/model preferences and see actual server-side credential presence; raw keys are never returned or stored in the application database. Learner requests use only the saved route for their task and require the matching server credential, with no silent fallback. No provider is declared best or comparatively validated until a real benchmark and blinded review are complete.
 
 ## Phase 3 — Multimodal problem input
 
