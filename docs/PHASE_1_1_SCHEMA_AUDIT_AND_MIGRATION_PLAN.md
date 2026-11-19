@@ -1,8 +1,8 @@
 # Cogniva — Phase 1.1 Schema Audit and Migration Plan
 
-**Status:** Design baseline approved; read-only Neon audit completed; Phase 1.1a and Phase 1.1b additive schema slices are implemented in stacked review branches.  
+**Status:** Design baseline and additive schema slices 1.1a/1.1b merged to `main`; read-only Neon audit completed; production application of migrations 0007/0008 remains unverified and has not been performed in this workflow.  
 **Scope:** Global academic interoperability. Migrations 0007 and 0008 define reference/provenance, institution/programme, credit/period, course-content, recognition, and Knowledge Component structures. Runtime adapters, ingestion, and learner-context backfill remain outstanding.  
-**Safety:** The audit was read-only. Migrations 0007 and 0008 are review-only and have not been applied to production; no catalogue data or production writes have been performed.
+**Safety:** The prior Neon audit was read-only. Migrations 0007 and 0008 are merged and CI-tested, but have not been applied to production in this workflow; no catalogue data or production writes have been performed.
 
 ## 1. Evidence boundary and current-state audit
 
