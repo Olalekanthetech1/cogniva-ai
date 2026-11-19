@@ -317,13 +317,20 @@ function isDirectAnswerRequest(text) {
 }
 
 function inferRequestedLearningMode(text, latestSubmissionType) {
-  if (latestSubmissionType === "initial_prompt") return null;
   const source = String(text ?? "").trim();
 
+  const hasProblemEvidence = /\d|[=+*/^]|\b(?:problem|equation|exercise|expression)\b/i.test(source);
+  const hasExplicitProblemRequest = /\b(?:solve|calculate|compute|evaluate|work out|determine|find|derive|prove)\b/i.test(source) &&
+    hasProblemEvidence;
   const requestsNewProblem = /\b(?:now|next|instead|please|let'?s|let us|can we|could we|switch to|move on to)\b[\s\S]{0,55}\b(?:solve|work through|calculate|compute|derive|evaluate|prove)\b/i.test(source) ||
     /\bnew\s+(?:problem|exercise)\b/i.test(source);
-  const hasProblemEvidence = /\d|[=+*/^]|\b(?:problem|equation|exercise|expression)\b/i.test(source);
-  if (requestsNewProblem && hasProblemEvidence) return "problem_solving";
+
+  if (latestSubmissionType === "initial_prompt" && hasExplicitProblemRequest) {
+    return "problem_solving";
+  }
+  if (latestSubmissionType !== "initial_prompt" && requestsNewProblem && hasProblemEvidence) {
+    return "problem_solving";
+  }
 
   const requestsNewConcept = /\bnew\s+(?:topic|concept)\b/i.test(source) ||
     /\bswitch to (?:a )?(?:new )?(?:topic|concept)\b/i.test(source) ||
@@ -331,7 +338,15 @@ function inferRequestedLearningMode(text, latestSubmissionType) {
     /\b(?:let'?s|let us) learn\b/i.test(source) ||
     /\bteach me about\b/i.test(source) ||
     /\bnow\b[\s\S]{0,35}\b(?:learn|study|teach|cover)\b/i.test(source);
-  if (requestsNewConcept) return "concept_mini_lesson";
+  const explicitConceptRequest = /\b(?:what is|define|explain|meaning of|teach me|help me understand)\b/i.test(source);
+
+  if (
+    latestSubmissionType === "initial_prompt" &&
+    explicitConceptRequest
+  ) return "concept_mini_lesson";
+  if (latestSubmissionType !== "initial_prompt" && requestsNewConcept) {
+    return "concept_mini_lesson";
+  }
 
   return null;
 }
