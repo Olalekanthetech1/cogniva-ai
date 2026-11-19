@@ -138,7 +138,7 @@ test("detects a learner's incorrect arithmetic without rejecting unrelated prose
 
   assert.equal(analysis.learnerNumericMismatches.length, 1);
   assert.equal(analysis.learnerNumericMismatches[0].expectedText, "27525.12");
-  assert.match(buildAdaptiveTutorInstructions(analysis), /learner's submitted working/i);
+  assert.match(buildAdaptiveTutorInstructions(analysis), /only the work the learner actually submitted/i);
 });
 
 test("does not claim independent verification for unsupported expressions", () => {
