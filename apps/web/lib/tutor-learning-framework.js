@@ -76,6 +76,16 @@ const MODE_OUTPUT_CONFIG = Object.freeze({
     limitMessage: "The problem-solving response exceeded Cogniva's response limit.",
     mismatchMessage: "The problem-solving response contains a numeric claim that did not pass Cogniva's bounded arithmetic check."
   },
+  problem_solving_continuation: {
+    label: "The problem-solving continuation",
+    maxOutputTokens: 560,
+    maxWords: 220,
+    maxCharacters: 2_400,
+    responseLengthInstruction: "For this problem-solving continuation, use up to 220 words and focus on the learner's current step without restarting the full walkthrough.",
+    requiredSections: null,
+    rejectNumericMismatches: false,
+    limitMessage: "The problem-solving continuation exceeded Cogniva's response limit."
+  },
   attempt_feedback: {
     label: "The attempt-feedback response",
     maxOutputTokens: 450,
@@ -167,7 +177,12 @@ export function resolveTutorLearningMode({
   }
   if (requestedLearningMode) return requestedLearningMode;
 
-  if (sessionIntent === "solve_problem") return "problem_solving";
+  if (sessionIntent === "solve_problem") {
+    if (latestSubmissionType === "initial_prompt" || learnerIntent === "direct_answer_request") {
+      return "problem_solving";
+    }
+    return "problem_solving_continuation";
+  }
 
   if (sessionIntent === "understand_concept" || sessionIntent === "learn_topic") {
     if (latestSubmissionType === "initial_prompt" || learnerIntent === "direct_answer_request") {
@@ -265,6 +280,14 @@ export function buildTutorLearningFrameworkInstructions({ mode, learnerIntent })
       "Check arithmetic, units, signs, dimensions, and whether the result is consistent with the stated conditions. Do not claim broader physical or factual verification than the available checks support.",
       "If required information is missing or the prompt is ambiguous, do not invent it or force a numerical answer. State what is known, identify the missing information under the relevant headings, and ask one precise clarifying question.",
       "Finish with one small transfer check or a question about the next meaningful step. Respect an explicit request for a complete worked solution."
+    ].join(" ");
+  } else if (mode === "problem_solving_continuation") {
+    instructions = [
+      "Continue the existing problem-solving conversation from the actual last agreed step. Do not repeat the full problem statement, governing principle, or complete six-part walkthrough unless the learner asks for a recap or complete solution.",
+      "Address the learner's latest question or next step directly. Preserve the known givens, assumptions, notation, units, and any correctly established intermediate results from the conversation.",
+      "Explain only the next useful piece of reasoning, make any necessary local arithmetic or dimensional check within supported capabilities, and state uncertainty when the available information is insufficient.",
+      "Adapt to the learner's current action, use hints or a smaller example when requested, and do not claim independent verification beyond the checks actually performed.",
+      "Ask exactly one focused question at the end when a response from the learner is useful."
     ].join(" ");
   } else if (mode === "attempt_feedback") {
     instructions = [
