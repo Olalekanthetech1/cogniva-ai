@@ -83,3 +83,14 @@ test("invalid TeX is shown safely without breaking the tutor message", () => {
   assert.match(html, /#cc0000/);
   assert.match(html, /Keep explaining/);
 });
+
+
+test("renders a piecewise cases environment as mathematical markup", () => {
+  const markdown = "$$\\begin{cases}x^2+1, & x<2 \\\\ 5, & x=2 \\\\ 3x-1, & x>2\\end{cases}$$";
+  const html = renderMarkdown(markdown);
+
+  assert.match(html, /class="katex-display"/);
+  assert.match(html, /class="katex"/);
+  assert.doesNotMatch(html, /\\\\begin\{cases\}/);
+  assert.doesNotMatch(html, /\\\\end\{cases\}/);
+});
