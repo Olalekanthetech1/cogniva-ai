@@ -46,6 +46,7 @@ function cookieHeader(response) {
 
 async function requestJson(baseUrl, path, options = {}) {
   const headers = new Headers(options.headers ?? {});
+  headers.set("origin", baseUrl);
   if (options.body !== undefined) headers.set("content-type", "application/json");
   if (options.cookie) headers.set("cookie", options.cookie);
 
@@ -94,7 +95,7 @@ async function verifyAccount(baseUrl, emails, email, password, name) {
     }
   });
 
-  assert.equal(signup.response.status, 200, "Email registration should be accepted.");
+  assert.equal(signup.response.status, 200, "Email registration should be accepted (HTTP " + signup.response.status + ", " + (signup.body?.code ?? signup.body?.error?.code ?? "no error code") + ").");
   assert.ok(emails.length > emailCount, "Registration should send an email-verification message.");
 
   const verificationLink = extractEmailLink(emails[emails.length - 1]);
