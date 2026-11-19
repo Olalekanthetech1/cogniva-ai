@@ -174,10 +174,6 @@ function normalizeNumber(value) {
   return Number(String(value).replace(/,/g, ""));
 }
 
-function decimalPlaces(value) {
-  const decimal = String(value).replace(/,/g, "").split(".")[1];
-  return Math.min(decimal?.length ?? 0, 8);
-}
 
 /**
  * Extract only explicit numeric equalities/approximations that the bounded
