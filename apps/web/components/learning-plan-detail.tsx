@@ -217,9 +217,6 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
   const [retryError, setRetryError] = useState("");
 
   const loadPlan = useCallback(async (signal?: AbortSignal) => {
-    setIsLoading(true);
-    setLoadError("");
-
     try {
       const response = await fetch(
         "/api/v1/learning-plans/" + encodeURIComponent(planId),
@@ -238,7 +235,10 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
       }
 
       const nextPlan = parsePlanDetail(payload.data);
-      if (!signal?.aborted) setPlan(nextPlan);
+      if (!signal?.aborted) {
+        setPlan(nextPlan);
+        setLoadError("");
+      }
     } catch (cause) {
       if (signal?.aborted) return;
       setLoadError(
@@ -256,6 +256,12 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
     void loadPlan(controller.signal);
     return () => controller.abort();
   }, [loadPlan]);
+
+  async function refreshPlan() {
+    setIsLoading(true);
+    setLoadError("");
+    await loadPlan();
+  }
 
   async function handleRetry() {
     if (!plan || isRetrying) return;
@@ -275,14 +281,14 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
         );
       }
 
-      await loadPlan();
+      await refreshPlan();
     } catch (cause) {
       setRetryError(
         cause instanceof Error
           ? cause.message
           : "Cogniva could not confirm the retry result. Refresh the plan state."
       );
-      await loadPlan();
+      await refreshPlan();
     } finally {
       setIsRetrying(false);
     }
@@ -300,7 +306,7 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
     return (
       <div className="learning-plan-error" role="alert">
         <p>{loadError}</p>
-        <button type="button" onClick={() => void loadPlan()}>
+        <button type="button" onClick={() => void refreshPlan()}>
           Try loading again
         </button>
       </div>
@@ -360,7 +366,7 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
               <button
                 className="learning-plan-secondary-button"
                 type="button"
-                onClick={() => void loadPlan()}
+                onClick={() => void refreshPlan()}
                 disabled={isLoading}
               >
                 {isLoading ? "Refreshing..." : "Refresh status"}
