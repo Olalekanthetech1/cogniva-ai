@@ -495,8 +495,9 @@ export async function POST(
     requestedLearningMode: turnAnalysis.requestedLearningMode,
     activeTaskMode: previousActiveTaskMode
   });
-  const nextActiveTaskMode =
-    tutorLearningMode === "concept_mini_lesson"
+  const nextActiveTaskMode = claim.learningPlanUnitId
+    ? null
+    : tutorLearningMode === "concept_mini_lesson"
       ? "concept_mini_lesson"
       : tutorLearningMode === "problem_solving" || tutorLearningMode === "problem_solving_continuation"
         ? "problem_solving"
