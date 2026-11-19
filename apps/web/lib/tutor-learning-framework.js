@@ -20,15 +20,16 @@ function isTruncated(finishReason) {
   ].includes(normalized);
 }
 
-function hasSection(text, title) {
-  const escaped = title.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+function findSectionIndex(text, title) {
+  const escaped = title.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
   const pattern = new RegExp(
-    "^\\s{0,3}(?:#{1,3}\\s*)?(?:\\d+[.)]\\s*)?" +
+    "^\\\\s{0,3}(?:#{1,3}\\\\s*)?(?:\\\\d+[.)]\\\\s*)?" +
       escaped +
-      "(?:\\s*:)?\\s*$",
+      "(?:\\\\s*:)?\\\\s*$",
     "im"
   );
-  return pattern.test(text);
+  const match = pattern.exec(text);
+  return match ? match.index : -1;
 }
 
 function validateQuestionEnding(text) {
@@ -118,10 +119,33 @@ export function validateTutorLearningOutput({
     if (words.length > 480 || normalized.length > 4_200) {
       return "The structured lesson opening exceeded Cogniva's lesson-response limit.";
     }
-    const missing = STRUCTURED_SECTIONS.filter((section) => !hasSection(normalized, section));
+    const sectionPositions = STRUCTURED_SECTIONS.map((section) =>
+      findSectionIndex(normalized, section)
+    );
+    const missing = STRUCTURED_SECTIONS.filter((section, index) =>
+      sectionPositions[index] < 0
+    );
     if (missing.length > 0) {
       return "The structured lesson opening is missing required sections: " + missing.join(", ") + ".";
     }
+    if (sectionPositions.some((position, index) =>
+      index > 0 && position <= sectionPositions[index - 1]
+    )) {
+      return "The structured lesson sections are not in the required order.";
+    }
+
+    const objectivesStart = normalized.indexOf("\n", sectionPositions[0]);
+    const objectivesEnd = sectionPositions[1];
+    const objectivesText = objectivesStart >= 0
+      ? normalized.slice(objectivesStart + 1, objectivesEnd)
+      : "";
+    const objectiveCount = (
+      objectivesText.match(/^\s*(?:[-*+]|\d+[.)])\s+\S.*$/gm) ?? []
+    ).length;
+    if (objectiveCount < 2 || objectiveCount > 4) {
+      return "The structured lesson must state between two and four list-form learning objectives.";
+    }
+
     if (numericMismatchCount > 0) {
       return "The structured lesson contains a numeric claim that did not pass Cogniva's bounded arithmetic check.";
     }
