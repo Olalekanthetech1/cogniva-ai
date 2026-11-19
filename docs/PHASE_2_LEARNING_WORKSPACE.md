@@ -123,7 +123,9 @@ Approved learning-plan unit sessions follow [Cogniva Tutor Learning Framework v1
 
 - Show real active and previous sessions.
 - Resume from the persisted state, not from a reconstructed or fabricated conversation.
-- Keep interaction controls explicit: explain why, hint, simplify, example, continue, repeat, and end.
+- Approved plan-unit sessions use CTL v1: a structured lesson opening followed by adaptive teaching guidance for clarification, attempts, hints, independent practice, and recap.
+- Direct concept and problem sessions retain the concise adaptive Socratic response path.
+- Explicit explain-why, hint, simplify, example, continue, and repeat controls with server-enforced stage transitions remain future work.
 - Do not expose answer-checking controls unless a subject verifier for the current task is actually available.
 
 ### Progress
