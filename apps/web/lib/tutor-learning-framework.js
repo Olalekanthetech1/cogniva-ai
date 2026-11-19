@@ -156,7 +156,8 @@ export function resolveTutorLearningMode({
   learnerIntent = "follow_up",
   sessionIntent = "",
   latestStudentMessage = "",
-  requestedLearningMode = null
+  requestedLearningMode = null,
+  activeTaskMode = null
 }) {
   if (hasLinkedUnit) {
     return latestSubmissionType === "initial_prompt"
@@ -177,6 +178,17 @@ export function resolveTutorLearningMode({
     return "quick_clarification";
   }
   if (requestedLearningMode) return requestedLearningMode;
+
+  if (activeTaskMode === "problem_solving") {
+    return learnerIntent === "direct_answer_request"
+      ? "problem_solving"
+      : "problem_solving_continuation";
+  }
+  if (activeTaskMode === "concept_mini_lesson") {
+    return learnerIntent === "direct_answer_request"
+      ? "concept_mini_lesson"
+      : "adaptive_socratic";
+  }
 
   if (sessionIntent === "solve_problem") {
     if (latestSubmissionType === "initial_prompt" || learnerIntent === "direct_answer_request") {
