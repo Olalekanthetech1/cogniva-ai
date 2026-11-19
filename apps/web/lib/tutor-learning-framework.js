@@ -144,6 +144,24 @@ function findSectionIndex(text, title) {
   return match ? match.index : -1;
 }
 
+function hasUnbalancedMathEnvironments(text) {
+  const commands = String(text ?? "").matchAll(/\\(begin|end)\{([a-zA-Z*]+)\}/g);
+  const stack = [];
+
+  for (const match of commands) {
+    const action = match[1];
+    const environment = match[2];
+
+    if (action === "begin") {
+      stack.push(environment);
+    } else if (stack.pop() !== environment) {
+      return true;
+    }
+  }
+
+  return stack.length > 0;
+}
+
 function validateQuestionEnding(text) {
   const questions = (text.match(/\?/g) ?? []).length;
   if (!text.endsWith("?") || questions !== 1) {
@@ -282,7 +300,7 @@ export function buildTutorLearningFrameworkInstructions({ mode, learnerIntent })
     if (learnerIntent === "clarification") {
       continuation.push("This turn is a clarification: answer the exact question directly, change representation if useful, and do not advance the teaching sequence merely because a reply was generated.");
     } else if (learnerIntent === "work_attempt") {
-      continuation.push("This turn contains a learner attempt: preserve correct reasoning, identify the first unsupported or incorrect step, explain why, and ask for one revised step before providing more help.");
+      continuation.push("This turn contains a learner attempt: preserve only reasoning explicitly written by the learner, identify the first evidenced unsupported or incorrect step, explain why, and ask for one revised step before providing more help. Never attribute factorisation, substitution, cancellation, or any other unsubmitted working to the learner. If the learner supplied only a final answer, respond to that answer without inventing intermediate steps.");
     } else if (learnerIntent === "direct_answer_request") {
       continuation.push("The learner explicitly requested a complete answer: respect that request, provide a complete worked explanation, and do not withhold the answer merely to enforce a teaching stage.");
     } else if (learnerIntent === "correction_challenge") {
@@ -354,6 +372,9 @@ export function validateTutorLearningOutput({
   const normalized = typeof text === "string" ? text.trim() : "";
   if (!normalized) return "The tutor returned an empty response.";
   if (isTruncated(finishReason)) return "The tutor response reached its output limit before completion.";
+  if (hasUnbalancedMathEnvironments(normalized)) {
+    return "The tutor response contains incomplete mathematical notation.";
+  }
 
   const config = getTutorLearningModeConfig(mode);
   const words = normalized.split(/\s+/).filter(Boolean);
