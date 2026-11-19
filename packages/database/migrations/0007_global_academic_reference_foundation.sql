@@ -175,7 +175,6 @@ CREATE TABLE "qualification_levels" (
   CONSTRAINT "qualification_levels_label_nonempty_check" CHECK (length(btrim("label")) > 0),
   CONSTRAINT "qualification_levels_descriptors_object_check" CHECK (jsonb_typeof("descriptors") = 'object'),
   CONSTRAINT "qualification_levels_framework_version_id_qualification_framework_versions_id_fk" FOREIGN KEY ("framework_version_id") REFERENCES "public"."qualification_framework_versions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
-  CONSTRAINT "qualification_levels_parent_same_version_fk" FOREIGN KEY ("parent_level_id", "framework_version_id") REFERENCES "public"."qualification_levels"("id", "framework_version_id") ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 --> statement-breakpoint
 CREATE TABLE "classification_schemes" (
@@ -217,7 +216,6 @@ CREATE TABLE "classification_codes" (
   CONSTRAINT "classification_codes_depth_positive_check" CHECK ("depth" IS NULL OR "depth" > 0),
   CONSTRAINT "classification_codes_label_nonempty_check" CHECK (length(btrim("label")) > 0),
   CONSTRAINT "classification_codes_scheme_version_id_classification_scheme_versions_id_fk" FOREIGN KEY ("scheme_version_id") REFERENCES "public"."classification_scheme_versions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
-  CONSTRAINT "classification_codes_parent_same_version_fk" FOREIGN KEY ("parent_code_id", "scheme_version_id") REFERENCES "public"."classification_codes"("id", "scheme_version_id") ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 --> statement-breakpoint
 CREATE TABLE "qualification_level_classification_mappings" (
@@ -382,3 +380,15 @@ CREATE INDEX "entity_source_assertions_jurisdiction_idx" ON "entity_source_asser
 CREATE INDEX "catalogue_review_events_assertion_created_idx" ON "catalogue_review_events" USING btree ("assertion_id", "created_at");
 --> statement-breakpoint
 CREATE INDEX "catalogue_review_events_reviewer_created_idx" ON "catalogue_review_events" USING btree ("reviewer_id", "created_at");
+--> statement-breakpoint
+ALTER TABLE "qualification_levels"
+  ADD CONSTRAINT "qualification_levels_parent_same_version_fk"
+  FOREIGN KEY ("parent_level_id", "framework_version_id")
+  REFERENCES "public"."qualification_levels"("id", "framework_version_id")
+  ON DELETE RESTRICT ON UPDATE NO ACTION;
+--> statement-breakpoint
+ALTER TABLE "classification_codes"
+  ADD CONSTRAINT "classification_codes_parent_same_version_fk"
+  FOREIGN KEY ("parent_code_id", "scheme_version_id")
+  REFERENCES "public"."classification_codes"("id", "scheme_version_id")
+  ON DELETE RESTRICT ON UPDATE NO ACTION;
