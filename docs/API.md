@@ -28,9 +28,10 @@ These are illustrative contracts, not live responses or seeded records.
 
 ## 3. Identity and student profile
 
-Better Auth owns registration, email verification, sign-in, sign-out, session retrieval, and password-reset operations under `/api/auth/*`. The student profile is a separate Cogniva-owned record.
+Better Auth owns registration, email verification, sign-in, sign-out, session retrieval, and password-reset operations under `/api/auth/*`. The student profile is a separate Cogniva-owned record. Learners can request a password reset at `/forgot-password` and set a new password at `/reset-password` using the one-time token delivered by email. Password-reset tokens expire after one hour, and successful resets revoke existing sessions.
 
 Implemented:
+- `/forgot-password` and `/reset-password` — account recovery screens backed by Better Auth request/reset operations; the recovery response does not disclose whether an email address has an account.
 - `GET /api/v1/student/profile` — returns the signed-in student's profile, or `data: null` when no profile has been saved.
 - `PUT /api/v1/student/profile` — creates or replaces the signed-in student's academic profile; validates catalogue IDs and institution/faculty/department ancestry.
 

@@ -66,7 +66,7 @@ pnpm db:generate
 pnpm db:migrate
 ```
 
-Do not run migrations against production without reviewing the generated SQL and taking an appropriate backup.
+Do not run migrations against production without reviewing the generated SQL and taking an appropriate backup. GitHub Actions runs auth/profile integration coverage against an isolated PostgreSQL service with the committed migrations; it does not use or mutate the production database.
 
 ## Health check
 
