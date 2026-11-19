@@ -88,6 +88,8 @@ The following learner-authenticated routes are implemented in the current Phase 
 - `POST /api/v1/tutor/sessions` — create a session and persist its initial learner message atomically. Optional `learningPlanRevisionId` and `learningPlanUnitId` associate a session with a plan unit. When a unit is supplied, the API validates that the unit and revision belong to the learner and requires the parent plan to be `active` and the revision to be `approved`; mismatched revision/unit references are rejected.
 - `GET /api/v1/tutor/sessions/:sessionId` — retrieve an owned session, ordered messages, and explicitly submitted attempts.
 - `POST /api/v1/tutor/sessions/:sessionId/respond` — generate the next Socratic response or retry an unanswered learner turn.
+
+For a session created with a validated approved learning-plan unit link, the first response uses CTL v1: a structured lesson opening with learning objectives, detailed explanation, a worked example, practical application, and one guided-practice checkpoint. Later linked-unit turns use adaptive lesson continuation. The Tutor message metadata records the framework version and response mode. No new request fields are required. This does not persist lesson-stage completion or award mastery; direct sessions retain the concise adaptive Socratic response contract. See [TUTOR_LEARNING_FRAMEWORK.md](TUTOR_LEARNING_FRAMEWORK.md).
 - `POST /api/v1/tutor/sessions/:sessionId/end` — cancel an active session; this does not mark it completed or mastered.
 
 When a learner sends a new message to the `respond` route, the optional `messageType` field distinguishes a submitted attempt from a follow-up question:
