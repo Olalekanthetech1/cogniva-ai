@@ -407,3 +407,18 @@ ALTER TABLE "classification_codes"
   FOREIGN KEY ("parent_code_id", "scheme_version_id")
   REFERENCES "public"."classification_codes"("id", "scheme_version_id")
   ON DELETE RESTRICT ON UPDATE NO ACTION;
+--> statement-breakpoint
+CREATE FUNCTION "public"."reject_catalogue_review_event_mutation"()
+RETURNS trigger
+LANGUAGE plpgsql
+AS '
+BEGIN
+  RAISE EXCEPTION ''catalogue_review_events is append-only''
+    USING ERRCODE = ''55000'';
+END;
+';
+--> statement-breakpoint
+CREATE TRIGGER "catalogue_review_events_append_only_guard"
+BEFORE UPDATE OR DELETE ON "public"."catalogue_review_events"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."reject_catalogue_review_event_mutation"();
