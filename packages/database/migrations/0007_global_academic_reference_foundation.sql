@@ -67,6 +67,7 @@ CREATE TABLE "countries" (
   "iso_numeric" varchar(3),
   "name" text NOT NULL,
   "official_name" text,
+  "source_record_id" uuid,
   "valid_from" timestamp with time zone,
   "valid_to" timestamp with time zone,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -75,7 +76,8 @@ CREATE TABLE "countries" (
   CONSTRAINT "countries_iso_alpha_2_format_check" CHECK ("iso_alpha_2" IS NULL OR "iso_alpha_2" ~ '^[A-Z]{2}$'),
   CONSTRAINT "countries_iso_alpha_3_format_check" CHECK ("iso_alpha_3" IS NULL OR "iso_alpha_3" ~ '^[A-Z]{3}$'),
   CONSTRAINT "countries_iso_numeric_format_check" CHECK ("iso_numeric" IS NULL OR "iso_numeric" ~ '^[0-9]{3}$'),
-  CONSTRAINT "countries_valid_period_check" CHECK ("valid_to" IS NULL OR "valid_from" IS NULL OR "valid_to" > "valid_from")
+  CONSTRAINT "countries_valid_period_check" CHECK ("valid_to" IS NULL OR "valid_from" IS NULL OR "valid_to" > "valid_from"),
+  CONSTRAINT "countries_source_record_fk" FOREIGN KEY ("source_record_id") REFERENCES "public"."catalogue_source_records"("id") ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 --> statement-breakpoint
 CREATE TABLE "country_aliases" (
@@ -85,10 +87,12 @@ CREATE TABLE "country_aliases" (
   "normalized_name" text NOT NULL,
   "language_tag" varchar(35),
   "alias_type" "country_alias_type" DEFAULT 'other' NOT NULL,
+  "source_record_id" uuid,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
   CONSTRAINT "country_aliases_name_nonempty_check" CHECK (length(btrim("name")) > 0),
   CONSTRAINT "country_aliases_normalized_name_nonempty_check" CHECK (length(btrim("normalized_name")) > 0),
-  CONSTRAINT "country_aliases_country_id_countries_id_fk" FOREIGN KEY ("country_id") REFERENCES "public"."countries"("id") ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT "country_aliases_country_id_countries_id_fk" FOREIGN KEY ("country_id") REFERENCES "public"."countries"("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT "country_aliases_source_record_fk" FOREIGN KEY ("source_record_id") REFERENCES "public"."catalogue_source_records"("id") ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 --> statement-breakpoint
 CREATE TABLE "education_jurisdictions" (
@@ -140,7 +144,6 @@ CREATE TABLE "qualification_frameworks" (
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
   CONSTRAINT "qualification_frameworks_name_nonempty_check" CHECK (length(btrim("name")) > 0),
   CONSTRAINT "qualification_frameworks_jurisdiction_id_education_jurisdictions_id_fk" FOREIGN KEY ("jurisdiction_id") REFERENCES "public"."education_jurisdictions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
-  CONSTRAINT "qualification_frameworks_education_system_id_education_systems_id_fk" FOREIGN KEY ("education_system_id") REFERENCES "public"."education_systems"("id") ON DELETE SET NULL ON UPDATE NO ACTION,
   CONSTRAINT "qualification_frameworks_source_record_id_catalogue_source_records_id_fk" FOREIGN KEY ("source_record_id") REFERENCES "public"."catalogue_source_records"("id") ON DELETE SET NULL ON UPDATE NO ACTION
 );
 --> statement-breakpoint
@@ -278,6 +281,7 @@ EXECUTE FUNCTION "public"."validate_qualification_level_classification_mapping_k
 CREATE TABLE "entity_source_assertions" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "source_record_id" uuid NOT NULL,
+  "country_id" uuid,
   "institution_id" uuid,
   "jurisdiction_id" uuid,
   "qualification_framework_id" uuid,
@@ -291,10 +295,11 @@ CREATE TABLE "entity_source_assertions" (
   "checked_at" timestamp with time zone DEFAULT now() NOT NULL,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-  CONSTRAINT "entity_source_assertions_exactly_one_subject_check" CHECK (num_nonnulls("institution_id", "jurisdiction_id", "qualification_framework_id", "qualification_level_id") = 1),
+  CONSTRAINT "entity_source_assertions_exactly_one_subject_check" CHECK (num_nonnulls("country_id", "institution_id", "jurisdiction_id", "qualification_framework_id", "qualification_level_id") = 1),
   CONSTRAINT "entity_source_assertions_claim_key_nonempty_check" CHECK (length(btrim("claim_key")) > 0),
   CONSTRAINT "entity_source_assertions_valid_period_check" CHECK ("valid_to" IS NULL OR "valid_from" IS NULL OR "valid_to" > "valid_from"),
   CONSTRAINT "entity_source_assertions_source_record_id_catalogue_source_records_id_fk" FOREIGN KEY ("source_record_id") REFERENCES "public"."catalogue_source_records"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
+  CONSTRAINT "entity_source_assertions_country_id_countries_id_fk" FOREIGN KEY ("country_id") REFERENCES "public"."countries"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
   CONSTRAINT "entity_source_assertions_institution_id_institutions_id_fk" FOREIGN KEY ("institution_id") REFERENCES "public"."institutions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
   CONSTRAINT "entity_source_assertions_jurisdiction_id_education_jurisdictions_id_fk" FOREIGN KEY ("jurisdiction_id") REFERENCES "public"."education_jurisdictions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
   CONSTRAINT "entity_source_assertions_qualification_framework_id_qualification_frameworks_id_fk" FOREIGN KEY ("qualification_framework_id") REFERENCES "public"."qualification_frameworks"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
@@ -343,6 +348,8 @@ CREATE UNIQUE INDEX "education_systems_jurisdiction_code_unique" ON "education_s
 --> statement-breakpoint
 CREATE INDEX "education_systems_jurisdiction_idx" ON "education_systems" USING btree ("jurisdiction_id");
 --> statement-breakpoint
+CREATE UNIQUE INDEX "education_systems_id_jurisdiction_unique" ON "education_systems" USING btree ("id", "jurisdiction_id");
+--> statement-breakpoint
 CREATE UNIQUE INDEX "qualification_frameworks_jurisdiction_code_unique" ON "qualification_frameworks" USING btree ("jurisdiction_id", "code");
 --> statement-breakpoint
 CREATE INDEX "qualification_frameworks_education_system_idx" ON "qualification_frameworks" USING btree ("education_system_id");
@@ -373,6 +380,8 @@ CREATE INDEX "qual_level_map_status_idx" ON "qualification_level_classification_
 --> statement-breakpoint
 CREATE INDEX "entity_source_assertions_source_status_idx" ON "entity_source_assertions" USING btree ("source_record_id", "status");
 --> statement-breakpoint
+CREATE INDEX "entity_source_assertions_country_idx" ON "entity_source_assertions" USING btree ("country_id");
+--> statement-breakpoint
 CREATE INDEX "entity_source_assertions_institution_idx" ON "entity_source_assertions" USING btree ("institution_id");
 --> statement-breakpoint
 CREATE INDEX "entity_source_assertions_jurisdiction_idx" ON "entity_source_assertions" USING btree ("jurisdiction_id");
@@ -385,6 +394,12 @@ ALTER TABLE "qualification_levels"
   ADD CONSTRAINT "qualification_levels_parent_same_version_fk"
   FOREIGN KEY ("parent_level_id", "framework_version_id")
   REFERENCES "public"."qualification_levels"("id", "framework_version_id")
+  ON DELETE RESTRICT ON UPDATE NO ACTION;
+--> statement-breakpoint
+ALTER TABLE "qualification_frameworks"
+  ADD CONSTRAINT "qualification_frameworks_system_same_jurisdiction_fk"
+  FOREIGN KEY ("education_system_id", "jurisdiction_id")
+  REFERENCES "public"."education_systems"("id", "jurisdiction_id")
   ON DELETE RESTRICT ON UPDATE NO ACTION;
 --> statement-breakpoint
 ALTER TABLE "classification_codes"
