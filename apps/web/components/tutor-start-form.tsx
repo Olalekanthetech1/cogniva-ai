@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { TutorAiDisclaimer } from "./tutor-ai-disclaimer";
 
 type TutorIntent = "learn_topic" | "understand_concept" | "solve_problem";
 
@@ -144,6 +145,7 @@ export function TutorStartForm({
       <p className="tutor-form-note">
         Cogniva saves your message and guides you one step at a time. Your progress is not marked as mastered from conversation alone.
       </p>
+      <TutorAiDisclaimer />
     </form>
   );
 }
