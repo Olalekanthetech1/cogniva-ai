@@ -205,6 +205,12 @@ export function AuthForm({ mode }: AuthFormProps) {
                   </label>
                 )}
 
+                {!isRegister && (
+                  <div className="auth-forgot-link">
+                    <Link href="/forgot-password">Forgot your password?</Link>
+                  </div>
+                )}
+
                 {formError && (
                   <p className="auth-error" role="alert">
                     {formError}
