@@ -68,7 +68,13 @@ The topic-based personal plan API reuses the existing learning-plan tables intro
 
 Generation is available only when an administrator has saved a provider/model route for `learning_plan_generation` and the matching server credential is present. No default model or automatic provider fallback is used. A provider response must be strict JSON matching the versioned output contract; malformed, truncated, or inconsistent plans are rejected before a revision is saved. The learner input remains on the plan when generation fails. Units, objectives, concepts, and relationships are persisted transactionally, and generated relationships remain `proposed`.
 
-The output validator enforces bounded collection sizes, exact object fields, unique names, valid unit-to-concept references, and acyclic prerequisite suggestions. This is structural validation; it does not establish the factual correctness or completeness of the generated teaching sequence. Plan editing, review, approval, and starting tutor sessions from a plan unit are not yet exposed by the learner UI.
+The output validator enforces bounded collection sizes, exact object fields, unique names, valid unit-to-concept references, and acyclic prerequisite suggestions. This is structural validation; it does not establish the factual correctness or completeness of the generated teaching sequence. Learners can review each proposed concept relationship and approve the latest revision using the review endpoints below. Editing plan content and starting tutor sessions from a plan unit are not yet exposed by the learner UI.
+
+Additional learner review endpoints:
+- `PATCH /api/v1/learning-plans/:planId/relationships/:relationshipId` — accepts exactly `{ "expectedVersion": 1, "decision": "accepted" | "rejected" }`. The relationship must belong to the latest proposed revision of a plan owned by the signed-in learner and still be in `proposed` review state. The server saves the decision and increments the parent plan version in one transaction.
+- `POST /api/v1/learning-plans/:planId/approve` — accepts exactly `{ "expectedVersion": 1 }`. It approves the latest proposed revision and changes the parent plan from `draft` to `active` in one transaction. Approval is rejected while any relationship in that revision remains `proposed`. This records the learner's decision to use the generated outline; it is not academic validation, official syllabus approval, or a mastery claim.
+
+Both endpoints enforce session-derived ownership and optimistic version checks. They do not yet expose text editing, unit reordering/removal, or plan-unit Tutor launch.
 
 Initial `POST /api/v1/learning-plans` creation is not currently deduplicated by an idempotency key. Clients must not automatically replay a timed-out create request; they can recover by listing the learner's plans. The separate generation retry endpoint uses a server-side state claim.
 
