@@ -24,6 +24,7 @@ import {
 } from "@/lib/ai-provider-runtime";
 import {
   TUTOR_LEARNING_FRAMEWORK_VERSION,
+  getTutorLearningModeConfig,
   buildTutorLearningFrameworkInstructions,
   resolveTutorLearningMode,
   validateTutorLearningOutput
@@ -33,16 +34,9 @@ import type { TutorLearningMode } from "@/lib/tutor-learning-framework";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PROMPT_VERSION = "cogniva-adaptive-tutor-2026-11-19-ctl-v1.1";
+const PROMPT_VERSION = "cogniva-adaptive-tutor-2026-11-19-ctl-v1.2";
 const MAX_CONTEXT_CHARACTERS = 10_000;
 const MAX_CONTEXT_MESSAGES = 16;
-const MAX_OUTPUT_TOKENS = 240;
-const MAX_STRUCTURED_LESSON_TOKENS = 1_100;
-const MAX_UNIT_CONTINUATION_TOKENS = 560;
-const MAX_CONCEPT_MINI_LESSON_TOKENS = 700;
-const MAX_PROBLEM_SOLVING_TOKENS = 900;
-const MAX_ATTEMPT_FEEDBACK_TOKENS = 450;
-const MAX_QUICK_CLARIFICATION_TOKENS = 280;
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
@@ -65,50 +59,8 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isOutputTruncated(finishReason: string | null): boolean {
-  const normalized = finishReason?.trim().toLowerCase() ?? "";
-  return [
-    "length",
-    "max_tokens",
-    "max_output_tokens",
-    "max_token_limit"
-  ].includes(normalized);
-}
-
-function validateTutorOutput(text: string, finishReason: string | null): string | null {
-  const normalized = text.trim();
-  if (!normalized) return "The tutor returned an empty response.";
-  if (isOutputTruncated(finishReason)) {
-    return "The tutor response reached its output limit before completion.";
-  }
-
-  const words = normalized.split(/\s+/).filter(Boolean);
-  if (words.length > 80 || normalized.length > 1_200) {
-    return "The tutor response exceeded its concise-response limit.";
-  }
-
-  const questionCount = (normalized.match(/\?/g) ?? []).length;
-  if (!normalized.endsWith("?") || questionCount !== 1) {
-    return "The tutor response did not contain exactly one clear closing question.";
-  }
-
-  return null;
-}
-
 function buildSystemPrompt(mode: TutorLearningMode): string {
-  const responseLengthInstruction = mode === "structured_lesson_opening"
-    ? "For this structured lesson opening, use up to 480 words and include the required lesson sections."
-    : mode === "structured_lesson_continuation"
-      ? "For this linked-unit lesson continuation, use up to 220 words."
-      : mode === "concept_mini_lesson"
-        ? "For this standalone concept mini-lesson, use up to 260 words and include the required concise teaching sections."
-        : mode === "problem_solving"
-          ? "For this problem-solving walkthrough, use up to 360 words and show the required reasoning and verification sections."
-          : mode === "attempt_feedback"
-            ? "For this attempt-feedback turn, use up to 190 words."
-            : mode === "quick_clarification"
-              ? "For this clarification, use up to 120 words."
-              : "Use at most 80 words for ordinary adaptive Socratic turns.";
+  const responseLengthInstruction = getTutorLearningModeConfig(mode).responseLengthInstruction;
   return [
     "You are Cogniva, a precise and supportive Socratic tutor for a global learning platform.",
     "Help the learner reason; do not simply complete the work for them.",
@@ -517,8 +469,10 @@ export async function POST(
     latestSubmissionType: claim.latestSubmissionType,
     learnerIntent: turnAnalysis.learnerIntent,
     sessionIntent: claim.intent,
-    latestStudentMessage: turnAnalysis.latestStudentMessage
+    latestStudentMessage: turnAnalysis.latestStudentMessage,
+    requestedLearningMode: turnAnalysis.requestedLearningMode
   });
+  const learningModeConfig = getTutorLearningModeConfig(tutorLearningMode);
   const learningFrameworkInstructions = buildTutorLearningFrameworkInstructions({
     mode: tutorLearningMode,
     learnerIntent: turnAnalysis.learnerIntent
@@ -670,19 +624,7 @@ export async function POST(
           latestSubmissionType: claim.latestSubmissionType,
           messages: claim.messages
         }),
-        maxOutputTokens: tutorLearningMode === "structured_lesson_opening"
-          ? MAX_STRUCTURED_LESSON_TOKENS
-          : tutorLearningMode === "structured_lesson_continuation"
-            ? MAX_UNIT_CONTINUATION_TOKENS
-            : tutorLearningMode === "concept_mini_lesson"
-              ? MAX_CONCEPT_MINI_LESSON_TOKENS
-              : tutorLearningMode === "problem_solving"
-                ? MAX_PROBLEM_SOLVING_TOKENS
-                : tutorLearningMode === "attempt_feedback"
-                  ? MAX_ATTEMPT_FEEDBACK_TOKENS
-                  : tutorLearningMode === "quick_clarification"
-                    ? MAX_QUICK_CLARIFICATION_TOKENS
-                    : MAX_OUTPUT_TOKENS,
+        maxOutputTokens: learningModeConfig.maxOutputTokens,
         temperature: 0.25,
         timeoutMs: 25_000
       });
@@ -765,20 +707,16 @@ export async function POST(
     evaluation: attemptEvaluation
   });
 
-  const outputIssue = tutorLearningMode === "adaptive_socratic"
-    ? validateTutorOutput(generated.text, generated.finishReason)
-    : generated.responseSource === "deterministic_verifier"
-      ? validateTutorLearningOutput({
-          text: generated.text,
-          finishReason: generated.finishReason,
-          mode: "quick_clarification"
-        })
-      : validateTutorLearningOutput({
-          text: generated.text,
-          finishReason: generated.finishReason,
-          mode: tutorLearningMode,
-          numericMismatchCount: findIncorrectNumericClaims(generated.text).length
-        });
+  const outputIssue = validateTutorLearningOutput({
+    text: generated.text,
+    finishReason: generated.finishReason,
+    mode: generated.responseSource === "deterministic_verifier"
+      ? "quick_clarification"
+      : tutorLearningMode,
+    numericMismatchCount: generated.responseSource === "deterministic_verifier"
+      ? 0
+      : findIncorrectNumericClaims(generated.text).length
+  });
   if (outputIssue) {
     await restoreSessionState({
       sessionId,
@@ -823,6 +761,7 @@ export async function POST(
             },
             adaptive: {
               learnerIntent: turnAnalysis.learnerIntent,
+              requestedLearningMode: turnAnalysis.requestedLearningMode,
               repeatedQuestionCount: turnAnalysis.repeatedQuestionCount,
               errorClassification: turnAnalysis.learnerErrorAnalysis
                 ? {
