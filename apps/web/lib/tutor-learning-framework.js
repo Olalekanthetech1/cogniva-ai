@@ -21,11 +21,10 @@ function isTruncated(finishReason) {
 }
 
 function findSectionIndex(text, title) {
-  const escaped = title.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
   const pattern = new RegExp(
-    "^\\\\s{0,3}(?:#{1,3}\\\\s*)?(?:\\\\d+[.)]\\\\s*)?" +
-      escaped +
-      "(?:\\\\s*:)?\\\\s*$",
+    "^\\s{0,3}(?:#{1,3}\\s*)?(?:\\d+[.)]\\s*)?" +
+      title +
+      "(?:\\s*:)?\\s*$",
     "im"
   );
   const match = pattern.exec(text);
