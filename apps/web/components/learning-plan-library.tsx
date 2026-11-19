@@ -110,7 +110,7 @@ function generationLabel(plan: LearningPlanSummary): string {
   if (plan.generationStatus === "succeeded") {
     if (plan.latestRevision?.status === "approved") return "Learner-approved";
     if (plan.latestRevision?.status === "rejected") return "Revision rejected";
-    return "Proposal ready";
+    return plan.latestRevision ? "Proposal ready" : "Revision unavailable";
   }
 
   switch (plan.generationStatus) {
