@@ -1,8 +1,8 @@
 # Cogniva — Phase 1.1 Schema Audit and Migration Plan
 
-**Status:** Design baseline prepared; production schema audit pending.  
-**Scope:** Global academic interoperability. This document does not claim that the target schema, source adapters, catalogue ingestion, or Knowledge Component graph are implemented.  
-**Safety:** No production DDL, data writes, catalogue imports, or migrations are part of this design PR.
+**Status:** Design baseline approved; read-only Neon audit completed; Phase 1.1a implementation is under review in a separate branch.  
+**Scope:** Global academic interoperability. The first reference/provenance schema slice is implemented in repository code, but source adapters, catalogue ingestion, programme/course interoperability, recognition records, flexible institution units, and the Knowledge Component graph remain outstanding.  
+**Safety:** The audit was read-only. Migration 0007 is additive and exists only on the implementation branch; no production DDL, data writes, catalogue imports, or production migrations have been executed.
 
 ## 1. Evidence boundary and current-state audit
 
@@ -10,7 +10,7 @@ Three different evidence sources must not be conflated:
 
 1. **Repository schema** describes what the current code expects.
 2. **CI PostgreSQL** proves that committed migrations can be applied to a disposable database. It does not prove what is installed in Neon.
-3. **Production database** must be inspected through a dedicated read-only transaction before any production migration is designed against its actual state.
+3. **Production database** was inspected through a dedicated read-only transaction on 19 November 2026 before this implementation slice was designed.
 
 ### 1.1 Verified repository facts
 
@@ -30,9 +30,9 @@ The current Drizzle academic schema defines:
 
 The current model is a useful initial catalogue, not a complete global academic model.
 
-### 1.2 Repository migration history
+### 1.2 Repository and production migration history
 
-The repository contains Drizzle migrations 0000 through 0006:
+The repository baseline at the time of the production audit contained Drizzle migrations 0000 through 0006:
 
 - 0000 — identity, academic catalogue, and profile baseline.
 - 0001 — self-reported institution and onboarding completion fields.
@@ -42,40 +42,24 @@ The repository contains Drizzle migrations 0000 through 0006:
 - 0005 — AI benchmark runs, results, and reviews.
 - 0006 — tutor attempt records and ownership/message constraints.
 
-The previously documented production confirmation covers migrations 0000–0003. The application of 0004–0006 to Neon has not been established by the available production evidence. Do not infer it from the current repository journal, CI database, or application liveness endpoint.
+The read-only production report generated 19 November 2026 at 15:34:20 UTC confirmed all seven migrations were applied to Neon. It reported zero missing migrations, zero missing repository migration files, and zero unexpected applied migrations. The report identifies database `neondb` running PostgreSQL 18.7.
 
-### 1.3 Production state observation
+The implementation branch now adds migration 0007, `0007_global_academic_reference_foundation.sql`. This migration is repository code under review and is not included in the production audit's seven applied migrations. It has not been applied to Neon.
 
-At the 19 November 2026 audit preparation:
+### 1.3 Production schema observation
 
-- The Render web service was configured with automatic deployment disabled.
-- The latest observed live deployment was commit a0266a571cae9737ebc78696da84cdcaf05e1b3f.
-- The repository main branch had advanced beyond that deployed commit.
-- The Render readiness endpoint had previously confirmed database connectivity, but connectivity does not reveal the applied migration list or verify each constraint.
-- A direct, read-only Neon schema inspection remains outstanding.
+The audited production database contained the nine current academic tables: institutions, faculties, departments, subjects, courses, topics, curriculum_versions, course_topics, and student_profiles. All nine were present. The audit also checked the original 27 planned Phase 1.1 target tables and found none present at that time.
 
-### 1.4 Read-only production audit workflow
+The audit inspected metadata only. It did not inspect catalogue or learner rows, determine data quality, establish academic recognition, or verify the current Render application deployment.
 
-This PR adds a manually triggered GitHub Actions workflow that:
+### 1.4 Read-only production audit evidence
 
-- requires the explicit input AUDIT_READ_ONLY;
-- reads only the DATABASE_MIGRATION_URL GitHub secret;
-- opens a PostgreSQL transaction and sets it READ ONLY before queries;
-- reports the Drizzle migration ledger, academic table/column inventory, and relevant constraints;
-- does not query learner rows, credentials, email addresses, or personal data;
-- emits a JSON artifact and workflow summary without printing the connection URL.
+The manually triggered **Read-only Neon schema audit** workflow was run using the explicit AUDIT_READ_ONLY input and the DATABASE_MIGRATION_URL secret. Its script opened a PostgreSQL transaction and set it READ ONLY before querying the migration ledger and schema metadata. It did not query learner rows, credentials, email addresses, or personal data.
 
-Run it only after this workflow is merged to main:
+The workflow run and retained JSON artifact are available at:
+https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44556239768
 
-1. Open the repository Actions tab.
-2. Select “Read-only Neon schema audit”.
-3. Choose “Run workflow”.
-4. Select AUDIT_READ_ONLY.
-5. Review the workflow summary and download the schema-audit artifact.
-
-The audit report should be added to the project record before a schema migration is generated. If the migration ledger is absent or inconsistent, stop and reconcile it with the actual database before continuing.
-
-The same script runs in CI against the disposable PostgreSQL service with an assertion that every repository migration is present. This validates the audit mechanism but does not substitute for the manual production audit.
+The same audit script runs in CI against disposable PostgreSQL with an assertion that every repository migration is applied. This verifies migration application in CI but is not evidence of production state.
 
 ## 2. Normative target-domain decisions
 
@@ -210,11 +194,11 @@ No current value should acquire a “verified” state merely because it existed
 
 ## 5. Additive migration and rollback sequence
 
-No production migration is authorised or proposed by this design PR. After the production audit, generate a migration plan that follows this order:
+Migration 0007 is the first additive implementation slice on the review branch. It adds the country/jurisdiction, qualification/classification reference, and source-provenance foundations. It does not seed records or change existing columns, and it has not been applied to production. The remaining migration sequence is:
 
 1. **Baseline and backup:** save the read-only production audit report; create/confirm a recoverable Neon backup/branch according to the operator's recovery procedure.
-2. **Reference foundations:** add jurisdiction, country-code history/reference, classification-scheme/version, qualification-framework/level, source-registry, and authority records.
-3. **Identity and organisation:** add institution identifiers/aliases, source assertions, and flexible institution-unit records. Keep existing institution/faculty/department tables and IDs.
+2. **Reference foundations (migration 0007):** add countries and aliases, education jurisdictions and systems, qualification frameworks and versions, qualification levels, versioned classification schemes/codes, reviewed ISCED-P/ISCED-A mapping records, source registry/source records, typed source assertions for the initial entity kinds, and review events. The migration adds no source data.
+3. **Identity and organisation (subsequent migration):** add institution identifiers/aliases, flexible institution-unit records, and typed recognition authorities/decisions. Keep existing institution/faculty/department tables and IDs.
 4. **Programme and curriculum:** add awards, programmes, programme versions, academic periods, credit schemes, programme-course requirements, and course-content versions.
 5. **Recognition evidence:** add scoped recognition decision/evidence records and typed target links.
 6. **Learner context:** add nullable jurisdiction, programme, qualification, local-stage label/index, and academic-period references. Do not require them at registration.
@@ -269,4 +253,4 @@ Before the global catalogue is considered ready, integration tests must verify:
 - Nigerian Universities Commission accreditation remit: https://www.nuc.edu.ng/project/accreditation/
 - COREN engineering programme accreditation reference: https://coren.gov.ng/accredited-universities/
 
-**Implementation gate:** do not generate or apply a global academic migration until the read-only production audit is reviewed, the target schema is translated into concrete constraints, the additive migration and rollback are tested, and the source-rights boundaries for each connector are explicit.
+**Implementation gate:** the production audit has been reviewed and the first additive migration is now under PR review with isolated PostgreSQL integration coverage. Do not apply migration 0007 to Neon until the PR is reviewed and merged, a recoverable Neon backup/branch is confirmed, and the explicit production migration approval is obtained. Do not enable a source adapter or import data until its terms, rights, attribution, rate limits, freshness, and failure semantics are reviewed.
