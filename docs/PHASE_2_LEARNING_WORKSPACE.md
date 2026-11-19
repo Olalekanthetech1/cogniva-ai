@@ -1,6 +1,6 @@
 # Cogniva — Phase 2 Learning Workspace v1
 
-**Status:** Accepted product/engineering contract; implementation is partial. Persistence and the text-first tutor vertical slice exist. Learn includes a personal plan library, read-only plan overview, learner review of suggested relationships, approval, and CTL v1 structured Tutor launch from approved plan units. Editing, Home continuation, persisted lesson-stage controls, and the full integrated learner workspace are not yet delivered.
+**Status:** Accepted product/engineering contract; implementation is partial. Persistence and the text-first Tutor vertical slice exist. Learn includes a personal plan library, read-only plan overview, learner review of suggested relationships, approval, and CTL v1.1 adaptive instructional modes for approved-unit and standalone tutoring. Editing, Home continuation, persisted lesson-stage controls, and the full integrated learner workspace are not yet delivered.
 
 ## 1. Goal
 
@@ -18,7 +18,7 @@ Phase 2 is one connected vertical slice, not a collection of disconnected dashbo
 - **Added by the API implementation:** authenticated personal plan creation from a learner topic, strict provider-output validation, transactional proposed-revision persistence, owner-scoped plan listing/detail, and retry for failed/unavailable/stale-running generation.
 - **Added by the Learn UI implementation:** a personal learning library that creates topics through the real API, lists owner-scoped saved plans, displays generation/review states, opens a read-only revision overview, and retries failed or unavailable generation without automatic create-request replay.
 - **Added by the review/approval slice:** a learner can accept or reject each proposed concept relationship and approve the latest proposed revision. Approval transactionally changes the revision to `approved` and the parent plan to `active`, guarded by ownership and an optimistic plan version. A plan cannot be approved while suggested relationships remain undecided.
-- **Implemented in this slice:** launching Tutor from an approved plan unit; the launch form seeds a learner-editable prompt with unit details/objectives/concepts and sends revision/unit references. Session creation validates ownership and requires the linked revision and plan to be approved/active. CTL v1 validates a structured lesson opening containing learning objectives, detailed explanation, worked example, practical application, and guided practice; subsequent linked-unit replies use adaptive continuation guidance. Prompt version and CTL mode are recorded in tutor-message metadata.
+- **Implemented in this slice:** launching Tutor from an approved plan unit; the launch form seeds a learner-editable prompt with unit details/objectives/concepts and sends revision/unit references. Session creation validates ownership and requires the linked revision and plan to be approved/active. CTL v1.1 keeps the linked-unit structured opening and adaptive continuation, and extends mode routing to standalone concept mini-lessons, problem-solving walkthroughs, attempt feedback, and quick clarifications. Output limits and mode-specific contracts are validated, and framework version/mode are recorded in tutor-message metadata.
 
 - **Still outstanding:** editing/reordering/removal of titles, units, objectives, and concepts; Home dashboard continuation from saved plans; persisted lesson-stage transitions; explicit Socratic action controls and server-enforced step progression; diagnostic assessment records; and end-to-end mobile journey tests.
 
@@ -119,12 +119,13 @@ Basic text tutoring is not the same as independent answer verification. Until a 
 
 ### Tutor
 
-Approved learning-plan unit sessions follow [Cogniva Tutor Learning Framework v1](TUTOR_LEARNING_FRAMEWORK.md): the first response is a structured lesson opening and later responses adapt to clarification, attempts, hints, practice, and recap requests. Direct concept questions and problem-solving sessions retain concise Socratic dialogue. The current implementation does not persist lesson-stage completion or mastery.
+Linked-unit and standalone Tutor sessions follow [Cogniva Tutor Learning Framework v1.1](TUTOR_LEARNING_FRAMEWORK.md). Linked units use a structured lesson opening followed by adaptive continuation. Standalone concept/topic sessions use a concept mini-lesson; problem sessions use a structured problem-solving walkthrough; explicit attempts receive feedback that preserves valid reasoning; later clarifications and correction challenges receive concise direct responses. The current implementation does not persist lesson-stage completion or mastery.
 
 - Show real active and previous sessions.
 - Resume from the persisted state, not from a reconstructed or fabricated conversation.
-- Approved plan-unit sessions use CTL v1: a structured lesson opening followed by adaptive teaching guidance for clarification, attempts, hints, independent practice, and recap.
-- Direct concept and problem sessions retain the concise adaptive Socratic response path.
+- Approved plan-unit sessions use CTL v1.1 structured lesson openings and adaptive continuations.
+- Standalone concept/topic sessions use a direct explanation, example, and understanding checkpoint; problem sessions use a governing principle, strategy, worked reasoning, verification, and transfer check.
+- Attempts and clarifications route to their respective feedback modes; uncertain intent falls back to adaptive Socratic dialogue.
 - Explicit explain-why, hint, simplify, example, continue, and repeat controls with server-enforced stage transitions remain future work.
 - Do not expose answer-checking controls unless a subject verifier for the current task is actually available.
 

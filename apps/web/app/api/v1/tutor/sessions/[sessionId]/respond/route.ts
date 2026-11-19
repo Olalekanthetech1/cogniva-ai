@@ -33,12 +33,16 @@ import type { TutorLearningMode } from "@/lib/tutor-learning-framework";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PROMPT_VERSION = "cogniva-socratic-tutor-2026-11-19-ctl-v1";
+const PROMPT_VERSION = "cogniva-adaptive-tutor-2026-11-19-ctl-v1.1";
 const MAX_CONTEXT_CHARACTERS = 10_000;
 const MAX_CONTEXT_MESSAGES = 16;
 const MAX_OUTPUT_TOKENS = 240;
 const MAX_STRUCTURED_LESSON_TOKENS = 1_100;
 const MAX_UNIT_CONTINUATION_TOKENS = 560;
+const MAX_CONCEPT_MINI_LESSON_TOKENS = 700;
+const MAX_PROBLEM_SOLVING_TOKENS = 900;
+const MAX_ATTEMPT_FEEDBACK_TOKENS = 450;
+const MAX_QUICK_CLARIFICATION_TOKENS = 280;
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
@@ -96,13 +100,22 @@ function buildSystemPrompt(mode: TutorLearningMode): string {
     ? "For this structured lesson opening, use up to 480 words and include the required lesson sections."
     : mode === "structured_lesson_continuation"
       ? "For this linked-unit lesson continuation, use up to 220 words."
-      : "Use at most 80 words for ordinary Socratic turns.";
+      : mode === "concept_mini_lesson"
+        ? "For this standalone concept mini-lesson, use up to 260 words and include the required concise teaching sections."
+        : mode === "problem_solving"
+          ? "For this problem-solving walkthrough, use up to 360 words and show the required reasoning and verification sections."
+          : mode === "attempt_feedback"
+            ? "For this attempt-feedback turn, use up to 190 words."
+            : mode === "quick_clarification"
+              ? "For this clarification, use up to 120 words."
+              : "Use at most 80 words for ordinary adaptive Socratic turns.";
   return [
     "You are Cogniva, a precise and supportive Socratic tutor for a global learning platform.",
     "Help the learner reason; do not simply complete the work for them.",
     "Respond to the latest learner message in the context of the stated learning task and prior conversation.",
     responseLengthInstruction,
-    "Normally give one manageable next step, one concise content-specific hint, and exactly one clear question at the end.",
+    "Use the teaching structure appropriate to the selected CTL mode. For compact clarification, answer directly; for concept and problem modes, teach with enough detail to make the reasoning reusable.",
+    "Normally give one manageable next step and exactly one clear question at the end.",
     "Honour a clear request for a direct worked answer when the learner asks for one.",
     "Correct misconceptions accurately and respectfully. Never affirm an incorrect statement.",
     "Do not claim to have checked work, sources, files, measurements, or calculations that are not present in the conversation.",
@@ -501,7 +514,10 @@ export async function POST(
   });
   const tutorLearningMode = resolveTutorLearningMode({
     hasLinkedUnit: Boolean(claim.learningPlanUnitId),
-    latestSubmissionType: claim.latestSubmissionType
+    latestSubmissionType: claim.latestSubmissionType,
+    learnerIntent: turnAnalysis.learnerIntent,
+    sessionIntent: claim.intent,
+    latestStudentMessage: turnAnalysis.latestStudentMessage
   });
   const learningFrameworkInstructions = buildTutorLearningFrameworkInstructions({
     mode: tutorLearningMode,
@@ -658,7 +674,15 @@ export async function POST(
           ? MAX_STRUCTURED_LESSON_TOKENS
           : tutorLearningMode === "structured_lesson_continuation"
             ? MAX_UNIT_CONTINUATION_TOKENS
-            : MAX_OUTPUT_TOKENS,
+            : tutorLearningMode === "concept_mini_lesson"
+              ? MAX_CONCEPT_MINI_LESSON_TOKENS
+              : tutorLearningMode === "problem_solving"
+                ? MAX_PROBLEM_SOLVING_TOKENS
+                : tutorLearningMode === "attempt_feedback"
+                  ? MAX_ATTEMPT_FEEDBACK_TOKENS
+                  : tutorLearningMode === "quick_clarification"
+                    ? MAX_QUICK_CLARIFICATION_TOKENS
+                    : MAX_OUTPUT_TOKENS,
         temperature: 0.25,
         timeoutMs: 25_000
       });
@@ -743,14 +767,18 @@ export async function POST(
 
   const outputIssue = tutorLearningMode === "adaptive_socratic"
     ? validateTutorOutput(generated.text, generated.finishReason)
-    : validateTutorLearningOutput({
-        text: generated.text,
-        finishReason: generated.finishReason,
-        mode: tutorLearningMode,
-        numericMismatchCount: tutorLearningMode === "structured_lesson_opening"
-          ? findIncorrectNumericClaims(generated.text).length
-          : 0
-      });
+    : generated.responseSource === "deterministic_verifier"
+      ? validateTutorLearningOutput({
+          text: generated.text,
+          finishReason: generated.finishReason,
+          mode: "quick_clarification"
+        })
+      : validateTutorLearningOutput({
+          text: generated.text,
+          finishReason: generated.finishReason,
+          mode: tutorLearningMode,
+          numericMismatchCount: findIncorrectNumericClaims(generated.text).length
+        });
   if (outputIssue) {
     await restoreSessionState({
       sessionId,
