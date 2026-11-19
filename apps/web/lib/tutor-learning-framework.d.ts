@@ -17,6 +17,7 @@ export function resolveTutorLearningMode(input: {
   sessionIntent?: "learn_topic" | "understand_concept" | "solve_problem" | string;
   latestStudentMessage?: string;
   requestedLearningMode?: "concept_mini_lesson" | "problem_solving" | null;
+  activeTaskMode?: "concept_mini_lesson" | "problem_solving" | null;
 }): TutorLearningMode;
 
 export type TutorLearningModeConfig = {
