@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   TUTOR_LEARNING_FRAMEWORK_VERSION,
+  getTutorLearningModeConfig,
   buildTutorLearningFrameworkInstructions,
   resolveTutorLearningMode,
   validateTutorLearningOutput
@@ -60,7 +61,7 @@ const validProblemSolution = [
 ].join("\n");
 
 test("publishes the unified CTL 1.1 framework version", () => {
-  assert.equal(TUTOR_LEARNING_FRAMEWORK_VERSION, "ctl-1.1.0");
+  assert.equal(TUTOR_LEARNING_FRAMEWORK_VERSION, "ctl-1.2.0");
 });
 
 test("keeps linked-unit opening and continuation routing unchanged", () => {
@@ -283,4 +284,107 @@ test("rejects numeric mismatches when the bounded checker supplies evidence", ()
     mode: "problem_solving",
     numericMismatchCount: 1
   }), /bounded arithmetic check/);
+});
+
+
+test("routes explicit learner assistance requests without forcing the original session mode", () => {
+  for (const learnerIntent of [
+    "hint_request",
+    "simplification_request",
+    "example_request",
+    "recap_request"
+  ]) {
+    assert.equal(resolveTutorLearningMode({
+      hasLinkedUnit: false,
+      latestSubmissionType: "question",
+      sessionIntent: "solve_problem",
+      learnerIntent
+    }), "quick_clarification");
+  }
+});
+
+test("allows an explicit new task to switch away from the original session intent", () => {
+  assert.equal(resolveTutorLearningMode({
+    hasLinkedUnit: false,
+    latestSubmissionType: "question",
+    sessionIntent: "understand_concept",
+    requestedLearningMode: "problem_solving"
+  }), "problem_solving");
+  assert.equal(resolveTutorLearningMode({
+    hasLinkedUnit: false,
+    latestSubmissionType: "question",
+    sessionIntent: "solve_problem",
+    requestedLearningMode: "concept_mini_lesson"
+  }), "concept_mini_lesson");
+});
+
+test("adds action-specific hint, simplification, example and recap guidance", () => {
+  const guidance = [
+    ["hint_request", /next useful hint|next level/i],
+    ["simplification_request", /plainer language|different representation/i],
+    ["example_request", /new, relevant example/i],
+    ["recap_request", /only what the conversation actually covered/i]
+  ];
+
+  for (const [learnerIntent, expected] of guidance) {
+    const instructions = buildTutorLearningFrameworkInstructions({
+      mode: "quick_clarification",
+      learnerIntent
+    });
+    assert.match(instructions, expected);
+  }
+});
+
+test("keeps linked-unit continuity while adapting the requested teaching action", () => {
+  const mode = resolveTutorLearningMode({
+    hasLinkedUnit: true,
+    latestSubmissionType: "question",
+    learnerIntent: "hint_request"
+  });
+  const instructions = buildTutorLearningFrameworkInstructions({
+    mode,
+    learnerIntent: "hint_request"
+  });
+
+  assert.equal(mode, "structured_lesson_continuation");
+  assert.match(instructions, /direction, recall of a relevant principle/i);
+  assert.match(instructions, /do not claim a persisted hint stage/i);
+});
+
+test("centralizes mode budgets and provides a safe fallback for unregistered future modes", () => {
+  const modes = [
+    "adaptive_socratic",
+    "structured_lesson_opening",
+    "structured_lesson_continuation",
+    "concept_mini_lesson",
+    "problem_solving",
+    "attempt_feedback",
+    "quick_clarification"
+  ];
+
+  for (const mode of modes) {
+    const config = getTutorLearningModeConfig(mode);
+    assert.ok(config.maxOutputTokens > 0, mode);
+    assert.ok(config.maxWords > 0, mode);
+    assert.ok(config.maxCharacters > 0, mode);
+    assert.ok(config.responseLengthInstruction.length > 0, mode);
+  }
+
+  assert.equal(
+    getTutorLearningModeConfig("future_unregistered_mode").maxOutputTokens,
+    getTutorLearningModeConfig("adaptive_socratic").maxOutputTokens
+  );
+});
+
+test("validates adaptive Socratic output through the same framework contract", () => {
+  assert.equal(validateTutorLearningOutput({
+    text: "The derivative measures the instantaneous rate of change. Which part would you like to examine?",
+    finishReason: "stop",
+    mode: "adaptive_socratic"
+  }), null);
+  assert.match(validateTutorLearningOutput({
+    text: "This is an answer. ".repeat(12) + "What would you like to do next?",
+    finishReason: "stop",
+    mode: "adaptive_socratic"
+  }), /concise-response limit/);
 });
