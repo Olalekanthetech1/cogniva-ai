@@ -557,3 +557,98 @@
   font-size: 21px;
   font-weight: 500;
 }
+
+
+/* Learner review and explicit plan approval. */
+.learning-plan-review-panel {
+  display: grid;
+  gap: 13px;
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid #dfe6d8;
+  border-radius: 14px;
+  background: #fbfcf9;
+}
+
+.learning-plan-review-panel h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.5vw, 25px);
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+
+.learning-plan-review-panel > div > p:last-child,
+.learning-plan-review-panel > p:not(.learning-plan-kicker) {
+  max-width: 760px;
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.learning-plan-review-message {
+  margin: 0;
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.learning-plan-review-panel.is-approved {
+  border-color: #d8e5d2;
+  background: #f7faf4;
+}
+
+.learning-plan-review-panel .learning-plan-error {
+  margin: 0;
+}
+
+.learning-plan-relation-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.learning-plan-relation-actions button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--accent-dark);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.learning-plan-relation-actions .learning-plan-relation-accept {
+  border-color: #cbdcc4;
+  background: #f4f8f1;
+}
+
+.learning-plan-relation-actions .learning-plan-relation-reject {
+  color: #8b4038;
+}
+
+.learning-plan-relation-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .learning-plan-relation-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .learning-plan-relation-actions button {
+    flex: 1;
+    min-height: 38px;
+  }
+
+  .learning-plan-review-panel .learning-plan-primary-button {
+    width: 100%;
+  }
+}
