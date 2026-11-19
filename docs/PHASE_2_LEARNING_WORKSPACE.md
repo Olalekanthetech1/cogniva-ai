@@ -124,7 +124,7 @@ Linked-unit and standalone Tutor sessions follow [Cogniva Tutor Learning Framewo
 - Show real active and previous sessions.
 - Resume from the persisted state, not from a reconstructed or fabricated conversation.
 - Approved plan-unit sessions use CTL v1.2 structured lesson openings and adaptive continuations.
-- Standalone concept/topic sessions use a direct explanation, example, and understanding checkpoint; problem sessions use a governing principle, strategy, worked reasoning, verification, and transfer check.
+- Standalone concept/topic openings use a direct explanation, example, and understanding checkpoint; problem sessions use a structured opening followed by step-aware continuations that do not repeat the full walkthrough.
 - Attempts, clarifications, hints, simplifications, examples, and recaps route to action-aware feedback; clear task switches can change a standalone mode, while uncertain intent falls back to adaptive Socratic dialogue.
 - Explicit explain-why, hint, simplify, example, continue, and repeat controls with server-enforced stage transitions remain future work.
 - Do not expose answer-checking controls unless a subject verifier for the current task is actually available.
