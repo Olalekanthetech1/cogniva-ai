@@ -159,3 +159,15 @@ test("does not reinterpret ordinary references, Markdown links, or code examples
   assert.match(html, /<pre>/);
   assert.match(html, /\\frac/);
 });
+
+test("renders legacy labeled algebra rules even when providers omit math delimiters", () => {
+  const markdown = [
+    "1. Constant Rule: (c)' = 0",
+    "2. Power Rule: (x^n)' = n x^{n-1}",
+    "3. Sum Rule: (f+g)' = f' + g'"
+  ].join("\n");
+  const html = renderMarkdown(markdown);
+
+  assert.equal((html.match(/class="katex"/g) ?? []).length >= 3, true);
+  assert.doesNotMatch(withoutMathSourceAnnotations(html), /x\\^n/);
+});
