@@ -134,7 +134,11 @@ export async function POST(request: Request): Promise<Response> {
 
     if (requestedRevisionId) {
       const [ownedRevision] = await db
-        .select({ id: learningPlanRevisions.id })
+        .select({
+          id: learningPlanRevisions.id,
+          status: learningPlanRevisions.status,
+          planStatus: learningPlans.status
+        })
         .from(learningPlanRevisions)
         .innerJoin(
           learningPlans,
@@ -155,13 +159,23 @@ export async function POST(request: Request): Promise<Response> {
           404
         );
       }
+
+      if (requestedUnitId && (ownedRevision.status !== "approved" || ownedRevision.planStatus !== "active")) {
+        return errorResponse(
+          "LEARNING_PLAN_NOT_ACTIVE",
+          "Tutor sessions from a unit require an approved, active learning plan.",
+          409
+        );
+      }
     }
 
     if (requestedUnitId) {
       const [ownedUnit] = await db
         .select({
           id: learningPlanUnits.id,
-          revisionId: learningPlanUnits.revisionId
+          revisionId: learningPlanUnits.revisionId,
+          revisionStatus: learningPlanRevisions.status,
+          planStatus: learningPlans.status
         })
         .from(learningPlanUnits)
         .innerJoin(
@@ -185,6 +199,14 @@ export async function POST(request: Request): Promise<Response> {
           "LEARNING_PLAN_UNIT_NOT_FOUND",
           "The selected learning-plan unit is not available to this account.",
           404
+        );
+      }
+
+      if (ownedUnit.revisionStatus !== "approved" || ownedUnit.planStatus !== "active") {
+        return errorResponse(
+          "LEARNING_PLAN_NOT_ACTIVE",
+          "Tutor sessions from a unit require an approved, active learning plan.",
+          409
         );
       }
 

@@ -16,12 +16,24 @@ function readApiError(payload: unknown, fallback: string): string {
     : fallback;
 }
 
-export function TutorStartForm({ compact = false }: { compact?: boolean }) {
+type TutorStartFormProps = {
+  compact?: boolean;
+  initialPrompt?: string;
+  learningPlanRevisionId?: string;
+  learningPlanUnitId?: string;
+};
+
+export function TutorStartForm({
+  compact = false,
+  initialPrompt = "",
+  learningPlanRevisionId,
+  learningPlanUnitId
+}: TutorStartFormProps) {
   const router = useRouter();
   const [intent, setIntent] = useState<TutorIntent>(
     compact ? "understand_concept" : "learn_topic"
   );
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(initialPrompt);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState("");
 
@@ -37,7 +49,12 @@ export function TutorStartForm({ compact = false }: { compact?: boolean }) {
       const response = await fetch("/api/v1/tutor/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intent, prompt: normalizedPrompt })
+        body: JSON.stringify({
+          intent,
+          prompt: normalizedPrompt,
+          ...(learningPlanRevisionId ? { learningPlanRevisionId } : {}),
+          ...(learningPlanUnitId ? { learningPlanUnitId } : {})
+        })
       });
       const payload: unknown = await response.json().catch(() => null);
 

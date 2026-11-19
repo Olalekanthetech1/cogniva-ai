@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LearningPlanUnitTutorLaunch } from "@/components/learning-plan-unit-tutor-launch";
 import { useCallback, useEffect, useState } from "react";
 
 type GenerationStatus = "pending" | "running" | "succeeded" | "failed" | "unavailable";
@@ -617,6 +618,16 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
                             <span key={concept.id}>{concept.name}</span>
                           ))}
                         </div>
+                      )}
+                      {revision.status === "approved" && (
+                        <LearningPlanUnitTutorLaunch
+                          revisionId={revision.id}
+                          unitId={unit.id}
+                          unitTitle={unit.title}
+                          description={unit.description}
+                          objectives={unit.objectives.map((objective) => objective.statement)}
+                          concepts={unit.concepts.map((concept) => concept.name)}
+                        />
                       )}
                     </div>
                   </li>

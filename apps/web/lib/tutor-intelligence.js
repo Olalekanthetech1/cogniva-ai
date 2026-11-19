@@ -316,6 +316,41 @@ function isDirectAnswerRequest(text) {
     /\bsolve it completely\b/i.test(text);
 }
 
+function inferRequestedLearningMode(text, latestSubmissionType) {
+  const source = String(text ?? "").trim();
+
+  const hasProblemEvidence = /\d|[=+*/^]|\b(?:problem|equation|exercise|expression)\b/i.test(source);
+  const hasExplicitProblemRequest = /\b(?:solve|calculate|compute|evaluate|work out|determine|find|derive|prove)\b/i.test(source) &&
+    hasProblemEvidence;
+  const requestsNewProblem = /\b(?:now|next|instead|please|let'?s|let us|can we|could we|switch to|move on to)\b[\s\S]{0,55}\b(?:solve|work through|calculate|compute|derive|evaluate|prove)\b/i.test(source) ||
+    /\bnew\s+(?:problem|exercise)\b/i.test(source);
+
+  if (latestSubmissionType === "initial_prompt" && hasExplicitProblemRequest) {
+    return "problem_solving";
+  }
+  if (latestSubmissionType !== "initial_prompt" && requestsNewProblem && hasProblemEvidence) {
+    return "problem_solving";
+  }
+
+  const requestsNewConcept = /\bnew\s+(?:topic|concept)\b/i.test(source) ||
+    /\bswitch to (?:a )?(?:new )?(?:topic|concept)\b/i.test(source) ||
+    /\bmove on to (?:a )?(?:new )?(?:topic|concept)\b/i.test(source) ||
+    /\b(?:let'?s|let us) learn\b/i.test(source) ||
+    /\bteach me about\b/i.test(source) ||
+    /\bnow\b[\s\S]{0,35}\b(?:learn|study|teach|cover)\b/i.test(source);
+  const explicitConceptRequest = /\b(?:what is|define|explain|meaning of|teach me|help me understand)\b/i.test(source);
+
+  if (
+    latestSubmissionType === "initial_prompt" &&
+    explicitConceptRequest
+  ) return "concept_mini_lesson";
+  if (latestSubmissionType !== "initial_prompt" && requestsNewConcept) {
+    return "concept_mini_lesson";
+  }
+
+  return null;
+}
+
 function lastQuestion(text) {
   const source = String(text ?? "");
   const questionEnd = source.lastIndexOf("?");
@@ -642,6 +677,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
   const learnerValueDiffers = correctionChallenge && Boolean(latestTutorClaim) &&
     learnerProposedValues.length > 0 && !learnerValueMatches;
   const directAnswerRequest = isDirectAnswerRequest(latestStudentMessage);
+  const normalizedMessage = latestStudentMessage.trim();
   let learnerIntent = "follow_up";
   if (correctionChallenge) {
     learnerIntent = "correction_challenge";
@@ -649,9 +685,21 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
     learnerIntent = "direct_answer_request";
   } else if (latestSubmissionType === "attempt") {
     learnerIntent = "work_attempt";
-  } else if (/^(why|what|how|when|where|can you explain|could you explain)\b/i.test(latestStudentMessage.trim())) {
+  } else if (latestSubmissionType !== "initial_prompt" && /\b(?:hint|clue|nudge|help me get started)\b/i.test(normalizedMessage)) {
+    learnerIntent = "hint_request";
+  } else if (latestSubmissionType !== "initial_prompt" && /\b(?:simplify|simpler|more simply|plain language|easier words|break (?:it|this) down)\b/i.test(normalizedMessage)) {
+    learnerIntent = "simplification_request";
+  } else if (latestSubmissionType !== "initial_prompt" && /\b(?:example|illustration|demonstration)\b/i.test(normalizedMessage)) {
+    learnerIntent = "example_request";
+  } else if (latestSubmissionType !== "initial_prompt" && /\b(?:recap|summari[sz]e|review|revise|revision|key points|remind me)\b/i.test(normalizedMessage)) {
+    learnerIntent = "recap_request";
+  } else if (/^(why|what|how|when|where|can you explain|could you explain)\b/i.test(normalizedMessage)) {
     learnerIntent = "clarification";
   }
+  const requestedLearningMode = inferRequestedLearningMode(
+    latestStudentMessage,
+    latestSubmissionType
+  );
 
   const tutorQuestions = previousTutorMessages
     .map((message) => lastQuestion(message.content))
@@ -667,6 +715,7 @@ export function analyzeTutorTurn({ messages, latestSubmissionType }) {
 
   return {
     learnerIntent,
+    requestedLearningMode,
     latestStudentMessage,
     latestTutorClaim,
     learnerNumericMismatches,
