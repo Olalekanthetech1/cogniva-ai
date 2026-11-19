@@ -1,8 +1,8 @@
 # Cogniva — Phase 1.1b Institutions, Programmes, and Knowledge Components
 
-**Status:** Implemented on a stacked review branch; CI passed on 19 November 2026 (run #44596303084); awaiting review.  
+**Status:** Merged to `main` via PR #41; PR CI #44597076607 and post-merge CI #44598472862 passed.  
 **Migration:** `0008_global_academic_interoperability.sql`.  
-**Production:** Not applied. Neon remains verified only through migration 0006 at the latest read-only audit.  
+**Production:** Migration 0008 has not been applied to Neon in this workflow. The earlier read-only audit verified Neon through migration 0006.  
 **Dependency:** Migration 0008 depends on migration 0007 from PR #39. Merge/apply order is 0007, then 0008.  
 **Scope:** Additive academic interoperability schema. No catalogue seeds, ingestion, APIs, runtime adapters, or production writes.
 
