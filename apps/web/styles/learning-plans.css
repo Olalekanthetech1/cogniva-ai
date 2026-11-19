@@ -1,0 +1,559 @@
+/* Personal learning library and read-only plan overview */
+.learning-plan-library {
+  display: grid;
+  gap: 18px;
+  margin: 36px 0 42px;
+}
+
+.learning-plan-library > .workspace-section-heading {
+  margin-bottom: 0;
+}
+
+.learning-plan-refresh,
+.learning-plan-secondary-button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--accent-dark);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.learning-plan-refresh:disabled,
+.learning-plan-secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.learning-plan-create-card,
+.learning-plan-proposal-header,
+.learning-plan-retry-card {
+  display: grid;
+  gap: 16px;
+  padding: clamp(22px, 4vw, 34px);
+  border: 1px solid #e1e5dc;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 55px rgba(45, 60, 40, 0.045);
+}
+
+.learning-plan-kicker {
+  margin: 0 0 8px;
+  color: var(--accent-dark);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+}
+
+.learning-plan-create-card h3,
+.learning-plan-retry-card h2,
+.learning-plan-proposal-header h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 500;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.learning-plan-create-card > div > p:last-child,
+.learning-plan-retry-card > p:not(.learning-plan-kicker),
+.learning-plan-proposal-header > p:not(.learning-plan-kicker) {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.learning-plan-create-form {
+  display: grid;
+  gap: 13px;
+}
+
+.learning-plan-field {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.learning-plan-field textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  padding: 13px 14px;
+  border: 1px solid #dfe3da;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.learning-plan-field textarea:focus {
+  outline: none;
+  border-color: #829b78;
+  box-shadow: 0 0 0 3px rgba(130, 155, 120, 0.16);
+}
+
+.learning-plan-field textarea:disabled {
+  background: #f4f5f1;
+  cursor: not-allowed;
+}
+
+.learning-plan-field textarea::placeholder {
+  color: #9a9e96;
+}
+
+.learning-plan-field small,
+.learning-plan-detail-date {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.learning-plan-primary-button {
+  display: inline-flex;
+  min-height: 45px;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, opacity 160ms ease;
+}
+
+.learning-plan-primary-button:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+.learning-plan-primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.learning-plan-note {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #e7e9df;
+  border-radius: 9px;
+  background: #fafbf7;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.learning-plan-error {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 13px 14px;
+  border: 1px solid #efc9c5;
+  border-radius: 9px;
+  background: #fff5f3;
+  color: #922f25;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.learning-plan-error p {
+  margin: 0;
+}
+
+.learning-plan-error button {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #922f25;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.learning-plan-muted-state {
+  margin: 0;
+  padding: 17px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.learning-plan-empty {
+  margin: 0;
+}
+
+.learning-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.learning-plan-card {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 13px;
+  padding: 21px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.76);
+  text-decoration: none;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+
+.learning-plan-card:hover {
+  border-color: #a8b99f;
+  transform: translateY(-2px);
+}
+
+.learning-plan-card:focus-visible {
+  outline: 3px solid #829b78;
+  outline-offset: 3px;
+}
+
+.learning-plan-card-topline,
+.learning-plan-detail-meta,
+.learning-plan-action-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.learning-plan-card-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 18px;
+}
+
+.learning-plan-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 4px 8px;
+  border: 1px solid #dfe7d9;
+  border-radius: 7px;
+  background: #f7faf4;
+  color: var(--accent-dark);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: capitalize;
+}
+
+.learning-plan-status-neutral {
+  border-color: var(--line);
+  background: #fafaf8;
+  color: var(--muted);
+}
+
+.learning-plan-card h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.learning-plan-card > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.learning-plan-card-meta {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.learning-plan-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.learning-plan-detail {
+  display: grid;
+  gap: 25px;
+}
+
+.learning-plan-detail-meta {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.learning-plan-proposal-header {
+  gap: 14px;
+}
+
+.learning-plan-proposal-header > p:not(.learning-plan-kicker) {
+  margin-top: 0;
+}
+
+.learning-plan-proposal-header .learning-plan-note {
+  margin-top: 3px;
+}
+
+.learning-plan-units-section,
+.learning-plan-concepts-section,
+.learning-plan-relations-section {
+  display: grid;
+  gap: 15px;
+}
+
+.learning-plan-unit-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: learning-plan-unit;
+}
+
+.learning-plan-unit-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 15px;
+  padding: 21px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.learning-plan-unit-number {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.learning-plan-unit-content {
+  min-width: 0;
+}
+
+.learning-plan-unit-content h3 {
+  margin: 1px 0 0;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  overflow-wrap: anywhere;
+}
+
+.learning-plan-unit-content > p,
+.learning-plan-concept-card p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.learning-plan-subsection {
+  margin-top: 17px;
+}
+
+.learning-plan-subsection h4 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.learning-plan-subsection ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.learning-plan-concept-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 15px;
+}
+
+.learning-plan-concept-tags span {
+  padding: 5px 8px;
+  border: 1px solid #e1e7dc;
+  border-radius: 7px;
+  background: #fafbf8;
+  color: var(--accent-dark);
+  font-size: 10px;
+}
+
+.learning-plan-concept-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.learning-plan-concept-card {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.learning-plan-concept-card > span {
+  color: var(--accent-dark);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.learning-plan-concept-card h3 {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.learning-plan-relation-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learning-plan-relation-list li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+
+.learning-plan-relation-list small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: capitalize;
+}
+
+.learning-plan-detail-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 17px;
+  border-top: 1px solid var(--line);
+}
+
+.learning-plan-text-link {
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.learning-plan-text-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 760px) {
+  .learning-plan-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-plan-concept-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .learning-plan-create-card {
+    border-radius: 14px;
+  }
+
+  .learning-plan-detail-footer {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .learning-plan-concept-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-plan-unit-card {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 11px;
+    padding: 15px;
+  }
+
+  .learning-plan-unit-number {
+    width: 31px;
+    height: 31px;
+  }
+
+  .learning-plan-primary-button {
+    width: 100%;
+  }
+
+  .learning-plan-action-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .learning-plan-secondary-button {
+    width: 100%;
+  }
+
+  .learning-plan-relation-list small {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+
+/* Keep catalogue subject headings consistent with the existing card layout. */
+.workspace-subject-card h3 {
+  margin: 14px 0 0;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 500;
+}
