@@ -77,6 +77,7 @@ Do not run migrations against production without reviewing the generated SQL and
 - [Architecture](docs/ARCHITECTURE.md)
 - [Database design](docs/DATABASE.md)
 - [API conventions](docs/API.md)
+- [Tutor Learning Framework](docs/TUTOR_LEARNING_FRAMEWORK.md)
 - [ZeroMock policy](docs/ZERO_MOCK.md)
 - [Global academic architecture](docs/GLOBAL_ACADEMIC_ARCHITECTURE.md)
 - [Mobile and web product experience](docs/PRODUCT_EXPERIENCE.md)
