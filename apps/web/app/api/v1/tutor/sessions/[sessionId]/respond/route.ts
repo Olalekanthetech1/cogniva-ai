@@ -59,6 +59,22 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function getPersistedActiveTaskMode(
+  messages: Array<{
+    role: "student" | "tutor";
+    metadata?: Record<string, unknown> | null;
+  }>
+): "concept_mini_lesson" | "problem_solving" | null {
+  for (const message of [...messages].reverse()) {
+    if (message.role !== "tutor" || !isObject(message.metadata)) continue;
+    const adaptive = message.metadata.adaptive;
+    if (!isObject(adaptive)) continue;
+    const mode = adaptive.activeTaskMode;
+    if (mode === "concept_mini_lesson" || mode === "problem_solving") return mode;
+  }
+  return null;
+}
+
 function buildSystemPrompt(mode: TutorLearningMode): string {
   const responseLengthInstruction = getTutorLearningModeConfig(mode).responseLengthInstruction;
   return [
@@ -265,7 +281,11 @@ export async function POST(
     previousState: string;
     claimedVersion: number;
     responseSequenceNumber: number;
-    messages: Array<{ role: "student" | "tutor"; content: string }>;
+    messages: Array<{
+      role: "student" | "tutor";
+      content: string;
+      metadata: Record<string, unknown> | null;
+    }>;
     latestSubmissionType: "attempt" | "question" | "initial_prompt";
     attemptMessageId: string | null;
   };
@@ -408,7 +428,8 @@ export async function POST(
       const recentMessages = await tx
         .select({
           role: tutorMessages.role,
-          content: tutorMessages.content
+          content: tutorMessages.content,
+          metadata: tutorMessages.metadata
         })
         .from(tutorMessages)
         .where(eq(tutorMessages.sessionId, session.id))
@@ -464,14 +485,28 @@ export async function POST(
     messages: claim.messages,
     latestSubmissionType: claim.latestSubmissionType
   });
+  const previousActiveTaskMode = getPersistedActiveTaskMode(claim.messages);
   const tutorLearningMode = resolveTutorLearningMode({
     hasLinkedUnit: Boolean(claim.learningPlanUnitId),
     latestSubmissionType: claim.latestSubmissionType,
     learnerIntent: turnAnalysis.learnerIntent,
     sessionIntent: claim.intent,
     latestStudentMessage: turnAnalysis.latestStudentMessage,
-    requestedLearningMode: turnAnalysis.requestedLearningMode
+    requestedLearningMode: turnAnalysis.requestedLearningMode,
+    activeTaskMode: previousActiveTaskMode
   });
+  const nextActiveTaskMode =
+    tutorLearningMode === "concept_mini_lesson"
+      ? "concept_mini_lesson"
+      : tutorLearningMode === "problem_solving" || tutorLearningMode === "problem_solving_continuation"
+        ? "problem_solving"
+        : previousActiveTaskMode ??
+          turnAnalysis.requestedLearningMode ??
+          (claim.intent === "solve_problem"
+            ? "problem_solving"
+            : claim.intent === "understand_concept" || claim.intent === "learn_topic"
+              ? "concept_mini_lesson"
+              : null);
   const learningModeConfig = getTutorLearningModeConfig(tutorLearningMode);
   const learningFrameworkInstructions = buildTutorLearningFrameworkInstructions({
     mode: tutorLearningMode,
@@ -762,6 +797,7 @@ export async function POST(
             adaptive: {
               learnerIntent: turnAnalysis.learnerIntent,
               requestedLearningMode: turnAnalysis.requestedLearningMode,
+              activeTaskMode: nextActiveTaskMode,
               repeatedQuestionCount: turnAnalysis.repeatedQuestionCount,
               errorClassification: turnAnalysis.learnerErrorAnalysis
                 ? {
