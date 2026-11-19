@@ -66,6 +66,7 @@ If information is missing or the prompt is ambiguous, Tutor must identify what i
 
 When the learner submits an attempt:
 - Preserve valid reasoning and identify the first incorrect, incomplete, or unsupported step.
+- Attribute reasoning only when the learner actually submitted or described it. A final answer alone is not evidence that the learner used a particular intermediate method.
 - Explain why that step needs attention; do not merely label the work right or wrong.
 - Use a deterministic result only when the expression falls within Cogniva's documented bounded arithmetic support.
 - An arithmetic mismatch proves only that the explicit arithmetic result differs; it does not establish the learner's cognitive cause or misconception.
@@ -94,6 +95,8 @@ This is an extensible architecture, not a guarantee that future capabilities nee
 All responses must be non-empty, non-truncated, within the registered budgets, and end with exactly one learner-facing question. Structured openings and the concept/problem modes have ordered section validation. Structured openings require two to four list-form objectives. Applicable modes reject output containing numeric claims that fail Cogniva's bounded arithmetic check.
 
 ## 9. Quality and evidence rules
+
+Cogniva is an AI-powered learning assistant and can make mistakes. The Tutor interface must disclose this clearly and encourage learners to verify important explanations and feedback. A generated response is not independent verification.
 
 1. **Correctness before fluency.** Explain assumptions, notation, units, and limitations.
 2. **No false verification.** A provider-generated explanation is not deterministic proof. Only documented bounded checks may produce a verified status, and only within their stated scope.
