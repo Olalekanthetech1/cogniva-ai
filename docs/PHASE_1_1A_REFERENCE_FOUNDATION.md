@@ -32,7 +32,7 @@ The migration adds 15 tables:
 - ISO identifiers are optional external references; internal Cogniva UUIDs remain stable. Code format and uniqueness are constrained, but no ISO list is seeded.
 - A country is not an education jurisdiction. A jurisdiction may be attached to a country or remain unassigned until its source is known.
 - Qualification frameworks and classification schemes carry explicit versions and validity intervals.
-- Qualification-level parents and classification-code parents are constrained to the same version. Self-parenting is rejected. Multi-node cycle validation still belongs in the service layer before any future write API is enabled.
+- Qualification-level parents and classification-code parents are constrained to the same version. Their composite foreign keys are added after the supporting composite unique indexes in migration 0007, as required by PostgreSQL. Self-parenting is rejected. Multi-node cycle validation still belongs in the service layer before any future write API is enabled.
 - ISCED-P and ISCED-A are separate mapping kinds. A database trigger verifies that an ISCED-P mapping points to a programme-kind classification scheme and an ISCED-A mapping points to an attainment-kind scheme. ISCED-F is a field classification, not a qualification-level mapping.
 - An accepted qualification mapping requires a source record and review timestamp. Confidence, when supplied, is bounded from 0 to 1.
 - Sources default to `proposed`. Permission flags are nullable so unknown rights are not treated as permission. A source cannot be marked `approved` until its rights-review timestamp and all four cache/store/display/redistribute decisions are explicitly recorded.
