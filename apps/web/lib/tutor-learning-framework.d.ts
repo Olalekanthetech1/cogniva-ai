@@ -4,6 +4,7 @@ export type TutorLearningMode =
   | "structured_lesson_continuation"
   | "concept_mini_lesson"
   | "problem_solving"
+  | "problem_solving_continuation"
   | "attempt_feedback"
   | "quick_clarification";
 
