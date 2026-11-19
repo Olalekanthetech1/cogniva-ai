@@ -188,7 +188,7 @@ The response route consumes this registry instead of maintaining a separate nest
 
 This is an extensible architecture, not a guarantee that future capabilities need no engineering. Every new teaching capability still requires an explicit policy, tests, operational limits, and evidence that the behavior is suitable.
 
- for inline mathematics and `$...$` for display equations, rather than bare TeX commands or square-bracket wrappers. Because Gemini, Groq, and Mistral use the same response contract and renderer, the display layer also normalizes common `\\(...\\)` and `\\[...\\]` delimiters and clearly mathematical legacy square-bracketed TeX. It skips inline/fenced code and ordinary bracket references. This compatibility pass changes only the rendered copy; stored provider text and verification provenance remain unchanged. The renderer is a presentation layer, not a mathematical correctness check.
+ for inline mathematics and `$...$` for display equations, rather than bare TeX commands or square-bracket wrappers. Because Gemini, Groq, and Mistral use the same response contract and renderer, the display layer also normalizes common `\\(...\\)` and `\\[...\\]` delimiters clearly mathematical legacy square-bracketed TeX, and short unwrapped equations after numbered/bulleted rule labels. It skips inline/fenced code and ordinary bracket references. This compatibility pass changes only the rendered copy; stored provider text and verification provenance remain unchanged. The renderer is a presentation layer, not a mathematical correctness check.
 
 ## 9. Quality and evidence rules
 
