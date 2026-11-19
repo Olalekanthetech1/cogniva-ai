@@ -134,7 +134,11 @@ export async function POST(request: Request): Promise<Response> {
 
     if (requestedRevisionId) {
       const [ownedRevision] = await db
-        .select({ id: learningPlanRevisions.id })
+        .select({
+          id: learningPlanRevisions.id,
+          status: learningPlanRevisions.status,
+          planStatus: learningPlans.status
+        })
         .from(learningPlanRevisions)
         .innerJoin(
           learningPlans,
