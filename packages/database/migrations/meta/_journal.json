@@ -57,6 +57,13 @@
       "when": 1795107000000,
       "tag": "0007_global_academic_reference_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795113600000,
+      "tag": "0008_global_academic_interoperability",
+      "breakpoints": true
     }
   ]
 }

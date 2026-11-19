@@ -25,6 +25,7 @@
     "test:learning-plan-review": "node --test apps/web/lib/learning-plan-review.test.mjs",
     "test:auth-lifecycle": "node --test tests/integration/auth-lifecycle.test.mjs",
     "test:academic-reference-foundation": "node --test tests/integration/academic-reference-foundation.test.mjs",
+    "test:academic-interoperability": "node --test tests/integration/academic-interoperability.test.mjs",
     "db:audit": "node scripts/audit-neon-schema.mjs"
   },
   "pnpm": {

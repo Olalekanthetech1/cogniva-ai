@@ -205,6 +205,7 @@ export const curriculumVersions = pgTable(
       table.courseId,
       table.versionLabel
     ),
+    uniqueIndex("curriculum_versions_id_course_unique").on(table.id, table.courseId),
     index("curriculum_versions_course_status_idx").on(
       table.courseId,
       table.status
