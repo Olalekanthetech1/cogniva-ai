@@ -92,6 +92,49 @@ test("rejects an opening that omits a required lesson section", () => {
   );
 });
 
+test("rejects lesson sections that are present but out of order", () => {
+  const outOfOrder = validLesson
+    .replace("## Detailed explanation", "## TEMPORARY SECTION")
+    .replace("## Worked example", "## Detailed explanation")
+    .replace("## TEMPORARY SECTION", "## Worked example");
+  assert.match(
+    validateTutorLearningOutput({
+      text: outOfOrder,
+      finishReason: "stop",
+      mode: "structured_lesson_opening"
+    }),
+    /not in the required order/
+  );
+});
+
+test("requires two to four list-form learning objectives", () => {
+  const oneObjective = validLesson.replace(
+    "- Calculate a derivative using the power rule.\\n",
+    ""
+  );
+  const fiveObjectives = validLesson.replace(
+    "\\n## Detailed explanation",
+    "\\n- Apply the derivative to a rate-of-change problem.\\n- Interpret the derivative in context.\\n- Check a derivative using a second method.\\n## Detailed explanation"
+  );
+
+  assert.match(
+    validateTutorLearningOutput({
+      text: oneObjective,
+      finishReason: "stop",
+      mode: "structured_lesson_opening"
+    }),
+    /between two and four/
+  );
+  assert.match(
+    validateTutorLearningOutput({
+      text: fiveObjectives,
+      finishReason: "stop",
+      mode: "structured_lesson_opening"
+    }),
+    /between two and four/
+  );
+});
+
 test("rejects unverified numeric errors in a structured lesson opening", () => {
   assert.match(
     validateTutorLearningOutput({
