@@ -103,7 +103,7 @@ When a learner sends a new message to the `respond` route, the optional `message
 
 Use `"question"` for a follow-up question. When omitted, `messageType` defaults to `"attempt"` for compatibility. An empty JSON object requests a retry for the most recent unanswered learner message and does not create a duplicate attempt.
 
-An attempt record and its student message are committed in the same database transaction before a provider request begins. The session response exposes the attempt number, linked message, submission time, and evaluation status. New records are saved as `not_evaluated`; the Socratic tutor reply is not an independent answer verification and must not be presented as a correctness or mastery result.
+An attempt record and its student message are committed in the same database transaction before a provider request begins. The session response exposes the attempt number, linked message, submission time, and evaluation status. New records are saved as `not_evaluated`; the Socratic tutor reply is not an independent answer verification and must not be presented as a correctness or mastery result. In the learner interface, `not_evaluated` is described as **Not independently verified** so that a conversational Tutor reply is not confused with a deterministic check. `evaluated` means only that a documented bounded check ran; its scope remains visible and does not establish mastery.
 
 The following are proposed future interaction/problem endpoints, not implemented routes:
 - `POST /api/v1/sessions`
