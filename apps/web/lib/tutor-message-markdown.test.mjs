@@ -91,6 +91,6 @@ test("renders a piecewise cases environment as mathematical markup", () => {
 
   assert.match(html, /class="katex-display"/);
   assert.match(html, /class="katex"/);
-  assert.doesNotMatch(html, /\\\\begin\{cases\}/);
-  assert.doesNotMatch(html, /\\\\end\{cases\}/);
+  assert.doesNotMatch(html, /\\begin\{cases\}/);
+  assert.doesNotMatch(html, /\\end\{cases\}/);
 });
