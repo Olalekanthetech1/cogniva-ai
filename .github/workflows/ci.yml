@@ -50,6 +50,9 @@ jobs:
       - name: Learning plan output validation tests
         run: pnpm test:learning-plan-output
 
+      - name: Learning plan review input tests
+        run: pnpm test:learning-plan-review
+
       - name: Lint
         run: pnpm lint
 
