@@ -60,7 +60,7 @@ const validProblemSolution = [
   "For s(t) = t³, what expression gives the velocity?"
 ].join("\n");
 
-test("publishes the unified CTL 1.1 framework version", () => {
+test("publishes the unified CTL 1.2 framework version", () => {
   assert.equal(TUTOR_LEARNING_FRAMEWORK_VERSION, "ctl-1.2.0");
 });
 
@@ -406,4 +406,20 @@ test("validates adaptive Socratic output through the same framework contract", (
     finishReason: "stop",
     mode: "adaptive_socratic"
   }), /concise-response limit/);
+});
+
+
+test("rejects unsupported numeric mismatches in problem-solving continuations", () => {
+  const continuation = "We already differentiated the position function. The next step is to substitute the requested time and keep the velocity units consistent. Which value do you obtain?";
+  assert.equal(validateTutorLearningOutput({
+    text: continuation,
+    finishReason: "stop",
+    mode: "problem_solving_continuation"
+  }), null);
+  assert.match(validateTutorLearningOutput({
+    text: continuation,
+    finishReason: "stop",
+    mode: "problem_solving_continuation",
+    numericMismatchCount: 2
+  }), /bounded arithmetic check/);
 });
