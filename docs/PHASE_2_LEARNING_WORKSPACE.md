@@ -1,6 +1,6 @@
 # Cogniva — Phase 2 Learning Workspace v1
 
-**Status:** Accepted product/engineering contract; implementation is partial. Persistence and the text-first tutor vertical slice exist. Learn includes a personal plan library, read-only plan overview, learner review of suggested relationships, and approval of a proposed revision. Editing, Home continuation, plan-unit tutoring, and the full integrated learner workspace are not yet delivered.
+**Status:** Accepted product/engineering contract; implementation is partial. Persistence and the text-first tutor vertical slice exist. Learn includes a personal plan library, read-only plan overview, learner review of suggested relationships, approval, and launch of Tutor from approved plan units. Editing, Home continuation, and the full integrated learner workspace are not yet delivered.
 
 ## 1. Goal
 
@@ -18,7 +18,7 @@ Phase 2 is one connected vertical slice, not a collection of disconnected dashbo
 - **Added by the API implementation:** authenticated personal plan creation from a learner topic, strict provider-output validation, transactional proposed-revision persistence, owner-scoped plan listing/detail, and retry for failed/unavailable/stale-running generation.
 - **Added by the Learn UI implementation:** a personal learning library that creates topics through the real API, lists owner-scoped saved plans, displays generation/review states, opens a read-only revision overview, and retries failed or unavailable generation without automatic create-request replay.
 - **Added by the review/approval slice:** a learner can accept or reject each proposed concept relationship and approve the latest proposed revision. Approval transactionally changes the revision to `approved` and the parent plan to `active`, guarded by ownership and an optimistic plan version. A plan cannot be approved while suggested relationships remain undecided.
-- **Still outstanding:** editing/reordering/removal of titles, units, objectives, and concepts; choosing a Tutor session from a plan unit in the learner UI; Home dashboard continuation from saved plans; explicit Socratic action controls and server-enforced step progression; and end-to-end mobile journey tests.
+- **Implemented in this slice:** launching Tutor from an approved plan unit; the launch form seeds a learner-editable prompt with unit details/objectives/concepts and sends revision/unit references. Session creation validates ownership and requires the linked revision and plan to be approved/active.\n- **Still outstanding:** editing/reordering/removal of titles, units, objectives, and concepts; Home dashboard continuation from saved plans; explicit Socratic action controls and server-enforced step progression; and end-to-end mobile journey tests.
 
 The API foundation is not a substitute for these remaining UI and tutoring-state requirements.
 
@@ -113,7 +113,7 @@ Basic text tutoring is not the same as independent answer verification. Until a 
 - Let learners explicitly accept or reject suggested concept relationships and approve the plan when every suggestion has been reviewed.
 - Clearly distinguish generated proposals from learner-approved content and authoritative external curricula.
 - Editing, reordering, and removing units/objectives/concepts remain outstanding.
-- Plan approval and starting a tutoring session from a selected unit remain outstanding.
+- Plan approval is implemented. Starting a tutoring session from a selected approved unit is now implemented; unit launch is unavailable for draft or unapproved plans.
 
 ### Tutor
 
