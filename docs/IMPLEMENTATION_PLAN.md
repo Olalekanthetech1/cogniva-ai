@@ -73,7 +73,7 @@ See [PHASE_2_LEARNING_WORKSPACE.md](PHASE_2_LEARNING_WORKSPACE.md) for the accep
 - [x] Launch a Tutor session directly from an approved learning-plan unit and preserve its plan/unit linkage.
 - [x] Apply CTL v1 structured lesson openings and adaptive continuation to approved-unit Tutor sessions; retain concise Socratic mode for direct questions and problems.
 - [ ] Add persisted lesson-stage transitions, explicit teaching controls, and evidence-backed checkpoint records.
-- [ ] Implement resumable text-first Socratic sessions from a plan unit or direct question/problem.
+- [x] Implement persisted text-first Tutor sessions, history, and resume for plan-unit and direct text starts.
 - [ ] Enforce one-step tutoring, clarification-without-advancement, progressive hints, and explicit continuation.
 - [ ] Connect Home, Learn, plan review, and Tutor to real persisted student-owned records.
 - [ ] Test provider/database failures, schema validation, idempotency, concurrency, ownership, and responsive behaviour.
