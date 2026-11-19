@@ -1,6 +1,6 @@
 # Cogniva — Phase 1.1b Institutions, Programmes, and Knowledge Components
 
-**Status:** Implemented on the Phase 1.1a feature branch as a stacked review branch; awaiting CI/review.  
+**Status:** Implemented on a stacked review branch; CI passed on 19 November 2026 (run #44596303084); awaiting review.  
 **Migration:** `0008_global_academic_interoperability.sql`.  
 **Production:** Not applied. Neon remains verified only through migration 0006 at the latest read-only audit.  
 **Dependency:** Migration 0008 depends on migration 0007 from PR #39. Merge/apply order is 0007, then 0008.  
@@ -31,7 +31,7 @@
 
 - Existing institution, faculty, department, course, curriculum-version and student-profile rows are not rewritten or deleted.
 - Institution identifiers are unique within a provider namespace. Aliases never create a new canonical institution. New external identifiers, aliases, units and programme identities carry source records; acceptance requires a review timestamp.
-- Unit-parent, programme-unit, programme-version and programme-course-period relationships are constrained to preserve institutional ownership.
+- Unit-parent, programme-unit, programme-version and programme-course-period relationships are constrained to preserve institutional ownership. A programme requirement cannot attach a course already assigned to another institution; institution-independent legacy courses remain eligible.
 - A recognition decision must have exactly one typed subject and its scope kind must match that subject. It requires an authority and source record, retains validity dates, and only becomes accepted with a review timestamp. A missing decision is not treated as a negative recognition result.
 - Programme versions are explicitly versioned. Programme-to-qualification links are separate from programme identity and are evidence/review-aware.
 - Credit values are paired with an explicit `credit_system_id`; the schema never assumes that identically named numeric credits from different systems are equivalent or convertible.
@@ -39,7 +39,7 @@
 - Academic periods use calendar dates and same-institution parent relationships. Cross-institution parent periods are rejected.
 - A course-content version can link to a legacy `curriculum_versions` row only when that legacy version belongs to the same course. No old curriculum version is copied or changed.
 - Active KC versions require source provenance and review time. Accepted KC relations and course-to-KC mappings require evidence and review time.
-- The database trigger rejects accepted prerequisite cycles, including cycles created by inserting the reverse edge. Multi-node cycle checks for other relation kinds are not implied.
+- The database trigger rejects accepted prerequisite cycles, including cycles created by inserting the reverse edge. It does not make other relation kinds acyclic. This slice adds no KC write API; a future writer must serialize accepted prerequisite-graph mutations so concurrent writes cannot race the cycle check.
 - Source assertions expand their typed subject set while retaining the exactly-one-subject invariant and source-record FK.
 
 ## 3. Compatibility boundaries
@@ -61,13 +61,13 @@ The new integration suite covers:
 - recognition-decision subject/scope and acceptance checks;
 - explicit credit-value/system pairing and local stage persistence;
 - legacy curriculum-to-course and course-content-to-course matching;
-- programme-course course-content/academic-period ownership;
+- programme-course course-content/academic-period ownership and legacy course institution matching;
 - KC active-version evidence, accepted relation provenance and prerequisite-cycle rejection;
 - accepted course-content-to-KC mapping provenance;
 - expanded one-subject source assertions;
 - unchanged legacy course credit units.
 
-CI proves repository/migration behaviour against disposable PostgreSQL. It does not prove that any external catalogue record is accurate or recognized.
+CI run [44596303084](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44596303084) passed for the reviewed branch head. It applies migrations 0000–0008, verifies the migration ledger, runs both academic integration suites and all existing regression suites, lint, typecheck and production build. CI proves repository/migration behaviour against disposable PostgreSQL. It does not prove that any external catalogue record is accurate or recognized.
 
 ## 5. Rollback
 
