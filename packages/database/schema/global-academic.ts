@@ -119,6 +119,8 @@ export const countries = pgTable(
     isoNumeric: varchar("iso_numeric", { length: 3 }),
     name: text("name").notNull(),
     officialName: text("official_name"),
+    sourceRecordId: uuid("source_record_id")
+      .references(() => catalogueSourceRecords.id, { onDelete: "restrict" }),
     validFrom: timestampWithTimezone("valid_from"),
     validTo: timestampWithTimezone("valid_to"),
     createdAt: timestampWithTimezone("created_at").notNull().defaultNow(),
@@ -147,6 +149,8 @@ export const countryAliases = pgTable(
     normalizedName: text("normalized_name").notNull(),
     languageTag: varchar("language_tag", { length: 35 }),
     aliasType: countryAliasType("alias_type").notNull().default("other"),
+    sourceRecordId: uuid("source_record_id")
+      .references(() => catalogueSourceRecords.id, { onDelete: "restrict" }),
     createdAt: timestampWithTimezone("created_at").notNull().defaultNow()
   },
   (table) => [
@@ -267,6 +271,8 @@ export const educationSystems = pgTable(
   (table) => [
     uniqueIndex("education_systems_jurisdiction_code_unique")
       .on(table.jurisdictionId, table.code),
+    uniqueIndex("education_systems_id_jurisdiction_unique")
+      .on(table.id, table.jurisdictionId),
     index("education_systems_jurisdiction_idx").on(table.jurisdictionId),
     check("education_systems_name_nonempty_check", sql.raw('length(btrim("education_systems"."name")) > 0')),
     check("education_systems_valid_period_check", sql.raw('"education_systems"."valid_to" is null or "education_systems"."valid_from" is null or "education_systems"."valid_to" > "education_systems"."valid_from"'))
@@ -279,8 +285,7 @@ export const qualificationFrameworks = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     jurisdictionId: uuid("jurisdiction_id").notNull()
       .references(() => educationJurisdictions.id, { onDelete: "restrict" }),
-    educationSystemId: uuid("education_system_id")
-      .references(() => educationSystems.id, { onDelete: "set null" }),
+    educationSystemId: uuid("education_system_id"),
     code: varchar("code", { length: 120 }),
     name: text("name").notNull(),
     description: text("description"),
@@ -294,6 +299,11 @@ export const qualificationFrameworks = pgTable(
     uniqueIndex("qualification_frameworks_jurisdiction_code_unique")
       .on(table.jurisdictionId, table.code),
     index("qualification_frameworks_education_system_idx").on(table.educationSystemId),
+    foreignKey({
+      name: "qualification_frameworks_system_same_jurisdiction_fk",
+      columns: [table.educationSystemId, table.jurisdictionId],
+      foreignColumns: [educationSystems.id, educationSystems.jurisdictionId]
+    }).onDelete("restrict"),
     check("qualification_frameworks_name_nonempty_check", sql.raw('length(btrim("qualification_frameworks"."name")) > 0'))
   ]
 );
@@ -461,6 +471,8 @@ export const entitySourceAssertions = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     sourceRecordId: uuid("source_record_id").notNull()
       .references(() => catalogueSourceRecords.id, { onDelete: "restrict" }),
+    countryId: uuid("country_id")
+      .references(() => countries.id, { onDelete: "restrict" }),
     institutionId: uuid("institution_id")
       .references(() => institutions.id, { onDelete: "restrict" }),
     jurisdictionId: uuid("jurisdiction_id")
@@ -482,9 +494,10 @@ export const entitySourceAssertions = pgTable(
   },
   (table) => [
     index("entity_source_assertions_source_status_idx").on(table.sourceRecordId, table.status),
+    index("entity_source_assertions_country_idx").on(table.countryId),
     index("entity_source_assertions_institution_idx").on(table.institutionId),
     index("entity_source_assertions_jurisdiction_idx").on(table.jurisdictionId),
-    check("entity_source_assertions_exactly_one_subject_check", sql.raw('num_nonnulls("entity_source_assertions"."institution_id", "entity_source_assertions"."jurisdiction_id", "entity_source_assertions"."qualification_framework_id", "entity_source_assertions"."qualification_level_id") = 1')),
+    check("entity_source_assertions_exactly_one_subject_check", sql.raw('num_nonnulls("entity_source_assertions"."country_id", "entity_source_assertions"."institution_id", "entity_source_assertions"."jurisdiction_id", "entity_source_assertions"."qualification_framework_id", "entity_source_assertions"."qualification_level_id") = 1')),
     check("entity_source_assertions_claim_key_nonempty_check", sql.raw('length(btrim("entity_source_assertions"."claim_key")) > 0')),
     check("entity_source_assertions_valid_period_check", sql.raw('"entity_source_assertions"."valid_to" is null or "entity_source_assertions"."valid_from" is null or "entity_source_assertions"."valid_to" > "entity_source_assertions"."valid_from"'))
   ]
