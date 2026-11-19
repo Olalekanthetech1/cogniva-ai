@@ -6,10 +6,19 @@ function looksLikeMathExpression(value) {
   if (!candidate || candidate.length > 1000) return false;
   if (MATH_COMMAND.test(candidate)) return true;
 
+  const words = candidate.match(/[A-Za-z]+/g) ?? [];
+  const knownMathFunctions = new Set([
+    "sin", "cos", "tan", "log", "ln", "lim", "exp", "max", "min", "sqrt",
+    "det", "arcsin", "arccos", "arctan"
+  ]);
+  if (words.some((word) => word.length > 2 && !knownMathFunctions.has(word.toLowerCase()))) {
+    return false;
+  }
+
   return (
     MATH_RELATION.test(candidate) &&
     /[A-Za-z0-9]/.test(candidate) &&
-    /(?:\^|_)/.test(candidate)
+    /[(){}^_*/·]/.test(candidate)
   );
 }
 
@@ -97,6 +106,22 @@ export function normalizeTutorMathMarkdown(markdown) {
     .replace(/\\\(([\s\S]*?)\\\)/g, (_match, expression) =>
       "$" + expression.replace(/\s*\n\s*/g, " ").trim() + "$"
     );
+
+  // Older lessons sometimes place a bare equation after a numbered rule label.
+  // Limit this compatibility path to short, math-shaped list-item suffixes.
+  normalized = normalized.replace(
+    /^([ \t]*(?:[-*+]|\d+[.)])[ \t]+[^:\n]{1,80}:[ \t]*)([^\n]+)$/gm,
+    (match, prefix, expression) => {
+      const candidate = expression.trim();
+      if (candidate.includes("$") || !looksLikeMathExpression(candidate)) return match;
+
+      const { expression: formula, punctuation } =
+        moveTrailingPunctuationOutsideMath(candidate);
+      if (!formula) return match;
+
+      return prefix + "$" + formula + "$" + punctuation;
+    }
+  );
 
   // Some model responses use square brackets as informal math delimiters.
   // Convert only un-nested, single-line bracket contents with clear math syntax;
