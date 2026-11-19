@@ -99,6 +99,6 @@ test("renders a piecewise cases environment as display mathematical markup", () 
 
   assert.match(html, /class="katex-display"/);
   assert.match(html, /class="katex"/);
-  assert.doesNotMatch(html, /\\begin\{cases\}/);
-  assert.doesNotMatch(html, /\\end\{cases\}/);
+  const visibleMarkup = html.replace(/<annotation\b[^>]*>[\s\S]*?<\/annotation>/g, "");
+  assert.doesNotMatch(visibleMarkup, /\\(?:begin|end)\{cases\}/);
 });
