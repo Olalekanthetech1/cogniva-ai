@@ -61,6 +61,29 @@ const validProblemSolution = [
   "For s(t) = t³, what expression gives the velocity?"
 ].join("\n");
 
+
+test("requires consistent Markdown math delimiters in every Tutor response mode", () => {
+  const modes = [
+    "adaptive_socratic",
+    "structured_lesson_opening",
+    "structured_lesson_continuation",
+    "concept_mini_lesson",
+    "problem_solving",
+    "problem_solving_continuation",
+    "attempt_feedback",
+    "quick_clarification"
+  ];
+
+  for (const mode of modes) {
+    const instructions = buildTutorLearningFrameworkInstructions({
+      mode,
+      learnerIntent: "follow_up"
+    });
+    assert.ok(instructions.includes("use $...$ for inline mathematics and $...$ for display equations"), mode);
+    assert.match(instructions, /Do not emit bare LaTeX commands or wrap formulas in square brackets/i, mode);
+  }
+});
+
 test("publishes the unified CTL 1.2 framework version", () => {
   assert.equal(TUTOR_LEARNING_FRAMEWORK_VERSION, "ctl-1.2.0");
 });
