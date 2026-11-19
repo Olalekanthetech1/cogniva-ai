@@ -137,9 +137,9 @@ test("global academic interoperability preserves institutional scope, provenance
         tx,
         (sp) => sp.unsafe(
           "INSERT INTO programme_versions " +
-          "(programme_id, institution_id, version_code, title, status, published_at) " +
-          "VALUES ($1, $2, '2026', 'Published Test Programme', 'published', now())",
-          [programme, institutionB]
+          "(programme_id, institution_id, version_code, title, status, source_record_id, published_at) " +
+          "VALUES ($1, $2, '2026', 'Published Test Programme', 'published', $3, now())",
+          [programme, institutionB, sourceRecordId]
         ),
         "23503",
         "A programme version must preserve the parent programme institution."
