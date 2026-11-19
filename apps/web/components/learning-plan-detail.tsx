@@ -50,6 +50,7 @@ type PlanRevision = {
 
 type PlanDetail = {
   id: string;
+  version: number;
   intent: string;
   initialInput: string;
   status: string;
@@ -167,6 +168,8 @@ function parseRevision(value: unknown): PlanRevision {
 function parsePlanDetail(value: unknown): PlanDetail {
   if (
     !isRecord(value) ||
+    typeof value.version !== "number" ||
+    !Number.isSafeInteger(value.version) ||
     !(
       value.generationStatus === "pending" ||
       value.generationStatus === "running" ||
@@ -180,6 +183,7 @@ function parsePlanDetail(value: unknown): PlanDetail {
 
   return {
     id: requiredString(value.id, "learning plan"),
+    version: value.version as number,
     intent: requiredString(value.intent, "learning intent"),
     initialInput: requiredString(value.initialInput, "saved topic"),
     status: requiredString(value.status, "plan status"),
@@ -215,6 +219,10 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
   const [loadError, setLoadError] = useState("");
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryError, setRetryError] = useState("");
+  const [isReviewingRelationship, setIsReviewingRelationship] = useState(false);
+  const [isApprovingPlan, setIsApprovingPlan] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewNotice, setReviewNotice] = useState("");
 
   const fetchPlan = useCallback(async (signal?: AbortSignal) => {
     const response = await fetch(
@@ -307,6 +315,95 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
     }
   }
 
+  async function handleRelationshipReview(
+    relationshipId: string,
+    decision: "accepted" | "rejected"
+  ) {
+    if (!plan || isReviewingRelationship || isApprovingPlan) return;
+    setIsReviewingRelationship(true);
+    setReviewError("");
+    setReviewNotice("");
+
+    try {
+      const response = await fetch(
+        "/api/v1/learning-plans/" +
+          encodeURIComponent(plan.id) +
+          "/relationships/" +
+          encodeURIComponent(relationshipId),
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expectedVersion: plan.version,
+            decision
+          })
+        }
+      );
+      const payload: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          readApiError(payload, "Cogniva could not save that relationship decision.")
+        );
+      }
+
+      setPlan(await fetchPlan());
+      setReviewNotice(
+        decision === "accepted"
+          ? "Relationship accepted and saved."
+          : "Relationship rejected and saved."
+      );
+    } catch (cause) {
+      setReviewError(
+        cause instanceof Error
+          ? cause.message
+          : "Cogniva could not confirm the relationship decision. Refresh the plan state."
+      );
+      await loadPlan();
+    } finally {
+      setIsReviewingRelationship(false);
+    }
+  }
+
+  async function handleApprovePlan() {
+    if (!plan || isApprovingPlan || isReviewingRelationship) return;
+    setIsApprovingPlan(true);
+    setReviewError("");
+    setReviewNotice("");
+
+    try {
+      const response = await fetch(
+        "/api/v1/learning-plans/" + encodeURIComponent(plan.id) + "/approve",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ expectedVersion: plan.version })
+        }
+      );
+      const payload: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          readApiError(payload, "Cogniva could not approve this learning plan.")
+        );
+      }
+
+      setPlan(await fetchPlan());
+      setReviewNotice(
+        "Your learning plan is approved and active. Launching a Tutor session from an individual unit is the next feature to be added."
+      );
+    } catch (cause) {
+      setReviewError(
+        cause instanceof Error
+          ? cause.message
+          : "Cogniva could not confirm plan approval. Refresh the plan state."
+      );
+      await loadPlan();
+    } finally {
+      setIsApprovingPlan(false);
+    }
+  }
+
   if (isLoading && !plan) {
     return (
       <p className="learning-plan-muted-state" role="status">
@@ -333,6 +430,13 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
     plan.generationStatus === "pending" ||
     plan.generationStatus === "failed" ||
     plan.generationStatus === "unavailable";
+  const unresolvedRelationshipCount = revision?.relationships.filter(
+    (relationship) => relationship.reviewStatus === "proposed"
+  ).length ?? 0;
+  const canReviewProposal =
+    plan.status === "draft" &&
+    plan.generationStatus === "succeeded" &&
+    revision?.status === "proposed";
 
   return (
     <div className="learning-plan-detail">
@@ -394,7 +498,9 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
         <>
           <section className="learning-plan-proposal-header">
             <p className="learning-plan-kicker">
-              PROPOSED PERSONAL LEARNING PLAN · REVISION {revision.revisionNumber}
+              {revision.status === "approved"
+                ? "APPROVED PERSONAL LEARNING PLAN"
+                : "PROPOSED PERSONAL LEARNING PLAN"} · REVISION {revision.revisionNumber}
             </p>
             <h2>{revision.title}</h2>
             {revision.summary && <p>{revision.summary}</p>}
@@ -409,11 +515,71 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
             {revision.status === "proposed" && (
               <p className="learning-plan-note">
                 This is a generated proposal, not an approved study plan or an
-                official university syllabus. Editing, relationship review and
-                approval controls are not available in this release.
+                official university syllabus. Review the suggested connections
+                below and approve the proposal when you are satisfied. Editing
+                unit titles and learning objectives is not available yet.
               </p>
             )}
           </section>
+
+          {revision.status === "proposed" && (
+            <section className="learning-plan-review-panel" aria-labelledby="learning-plan-review-title">
+              <div>
+                <p className="learning-plan-kicker">LEARNER REVIEW</p>
+                <h2 id="learning-plan-review-title">Review and activate this plan</h2>
+                <p>
+                  Review every suggested concept relationship below. Accept a
+                  connection to keep it in your plan, or reject it to exclude it.
+                  Your decisions are saved to this revision.
+                </p>
+              </div>
+              {unresolvedRelationshipCount > 0 ? (
+                <p className="learning-plan-review-message">
+                  {unresolvedRelationshipCount} suggested {unresolvedRelationshipCount === 1 ? "relationship needs" : "relationships need"} a decision before you can approve this plan.
+                </p>
+              ) : (
+                <p className="learning-plan-review-message">
+                  {revision.relationships.length === 0
+                    ? "This proposal contains no suggested relationships to review."
+                    : "All suggested relationships have a saved decision."} You can now approve and activate the plan.
+                </p>
+              )}
+              {reviewError && <p className="learning-plan-error" role="alert">{reviewError}</p>}
+              {reviewNotice && <p className="learning-plan-review-message" role="status">{reviewNotice}</p>}
+              <button
+                className="learning-plan-primary-button"
+                type="button"
+                onClick={() => void handleApprovePlan()}
+                disabled={
+                  !canReviewProposal ||
+                  unresolvedRelationshipCount > 0 ||
+                  isApprovingPlan ||
+                  isReviewingRelationship
+                }
+              >
+                {isApprovingPlan ? "Approving plan..." : "Approve and activate plan"}
+              </button>
+              <p className="learning-plan-note">
+                Approval records your decision to use this as your personal study
+                outline. It does not verify academic correctness or make the plan
+                an official university syllabus. Editing the outline and starting
+                Tutor directly from a unit are not available yet.
+              </p>
+            </section>
+          )}
+
+          {revision.status === "approved" && (
+            <section className="learning-plan-review-panel is-approved" aria-labelledby="learning-plan-approved-title">
+              <p className="learning-plan-kicker">PLAN STATUS</p>
+              <h2 id="learning-plan-approved-title">Your plan is approved and active</h2>
+              <p>
+                This is your approved personal study outline. Its generated
+                content has not been independently verified or matched to an
+                official university syllabus.
+              </p>
+              {reviewNotice && <p className="learning-plan-review-message" role="status">{reviewNotice}</p>}
+            </section>
+          )}
 
           <section className="learning-plan-units-section" aria-labelledby="learning-plan-units-title">
             <div className="workspace-section-heading">
@@ -512,14 +678,40 @@ export function LearningPlanDetail({ planId }: { planId: string }) {
                     <small>
                       {stateLabel(relationship.type)} · {stateLabel(relationship.reviewStatus)}
                     </small>
+                    {relationship.reviewStatus === "proposed" && canReviewProposal && (
+                      <div className="learning-plan-relation-actions">
+                        <button
+                          type="button"
+                          className="learning-plan-relation-accept"
+                          onClick={() => void handleRelationshipReview(relationship.id, "accepted")}
+                          disabled={isReviewingRelationship || isApprovingPlan}
+                          aria-label={"Accept relationship: " + (relationship.sourceConcept ?? "unresolved concept") + " to " + (relationship.targetConcept ?? "unresolved concept")}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          className="learning-plan-relation-reject"
+                          onClick={() => void handleRelationshipReview(relationship.id, "rejected")}
+                          disabled={isReviewingRelationship || isApprovingPlan}
+                          aria-label={"Reject relationship: " + (relationship.sourceConcept ?? "unresolved concept") + " to " + (relationship.targetConcept ?? "unresolved concept")}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
               <p className="learning-plan-note">
-                Relationship suggestions are generated content. They have not
-                been independently verified or approved.
+                These are generated suggestions, not independently verified
+                prerequisites. Accepting a connection records your preference;
+                it does not establish that the relationship is academically correct.
               </p>
             </section>
+          )}
+          {reviewError && revision.status === "approved" && (
+            <p className="learning-plan-error" role="alert">{reviewError}</p>
           )}
         </>
       )}
