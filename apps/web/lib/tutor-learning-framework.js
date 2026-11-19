@@ -32,7 +32,7 @@ function hasSection(text, title) {
 }
 
 function validateQuestionEnding(text) {
-  const questions = (text.match(/\\?/g) ?? []).length;
+  const questions = (text.match(/\?/g) ?? []).length;
   if (!text.endsWith("?") || questions !== 1) {
     return "Tutor replies must end with exactly one clear learner-facing question.";
   }
@@ -110,7 +110,7 @@ export function validateTutorLearningOutput({
     return "The tutor response reached its output limit before completion.";
   }
 
-  const words = normalized.split(/\\s+/).filter(Boolean);
+  const words = normalized.split(/\s+/).filter(Boolean);
   const questionIssue = validateQuestionEnding(normalized);
   if (questionIssue) return questionIssue;
 
