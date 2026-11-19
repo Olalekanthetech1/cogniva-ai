@@ -55,7 +55,7 @@ The tutor response route uses the provider runtime when its task route and crede
 
 ## 4. Production migration history and workflow
 
-The read-only production audit confirmed the following migration history in Neon at 2026-11-19 15:34:20 UTC:
+The initial read-only production audit confirmed the baseline migration history in Neon at 2026-11-19 15:34:20 UTC. The post-migration audit later verified the complete 0000–0008 ledger as recorded below:
 
 - `0000_dapper_vulture.sql` — initial identity and academic/profile baseline.
 - `0001_student_onboarding_state.sql` — onboarding completion and self-reported institution fields.
@@ -64,6 +64,8 @@ The read-only production audit confirmed the following migration history in Neon
 - `0004_classy_freak.sql` — AI task routes and administrative audit events.
 - `0005_faithful_zodiak.sql` — AI benchmark runs, results, and reviews.
 - `0006_cultured_lila_cheney.sql` — Tutor attempt records and ownership/message constraints.
+- `0007_global_academic_reference_foundation.sql` — global country/jurisdiction, qualification/classification, source-provenance, and review foundations.
+- `0008_institutions_programmes_and_kcs.sql` — institution identity/units, scoped recognition, programmes, credit systems, academic periods, versioned course content, and Knowledge Component structures.
 
 Migrations `0007_global_academic_reference_foundation.sql` and `0008_institutions_programmes_and_kcs.sql` were applied to Neon by [production migration run #44615863935](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44615863935). The subsequent [read-only audit, run #44610442501 attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501), reports 9 expected and 9 applied migrations, zero missing migrations, zero missing repository files, and zero unexpected applied migrations. Its table inventory confirms all 31 Phase 1.1 target tables and all nine existing academic tables are present.
 

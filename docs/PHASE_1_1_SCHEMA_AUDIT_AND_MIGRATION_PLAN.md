@@ -193,18 +193,21 @@ No current value should acquire a “verified” state merely because it existed
 
 ## 5. Additive migration and rollback sequence
 
-Migrations 0007 and 0008 are additive implementation slices merged to `main` and applied to Neon production. Migration 0007 adds country/jurisdiction, qualification/classification reference, and source-provenance foundations. Migration 0008 adds institution identifiers/aliases/units, scoped recognition, programmes and versions, programme qualification links, credit systems, academic periods, versioned course content and requirements, and the initial canonical KC graph. Neither migration seeds records or rewrites existing academic/learner rows. The remaining migration sequence is:
+Migrations 0007 and 0008 are additive implementation slices merged to `main` and applied to Neon production. Migration 0007 adds country/jurisdiction, qualification/classification reference, and source-provenance foundations. Migration 0008 adds institution identifiers/aliases/units, scoped recognition, programmes and versions, programme qualification links, credit systems, academic periods, versioned course content and requirements, and the initial canonical KC graph. Neither migration seeds records or rewrites existing academic/learner rows.
 
-1. **Future production DDL baseline and backup:** before any later production migration, capture a fresh read-only audit and independently verify a recoverable Neon backup/restore point under the operator's recovery procedure. The present audit does not establish backup status.
-2. **Reference foundations (migration 0007):** add countries and aliases, education jurisdictions and systems, qualification frameworks and versions, qualification levels, versioned classification schemes/codes, reviewed ISCED-P/ISCED-A mapping records, source registry/source records, typed source assertions for the initial entity kinds, and review events. The migration adds no source data.
-3. **Identity and organisation (migration 0008):** add source-backed institution identifiers/aliases, a flexible same-institution unit tree, and scoped recognition authorities/decisions. Keep existing institution/faculty/department tables and IDs intact.
-4. **Programme and curriculum (migration 0008):** add source-backed programmes and versions, qualification links, explicit credit systems, institution-scoped academic periods, versioned course content linked to legacy curriculum versions, and programme-course requirements. Credits are always paired with a named credit system; local stage labels/indices remain local and are not ISCED levels.
-5. **Knowledge Components (migration 0008):** add stable Cogniva KC IDs, versioned definitions/objectives, typed prerequisite/part-of/related/progression/contrast relations, and evidence/review-aware course-content mappings. Accepted prerequisite cycles are rejected by a database trigger.
-6. **Learner context (later migration):** add nullable jurisdiction, programme, qualification, local-stage label/index, and academic-period references. Do not require them at registration.
-7. **Controlled backfill:** copy only values present in legacy records; preserve original values and map source provenance as legacy-Cogniva. Leave unsupported mappings unknown/unreviewed.
-8. **Compatibility release:** dual-read or dual-write only where required; verify routes and student ownership. Keep old fields/tables available during the compatibility window.
-9. **Cutover:** switch reads after reconciliation counts, constraints, and integration tests pass.
-10. **Later cleanup:** remove legacy schema only in a separate reviewed change after evidence that no deployed code or retained data depends on it.
+**Completed schema slices:**
+- [x] **Reference foundations (migration 0007):** countries and aliases, education jurisdictions and systems, qualification frameworks and versions, qualification levels, versioned classification schemes/codes, reviewed ISCED-P/ISCED-A mapping records, source registry/source records, typed source assertions, and review events.
+- [x] **Identity and organisation (migration 0008):** source-backed institution identifiers/aliases, a flexible same-institution unit tree, and scoped recognition authorities/decisions; existing institution/faculty/department tables and IDs remain intact.
+- [x] **Programme and curriculum (migration 0008):** source-backed programmes and versions, qualification links, explicit credit systems, institution-scoped academic periods, versioned course content linked to legacy curriculum versions, and programme-course requirements.
+- [x] **Knowledge Components (migration 0008):** stable Cogniva KC IDs, versioned definitions/objectives, typed prerequisite/part-of/related/progression/contrast relations, and evidence/review-aware course-content mappings. Accepted prerequisite cycles are rejected by a database trigger.
+
+**Remaining migration and rollout sequence:**
+1. **Future production DDL baseline and backup:** before any later production migration, capture a fresh read-only audit and independently verify a recoverable Neon backup/restore point under the operator's recovery procedure. The current audit does not establish backup status.
+2. **Learner context (later migration):** add nullable jurisdiction, programme, qualification, local-stage label/index, and academic-period references. Do not require them at registration.
+3. **Controlled backfill:** copy only values present in legacy records; preserve original values and map source provenance as legacy-Cogniva. Leave unsupported mappings unknown/unreviewed.
+4. **Compatibility release:** dual-read or dual-write only where required; verify routes and student ownership. Keep old fields/tables available during the compatibility window.
+5. **Cutover:** switch reads after reconciliation counts, constraints, and integration tests pass.
+6. **Later cleanup:** remove legacy schema only in a separate reviewed change after evidence that no deployed code or retained data depends on them.
 
 ### Rollback principles
 
