@@ -30,9 +30,11 @@ There are no seeded or fabricated university, course, or subject catalogue recor
 
 ### Learning Workspace
 
-The next tutor-evidence increment adds a proposed `tutor_attempts` table. It links an explicitly submitted learner attempt to its student message, session, and owning learner, with a sequential attempt number and an evaluation lifecycle status. The message remains the source text; a newly recorded attempt starts as `not_evaluated`. This schema is not available in Neon until its migration is generated, reviewed, and explicitly applied.
+The repository includes student-owned plans and revision history, ordered units/objectives, plan-scoped concepts and relationships, resumable tutor sessions, and ordered tutor messages with provider/model/prompt provenance fields. The plan structures were introduced by migration `0002_futuristic_alex_power.sql`; the project owner previously confirmed production migration history through `0003_lean_gateway.sql`.
 
-The applied Learning Workspace schema includes student-owned plans and revision history, ordered units/objectives, plan-scoped concepts and relationships, resumable tutor sessions, and ordered tutor messages with provider/model/prompt provenance fields. These are persisted structures; provider generation and tutoring execution are not yet enabled.
+The repository also contains migration `0006_cultured_lila_cheney.sql`, which adds `tutor_attempts` linked to the owning learner, session, and student message. The code records explicit attempts and their evaluation lifecycle. The repository's migration files alone do not prove that every later migration has been applied to Neon; verify the production migration workflow before relying on later additions.
+
+The tutor response route uses the provider runtime when its task route and credential are configured. The personal learning-plan generation API in this implementation uses the same provider-neutral runtime and the existing plan tables; it does not require a new schema migration.
 
 ## 3. Existing constraints and data integrity
 
@@ -66,14 +68,14 @@ With `DATABASE_URL` and optionally `DATABASE_MIGRATION_URL` configured:
 6. Verify the workflow result and production readiness.
 7. Deploy application code that depends on the new schema only after the migration succeeds.
 
-## 5. Proposed AI administration schema
+## 5. AI administration schema
 
-The `admin.ts` schema in the AI Configuration feature branch proposes:
+Migration `0004_classy_freak.sql` and the current `admin.ts` schema define:
 
 - `ai_task_routes`: one persisted provider/model preference per supported task, with the administrator who last changed it and timestamps. Current task keys are `learning_plan_generation` and `socratic_tutor_response`; provider values are `gemini`, `groq`, and `mistral`.
 - `admin_audit_events`: administrative change records with actor, action, resource, non-secret metadata, and timestamp. The application exposes inserts only; it does not provide update/delete operations.
 
-Provider credentials are not stored in either table. The admin API checks only whether the corresponding server environment variable is non-empty and returns a boolean plus the variable name. The raw value is never selected, returned, or stored. Saved route preferences remain inactive until provider adapters are implemented and evaluated.
+Provider credentials are not stored in either table. The admin API checks only whether the corresponding server environment variable is non-empty and returns a boolean plus the variable name. The raw value is never selected, returned, or stored. Task routes are consumed by the provider runtime for learner-facing tutoring and topic-based plan generation only when the matching server credential is present. Comparative model benchmarking remains an evaluation step; no provider is selected automatically.
 
 ## 6. Authentication configuration
 

@@ -1,6 +1,6 @@
 # Cogniva — Admin Dashboard Foundation
 
-**Status:** The Admin Foundation is deployed. The AI Configuration slice adds protected credential-status visibility, saved task-routing preferences, and audit events; provider execution remains separate work.
+**Status:** The Admin Foundation and AI Configuration are deployed. The configuration UI exposes protected credential-presence visibility, saved task routes, administrator connection tests, and audit events. The provider runtime is integrated into the learner-facing Socratic tutor and personal learning-plan generation paths; each task still requires a saved route and a matching server credential.
 
 ## 1. Purpose
 
@@ -40,9 +40,9 @@ Implemented in this slice:
 - `ai_task_routes` stores provider/model preferences and the administrator who last updated them.
 - The application exposes no update/delete operation for audit events.
 
-**Capability boundary:** saved routing preferences remain configuration data, not active learner-facing routing. Provider-neutral text-generation adapters for Gemini, Groq, and Mistral and a protected, fixed-prompt administrator connection test are now implemented. The test uses the saved route for a task and reports connection status, exact-token adherence, latency, and provider-reported token usage. It does not return or persist the generated test text.
+**Capability boundary:** Gemini, Groq, and Mistral adapters are implemented. The learner tutor response route uses the saved `socratic_tutor_response` task route; the personal learning-plan generation API uses the saved `learning_plan_generation` task route. Each learner-facing task requires both a saved provider/model preference and its matching server credential. The runtime does not silently switch providers or return canned output. The admin connection test reports provider response, exact-token adherence, latency, and provider-reported token usage; it does not return or persist the generated test text.
 
-No learner request is routed to a provider. Cogniva does not yet generate learning plans, tutor students, expose a live model catalogue, compare model quality/cost, or automatically select/activate a provider. The comparative benchmark and activation gate remain separate work. See [AI_PROVIDER_RUNTIME.md](AI_PROVIDER_RUNTIME.md) for the adapter contract, security boundaries, and benchmark requirements.
+Personal learning-plan generation is text-topic only and writes a proposed revision only after strict structural validation. Plan editing/approval UI, Home/Learn integration, explicit Socratic controls, and comparative provider evaluation remain separate work. No provider has been selected as a universal winner. See [AI_PROVIDER_RUNTIME.md](AI_PROVIDER_RUNTIME.md) for adapter limits, structured-output requirements, and benchmark gates.
 
 To provide credentials, add the appropriate variable in the Render web service's Environment settings. Never paste API keys into the admin page, GitHub, source code, screenshots, or chat. After changing an environment variable, restart/redeploy the service so the running process receives it.
 

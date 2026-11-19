@@ -1,6 +1,6 @@
 # Cogniva — Phase 2 Learning Workspace v1
 
-**Status:** Product and engineering scope to approve before implementation. This document defines intended behaviour; it is not evidence that the workspace, plan generation, or tutor is live.
+**Status:** Accepted product/engineering contract; implementation is partial. Persistence and the text-first tutor vertical slice exist. This implementation adds the plan-generation/retrieval API foundation. The complete plan review and integrated learner workspace are not yet delivered.
 
 ## 1. Goal
 
@@ -11,6 +11,14 @@ Deliver the first real learning journey after account setup:
 The workspace must work for institution-based students and independent learners. A selected institution is optional and must not control access to learning.
 
 Phase 2 is one connected vertical slice, not a collection of disconnected dashboard cards. The Home composer, Learn library, learning-plan review, and Tutor session must use the same persisted student-owned records.
+
+### Current implementation status
+
+- **Already implemented:** student-owned plan/revision/unit/objective/concept persistence; saved tutor sessions/messages and direct text tutor UI; authenticated tutor session APIs; provider-backed Socratic responses when the task route and credential are configured; explicit attempt persistence and bounded numeric evaluation.
+- **Added by this implementation:** authenticated personal plan creation from a learner topic, strict provider-output validation, transactional proposed-revision persistence, owner-scoped plan listing/detail, and retry for failed/unavailable/stale-running generation.
+- **Still outstanding:** plan editing/reordering/removal and approval, choosing a tutor session from a plan unit in the learner UI, dashboard continuation from plans, Learn personal-library integration, explicit Socratic action controls and server-enforced step progression, and end-to-end mobile journey tests.
+
+The API foundation is not a substitute for these remaining UI and tutoring-state requirements.
 
 ## 2. Product decisions
 
@@ -115,14 +123,16 @@ Progress analytics and mastery estimates remain unavailable until the evidence m
 
 ## 4. Provider and generation requirements
 
-The repository currently contains provider environment-variable placeholders but no implemented AI provider adapter or SDK integration. Before enabling plan generation or tutoring:
+The repository contains a provider-neutral server-side text-generation adapter in `apps/web/lib/ai-provider-runtime.ts`, plus administrator-managed task/provider/model preferences. The tutor response route already uses the `socratic_tutor_response` route. This implementation uses `learning_plan_generation` for topic-based plan generation. Before a task can run, an administrator must save an exact provider/model route and configure the matching server-side credential.
 
-1. Select and configure one initial provider/model for the first supported text workflow.
-2. Implement a provider-neutral request boundary and structured output validation.
+1. Use the administrator-configured provider/model for the task; do not hardcode a universal default or winner.
+2. Validate generated structured output before saving it.
 3. Version prompts and output schemas.
 4. Bound input/output size, request duration, and usage; record the actual provider/model and prompt version.
-5. Handle unavailable, rate-limited, invalid, and timed-out responses explicitly.
+5. Handle unavailable, rate-limited, invalid, truncated, and timed-out responses explicitly.
 6. Do not silently switch to an unconfigured provider or return hardcoded content as a fallback.
+
+No comparative provider benchmark has been completed. A successful provider connection test is not evidence of pedagogical quality.
 
 If the required provider is not configured or unavailable, preserve the learner's input and display an actionable unavailable/failed state. Do not create a successful plan or session step.
 
@@ -132,16 +142,11 @@ Generated plan content must pass runtime schema validation before it is saved or
 
 The implementation must review the live schema and existing migrations before proposing new tables. Use additive, reviewed migrations and preserve all existing profile and academic catalogue data.
 
-The data model is expected to represent, at minimum:
+The existing Drizzle schema and migration `0002_futuristic_alex_power.sql` already define `learning_plans`, `learning_plan_revisions`, `learning_plan_units`, `learning_plan_objectives`, `learning_plan_concepts`, `learning_plan_unit_concepts`, `learning_plan_concept_relations`, `tutor_sessions`, and `tutor_messages`.
 
-- student-owned learning plans and their status/version;
-- ordered plan units;
-- plan-scoped concepts/skills, learning objectives and proposed prerequisite edges;
-- tutoring sessions linked optionally to a plan/unit;
-- persisted tutor messages, current state/step, and concurrency version;
-- provider/model and prompt/schema provenance for generated content.
+The plan generation API in this implementation reuses those structures without a new migration. Generated relationships are stored with review status `proposed`; plan-scoped nodes are not global Knowledge Components. Tutor attempts are represented separately by `tutor_attempts` in migration `0006_cultured_lila_cheney.sql`; attempt status records that a supported evaluation ran, not mastery.
 
-Exact table names and normalisation are implementation decisions to be made after the schema audit; this list is the domain contract, not permission to add guessed or duplicate columns.
+Do not add duplicate plan tables or guessed columns. Any future schema change must be additive, generated, reviewed, and explicitly applied before dependent application code is deployed.
 
 Security and reliability requirements:
 
@@ -173,12 +178,12 @@ These capabilities may be planned separately after their data, privacy, evidence
 
 Implement and verify one vertical slice at a time:
 
-1. **Schema and provider audit** — inspect deployed schema/migration history; select the initial text provider; document provider configuration, output contracts, and failure behaviour.
-2. **Persistence foundation** — add reviewed student-owned plan, unit, concept, session, and message persistence with ownership and concurrency tests.
-3. **Plan generation** — create a topic-based proposed plan from real learner input; validate and persist structured output; preserve provider failures.
-4. **Plan review UI** — edit, reorder, remove, and approve plan content; verify persistence after refresh.
-5. **Tutoring engine** — create/resume text sessions from a plan unit or direct question/problem; enforce Socratic step and continuation invariants.
-6. **Workspace integration** — connect Home, Learn, plan overview, and Tutor to real saved records; remove unavailable states only when their end-to-end path is live.
+1. **Schema and provider audit** — review the existing Drizzle schema/migrations and verify production migration history; confirm task-specific provider routing and credential requirements. No provider is preselected by code.
+2. **Persistence foundation** — existing plan, revision, unit, concept, tutor-session, and message tables are reused; no duplicate tables are introduced by this implementation.
+3. **Plan generation API** — create a topic-based proposed plan from real learner input; validate strict structured output; preserve failures and generation provenance. This implementation covers this API slice.
+4. **Plan review UI** — still required: edit, reorder, remove, accept/reject proposed relations, and approve plans while preserving older revisions.
+5. **Tutoring integration** — existing direct text sessions can be resumed; still required: start/resume sessions from plan units and enforce explicit Socratic actions and step progression.
+6. **Workspace integration** — still required: connect Home and Learn to owned plans/sessions and replace unavailable/placeholder states only when the end-to-end path is live.
 7. **Release verification** — run CI, ownership/integration and state-machine tests, mobile/desktop checks, provider failure tests, and production migration/deployment verification.
 
 Each implementation change should be a focused pull request. Production migrations must be reviewed and explicitly applied before application code that depends on their columns or tables is deployed.

@@ -47,6 +47,9 @@ jobs:
       - name: Tutor Markdown rendering regression tests
         run: pnpm test:tutor-markdown
 
+      - name: Learning plan output validation tests
+        run: pnpm test:learning-plan-output
+
       - name: Lint
         run: pnpm lint
 

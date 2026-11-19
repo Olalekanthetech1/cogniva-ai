@@ -20,11 +20,11 @@ The intended monorepo structure is documented in [docs/ARCHITECTURE.md](docs/ARC
 
 ## Product scope
 
-Cogniva is intended for undergraduate university students across academic disciplines. The first implementation milestone is a complete, reliable Socratic tutoring workflow. Subject breadth will expand through capability-declared subject modules rather than unsupported claims that every subject is fully verified.
+Cogniva is intended for undergraduate university students across academic disciplines. The first connected learning journeys are text-first Socratic tutoring and topic-based personal learning plans. Plan review controls and full Home/Learn integration are still being built. Subject breadth will expand through capability-declared subject modules rather than unsupported claims that every subject is fully verified.
 
 ## Engineering status
 
-The web application foundation is implemented and its CI lint, TypeScript, and production-build checks pass. Phase 1 now introduces the PostgreSQL schema, Drizzle data layer, and Better Auth integration. A live database and email sender must be configured before registration or migrations can run. AI tutoring, document processing, and subject verification are not yet implemented.
+The web application, PostgreSQL/Drizzle data layer, and Better Auth integration are implemented. The text-first tutor has authenticated, persisted session APIs and provider-backed responses when the Socratic task route and matching server credential are configured. Explicit attempts are persisted, and a bounded deterministic arithmetic verifier supports only its documented numeric forms. The personal-learning-plan schema already exists; the current implementation adds authenticated topic-plan generation and owner-scoped plan retrieval using the configured learning-plan provider route. Provider output is strictly validated before revision data is committed. Plan editing/approval UI and Home/Learn integration remain unfinished. No provider benchmark has been completed and no universal model winner is selected. Multimodal/document processing, general subject verification, canonical global Knowledge Components, mastery estimates, and adaptive recommendations are not implemented.
 
 ## Prerequisites
 
