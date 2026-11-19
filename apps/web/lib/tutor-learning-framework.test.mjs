@@ -423,3 +423,51 @@ test("rejects unsupported numeric mismatches in problem-solving continuations", 
     numericMismatchCount: 2
   }), /bounded arithmetic check/);
 });
+
+
+test("preserves the last explicitly selected standalone task across later turns", () => {
+  assert.equal(resolveTutorLearningMode({
+    hasLinkedUnit: false,
+    latestSubmissionType: "question",
+    sessionIntent: "understand_concept",
+    learnerIntent: "follow_up",
+    activeTaskMode: "problem_solving"
+  }), "problem_solving_continuation");
+
+  assert.equal(resolveTutorLearningMode({
+    hasLinkedUnit: false,
+    latestSubmissionType: "question",
+    sessionIntent: "solve_problem",
+    learnerIntent: "follow_up",
+    activeTaskMode: "concept_mini_lesson"
+  }), "adaptive_socratic");
+});
+
+test("a new explicit task switch takes precedence over previously persisted standalone context", () => {
+  assert.equal(resolveTutorLearningMode({
+    hasLinkedUnit: false,
+    latestSubmissionType: "question",
+    sessionIntent: "understand_concept",
+    learnerIntent: "follow_up",
+    activeTaskMode: "problem_solving",
+    requestedLearningMode: "concept_mini_lesson"
+  }), "concept_mini_lesson");
+});
+
+test("hint and attempt handling preserve the active standalone task context", () => {
+  assert.equal(resolveTutorLearningMode({
+    hasLinkedUnit: false,
+    latestSubmissionType: "question",
+    sessionIntent: "learn_topic",
+    learnerIntent: "hint_request",
+    activeTaskMode: "problem_solving"
+  }), "quick_clarification");
+
+  assert.equal(resolveTutorLearningMode({
+    hasLinkedUnit: false,
+    latestSubmissionType: "attempt",
+    sessionIntent: "understand_concept",
+    learnerIntent: "work_attempt",
+    activeTaskMode: "problem_solving"
+  }), "attempt_feedback");
+});
