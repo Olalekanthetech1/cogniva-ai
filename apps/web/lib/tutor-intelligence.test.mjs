@@ -639,3 +639,22 @@ test("does not mistake an initial request for a mid-session task switch", () => 
   });
   assert.equal(analysis.requestedLearningMode, null);
 });
+
+
+test("infers an explicit initial concept or problem task from learner wording", () => {
+  const problem = analyzeTutorTurn({
+    latestSubmissionType: "initial_prompt",
+    messages: [
+      { role: "student", content: "Please solve 2x + 3 = 7 step by step." }
+    ]
+  });
+  const concept = analyzeTutorTurn({
+    latestSubmissionType: "initial_prompt",
+    messages: [
+      { role: "student", content: "What is conservation of mass?" }
+    ]
+  });
+
+  assert.equal(problem.requestedLearningMode, "problem_solving");
+  assert.equal(concept.requestedLearningMode, "concept_mini_lesson");
+});
