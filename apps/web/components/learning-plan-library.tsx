@@ -137,9 +137,6 @@ export function LearningPlanLibrary() {
   const [createError, setCreateError] = useState("");
 
   const loadPlans = useCallback(async (signal?: AbortSignal) => {
-    setIsLoading(true);
-    setLoadError("");
-
     try {
       const response = await fetch("/api/v1/learning-plans", {
         cache: "no-store",
@@ -158,7 +155,10 @@ export function LearningPlanLibrary() {
       }
 
       const nextPlans = payload.data.map(parsePlanSummary);
-      if (!signal?.aborted) setPlans(nextPlans);
+      if (!signal?.aborted) {
+        setPlans(nextPlans);
+        setLoadError("");
+      }
     } catch (cause) {
       if (signal?.aborted) return;
       setLoadError(
@@ -176,6 +176,12 @@ export function LearningPlanLibrary() {
     void loadPlans(controller.signal);
     return () => controller.abort();
   }, [loadPlans]);
+
+  function refreshPlans() {
+    setIsLoading(true);
+    setLoadError("");
+    void loadPlans();
+  }
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -243,7 +249,7 @@ export function LearningPlanLibrary() {
         <button
           className="learning-plan-refresh"
           type="button"
-          onClick={() => void loadPlans()}
+          onClick={refreshPlans}
           disabled={isLoading}
         >
           {isLoading ? "Refreshing..." : "Refresh"}
@@ -299,7 +305,7 @@ export function LearningPlanLibrary() {
       {loadError && (
         <div className="learning-plan-error" role="alert">
           <p>{loadError}</p>
-          <button type="button" onClick={() => void loadPlans()}>
+          <button type="button" onClick={refreshPlans}>
             Try loading again
           </button>
         </div>
