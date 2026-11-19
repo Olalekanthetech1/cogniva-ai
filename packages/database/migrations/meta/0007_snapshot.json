@@ -4447,6 +4447,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "source_record_id": {
+          "name": "source_record_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -4496,7 +4502,21 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "countries_source_record_fk": {
+          "name": "countries_source_record_fk",
+          "tableFrom": "countries",
+          "tableTo": "catalogue_source_records",
+          "columnsFrom": [
+            "source_record_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -4573,6 +4593,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "source_record_id": {
+          "name": "source_record_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -4631,6 +4657,19 @@
             "id"
           ],
           "onDelete": "cascade on update no action",
+          "onUpdate": "no action"
+        },
+        "country_aliases_source_record_fk": {
+          "name": "country_aliases_source_record_fk",
+          "tableFrom": "country_aliases",
+          "tableTo": "catalogue_source_records",
+          "columnsFrom": [
+            "source_record_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -4941,6 +4980,27 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "education_systems_id_jurisdiction_unique": {
+          "name": "education_systems_id_jurisdiction_unique",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "jurisdiction_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -5100,19 +5160,6 @@
           "onDelete": "restrict on update no action",
           "onUpdate": "no action"
         },
-        "qualification_frameworks_education_system_id_education_systems_id_fk": {
-          "name": "qualification_frameworks_education_system_id_education_systems_id_fk",
-          "tableFrom": "qualification_frameworks",
-          "tableTo": "education_systems",
-          "columnsFrom": [
-            "education_system_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null on update no action",
-          "onUpdate": "no action"
-        },
         "qualification_frameworks_source_record_id_catalogue_source_records_id_fk": {
           "name": "qualification_frameworks_source_record_id_catalogue_source_records_id_fk",
           "tableFrom": "qualification_frameworks",
@@ -5124,6 +5171,21 @@
             "id"
           ],
           "onDelete": "set null on update no action",
+          "onUpdate": "no action"
+        },
+        "qualification_frameworks_system_same_jurisdiction_fk": {
+          "name": "qualification_frameworks_system_same_jurisdiction_fk",
+          "tableFrom": "qualification_frameworks",
+          "tableTo": "education_systems",
+          "columnsFrom": [
+            "education_system_id",
+            "jurisdiction_id"
+          ],
+          "columnsTo": [
+            "id",
+            "jurisdiction_id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -6109,6 +6171,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "country_id": {
+          "name": "country_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -6153,6 +6221,21 @@
           "columns": [
             {
               "expression": "jurisdiction_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "entity_source_assertions_country_idx": {
+          "name": "entity_source_assertions_country_idx",
+          "columns": [
+            {
+              "expression": "country_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -6229,6 +6312,19 @@
           ],
           "onDelete": "restrict on update no action",
           "onUpdate": "no action"
+        },
+        "entity_source_assertions_country_id_countries_id_fk": {
+          "name": "entity_source_assertions_country_id_countries_id_fk",
+          "tableFrom": "entity_source_assertions",
+          "tableTo": "countries",
+          "columnsFrom": [
+            "country_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -6237,7 +6333,7 @@
       "checkConstraints": {
         "entity_source_assertions_exactly_one_subject_check": {
           "name": "entity_source_assertions_exactly_one_subject_check",
-          "value": "num_nonnulls(\"institution_id\", \"jurisdiction_id\", \"qualification_framework_id\", \"qualification_level_id\") = 1"
+          "value": "num_nonnulls(\"country_id\", \"institution_id\", \"jurisdiction_id\", \"qualification_framework_id\", \"qualification_level_id\") = 1"
         },
         "entity_source_assertions_claim_key_nonempty_check": {
           "name": "entity_source_assertions_claim_key_nonempty_check",
