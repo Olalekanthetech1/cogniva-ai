@@ -20,7 +20,7 @@ function protectCode(markdown) {
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    const opening = line.match(/^ {0,3}(\`{3,}|~{3,})/);
+    const opening = line.match(/^ {0,3}(\x60{3,}|~{3,})/);
 
     if (!opening) {
       output += line;
@@ -35,7 +35,7 @@ function protectCode(markdown) {
     for (index += 1; index < lines.length; index += 1) {
       const candidate = lines[index];
       block += candidate;
-      const closing = candidate.match(/^ {0,3}(\`+|~+)[ \t]*(?:\r?\n)?$/);
+      const closing = candidate.match(/^ {0,3}(\x60+|~+)[ \t]*(?:\r?\n)?$/);
 
       if (
         closing &&
@@ -50,7 +50,7 @@ function protectCode(markdown) {
     output += "\uE000CGFENCE" + (protectedBlocks.length - 1) + "\uE001";
   }
 
-  output = output.replace(/(\`+)([\s\S]*?)\1/g, (match) => {
+  output = output.replace(/(\x60+)([\s\S]*?)\1/g, (match) => {
     protectedBlocks.push(match);
     return "\uE000CGINLINE" + (protectedBlocks.length - 1) + "\uE001";
   });
