@@ -548,3 +548,12 @@
     margin-left: 0;
   }
 }
+
+
+/* Keep catalogue subject headings consistent with the existing card layout. */
+.workspace-subject-card h3 {
+  margin: 14px 0 0;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 500;
+}
