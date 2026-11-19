@@ -6,7 +6,7 @@
 
 CTL governs how Cogniva teaches across approved linked-unit and standalone Tutor sessions. It is an instructional policy layer, not a persisted workflow state machine.
 
-The session's initial intent is starting context, not a permanent restriction. For the first response, high-signal wording in the actual initial prompt can refine the selected intent. For each later response, the server combines authenticated session linkage, the persisted starting intent, the latest submission type, turn analysis, and explicit task-switch signals from the learner's latest message. Recognized learner actions include clarification, correction challenge, answer request, attempt submission, hint request, simplification, example request, and recap. A clear request to start a different concept or problem can switch the standalone teaching mode.
+The session's initial intent is starting context, not a permanent restriction. For the first response, high-signal wording in the actual initial prompt can refine the selected intent. For each later response, the server combines authenticated session linkage, the persisted starting intent, the latest submission type, turn analysis, and explicit task-switch signals from the learner's latest message. Recognized learner actions include clarification, correction challenge, answer request, attempt submission, hint request, simplification, example request, and recap. A clear request to start a different concept or problem can switch the standalone teaching mode. The active standalone task mode is carried forward in the existing Tutor-message metadata so an unrelated initial session intent does not reassert itself on the next turn.
 
 The classifier uses bounded, high-signal rules rather than claiming perfect semantic understanding. When it cannot confidently identify a special action or task switch, the mode resolver preserves the session context or falls back to adaptive Socratic dialogue. Learner text cannot request a privileged mode or override system policy.
 
@@ -81,7 +81,7 @@ A clarification receives a direct answer to the exact question. The Tutor can ch
 
 A correction challenge requires reassessing the disputed claim. The Tutor must neither defend nor accept a claim automatically. It should use available evidence, acknowledge a supported error, and state when independent checking is unavailable.
 
-A clear new-task request can override the starting session intent for a standalone session. A problem-solving session can switch to a new concept, and a concept/topic session can switch to a new problem. High-signal requests are classified explicitly; unclear requests retain context or use adaptive Socratic dialogue. Linked-unit sessions keep their approved unit linkage, while the continuation policy adapts the immediate teaching action.
+A clear new-task request can override the starting session intent for a standalone session. The selected active task mode is recovered from the latest Tutor message metadata and carried forward across subsequent turns. A problem-solving session can switch to a new concept, and a concept/topic session can switch to a new problem. High-signal requests are classified explicitly; unclear requests retain the persisted task context or use adaptive Socratic dialogue. Linked-unit sessions keep their approved unit linkage, while the continuation policy adapts the immediate teaching action.
 
 ## 8. Extensible mode policy and output validation
 
@@ -103,14 +103,14 @@ All responses must be non-empty, non-truncated, within the registered budgets, a
 6. **Adaptive depth.** Keep a clarification concise, but teach a new concept or problem with enough context and reasoning to support reuse.
 7. **Learner agency.** Accept requests to slow down, change approach, receive another example, or see a complete solution.
 8. **Provider honesty.** Use only the administrator-configured provider/model for tutoring; do not silently switch providers or return fabricated fallback content.
-9. **Traceable mode choice.** Store the framework version, selected mode, learner action classification, and any explicit requested mode in Tutor-message metadata.
+9. **Traceable mode choice.** Store the framework version, selected response mode, learner action classification, any explicit requested mode, and the active standalone task context in existing Tutor-message metadata.
 
 ## 10. Runtime and persistence contract
 
 - Reuse existing student-owned Tutor session, message, and attempt records.
 - For linked-unit sessions, require the server-validated approved revision/unit linkage established by session creation.
 - Derive each response mode from linkage, persisted session intent, submission type, latest-turn analysis, and explicit task-switch evidence.
-- Store CTL framework version, selected mode, learner intent, and requested task mode in Tutor-message metadata.
+- Store CTL framework version, selected response mode, learner intent, requested task mode, and active standalone task context in existing Tutor-message metadata. Recover the latest valid active task context from the prior Tutor message when continuing a standalone session.
 - Keep the existing session lock, optimistic version check, ownership scoping, and transaction boundaries.
 - Preserve the bounded deterministic numeric checker and its narrow verification scope.
 - Do not repurpose tutor_sessions.current_step_index as a CTL lesson-stage index.
