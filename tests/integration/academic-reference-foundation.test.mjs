@@ -39,15 +39,16 @@ test("global academic reference foundation preserves jurisdiction, version, and 
       const sourceRecordId = sourceRecordRows[0].id;
 
       const countryRows = await tx.unsafe(
-        "INSERT INTO countries (iso_alpha_2, iso_alpha_3, iso_numeric, name) " +
-        "VALUES ('XQ', 'XQQ', '999', 'Isolated Test Country') RETURNING id"
+        "INSERT INTO countries (iso_alpha_2, iso_alpha_3, iso_numeric, name, source_record_id) " +
+        "VALUES ('XQ', 'XQQ', '999', 'Isolated Test Country', $1) RETURNING id",
+        [sourceRecordId]
       );
       const countryId = countryRows[0].id;
 
       await tx.unsafe(
-        "INSERT INTO country_aliases (country_id, name, normalized_name, language_tag, alias_type) " +
-        "VALUES ($1, 'Test Country (alternate)', 'test country alternate', 'en', 'short')",
-        [countryId]
+        "INSERT INTO country_aliases (country_id, name, normalized_name, language_tag, alias_type, source_record_id) " +
+        "VALUES ($1, 'Test Country (alternate)', 'test country alternate', 'en', 'short', $2)",
+        [countryId, sourceRecordId]
       );
 
       await expectDatabaseFailure(
@@ -92,6 +93,28 @@ test("global academic reference foundation preserves jurisdiction, version, and 
         [jurisdictionId, sourceRecordId]
       );
       const systemId = systemRows[0].id;
+
+      const secondJurisdictionRows = await tx.unsafe(
+        "INSERT INTO education_jurisdictions (country_id, code, name, jurisdiction_type, source_record_id) " +
+        "VALUES ($1, 'subnational-test', 'Test Subnational Education Jurisdiction', 'subnational', $2) RETURNING id",
+        [countryId, sourceRecordId]
+      );
+      const secondSystemRows = await tx.unsafe(
+        "INSERT INTO education_systems (jurisdiction_id, code, name, source_record_id) " +
+        "VALUES ($1, 'other-system-test', 'Other Jurisdiction Education System', $2) RETURNING id",
+        [secondJurisdictionRows[0].id, sourceRecordId]
+      );
+
+      await expectDatabaseFailure(
+        tx,
+        (sp) => sp.unsafe(
+          "INSERT INTO qualification_frameworks (jurisdiction_id, education_system_id, code, name) " +
+          "VALUES ($1, $2, 'cross-jurisdiction-framework', 'Cross Jurisdiction Framework')",
+          [jurisdictionId, secondSystemRows[0].id]
+        ),
+        "23503",
+        "A qualification framework must reference an education system from the same jurisdiction."
+      );
 
       const frameworkRows = await tx.unsafe(
         "INSERT INTO qualification_frameworks (jurisdiction_id, education_system_id, code, name, source_record_id) " +
@@ -224,6 +247,14 @@ test("global academic reference foundation preserves jurisdiction, version, and 
       );
       const institutionId = institutionRows[0].id;
 
+      const countryAssertionRows = await tx.unsafe(
+        "INSERT INTO entity_source_assertions " +
+        "(source_record_id, country_id, claim_key, claim_value, status) " +
+        "VALUES ($1, $2, 'iso_alpha_2', $3::jsonb, 'unreviewed') RETURNING id",
+        [sourceRecordId, countryId, { value: "XQ" }]
+      );
+      assert.ok(countryAssertionRows[0].id);
+
       const assertionRows = await tx.unsafe(
         "INSERT INTO entity_source_assertions " +
         "(source_record_id, institution_id, claim_key, claim_value, status) " +
@@ -236,9 +267,9 @@ test("global academic reference foundation preserves jurisdiction, version, and 
         tx,
         (sp) => sp.unsafe(
           "INSERT INTO entity_source_assertions " +
-          "(source_record_id, institution_id, jurisdiction_id, claim_key, claim_value) " +
+          "(source_record_id, country_id, jurisdiction_id, claim_key, claim_value) " +
           "VALUES ($1, $2, $3, 'invalid_subject', 'null'::jsonb)",
-          [sourceRecordId, institutionId, jurisdictionId]
+          [sourceRecordId, countryId, jurisdictionId]
         ),
         "23514",
         "A source assertion must identify exactly one typed subject."
@@ -255,6 +286,25 @@ test("global academic reference foundation preserves jurisdiction, version, and 
         [assertionId]
       );
       assert.equal(reviewRows[0].count, 1);
+
+      await expectDatabaseFailure(
+        tx,
+        (sp) => sp.unsafe(
+          "UPDATE catalogue_review_events SET rationale = 'tampered' WHERE assertion_id = $1",
+          [assertionId]
+        ),
+        "55000",
+        "Catalogue review events cannot be updated."
+      );
+      await expectDatabaseFailure(
+        tx,
+        (sp) => sp.unsafe(
+          "DELETE FROM catalogue_review_events WHERE assertion_id = $1",
+          [assertionId]
+        ),
+        "55000",
+        "Catalogue review events cannot be deleted."
+      );
     });
   } finally {
     await sql.end({ timeout: 5 });
