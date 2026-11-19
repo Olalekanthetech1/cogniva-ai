@@ -9,6 +9,7 @@ Cogniva is a global, AI-powered learning companion designed to help students bui
 - **Teach, don't merely answer.** Guide students through a problem one meaningful step at a time.
 - **Preserve student agency.** Ask for attempts, offer progressive hints, and explain the current step without silently advancing.
 - **Be honest about uncertainty.** Confirm ambiguous image/document extraction and disclose unavailable or failed verification.
+- **Make AI limitations visible.** Cogniva is AI-powered and can make mistakes in explanations, calculations, and feedback; learners should verify important answers.
 - **Ground academic claims.** Use uploaded learning materials and credible sources where appropriate; never invent citations.
 - **Verify where possible.** Use deterministic tools and subject-specific checks when a capability is available.
 - **ZeroMock.** No fabricated production data, pretend processing, static AI answer fallbacks, or false verification statuses.
