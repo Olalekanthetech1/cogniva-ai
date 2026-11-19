@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { TutorMessageMarkdown } from "./tutor-message-markdown";
+import { TutorAiDisclaimer } from "./tutor-ai-disclaimer";
 
 type TutorMessage = {
   id: string;
@@ -126,11 +127,11 @@ async function fetchTutorSession(sessionId: string): Promise<TutorSession> {
 function formatAttemptStatus(status: string): string {
   switch (status) {
     case "not_evaluated":
-      return "Not evaluated yet";
+      return "Not independently verified";
     case "pending":
-      return "Evaluation pending";
+      return "Independent check pending";
     case "evaluated":
-      return "Evaluated";
+      return "Checked within supported scope";
     case "unavailable":
       return "Evaluation unavailable";
     case "failed":
@@ -368,6 +369,7 @@ export function TutorSessionConversation({ sessionId }: { sessionId: string }) {
       <p className="tutor-form-note">
         Cogniva&apos;s replies guide your reasoning. A conversation by itself does not establish demonstrated mastery.
       </p>
+      <TutorAiDisclaimer />
     </section>
   );
 }

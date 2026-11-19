@@ -516,3 +516,31 @@ test("ignores learner-provided or invalid task-mode metadata and uses the latest
   assert.equal(getPersistedActiveTaskMode(messages), "concept_mini_lesson");
   assert.equal(getPersistedActiveTaskMode([]), null);
 });
+
+
+test("accepts a complete piecewise cases environment", () => {
+  const piecewise = "$$\\begin{cases}x^2+1, & x<2 \\\\ 5, & x=2 \\\\ 3x-1, & x>2\\end{cases}$$";
+  const response = validProblemSolution.replace(
+    "The units are metres per second, as expected for velocity.",
+    "The piecewise form is " + piecewise + ". The units are metres per second, as expected for velocity."
+  );
+
+  assert.equal(validateTutorLearningOutput({
+    text: response,
+    finishReason: "stop",
+    mode: "problem_solving"
+  }), null);
+});
+
+test("rejects an unmatched piecewise environment before it reaches the Markdown renderer", () => {
+  const malformed = validProblemSolution.replace(
+    "The units are metres per second, as expected for velocity.",
+    "The piecewise expression is $$\\end{cases}$$. The units are metres per second, as expected for velocity."
+  );
+
+  assert.match(validateTutorLearningOutput({
+    text: malformed,
+    finishReason: "stop",
+    mode: "problem_solving"
+  }), /incomplete mathematical notation/i);
+});

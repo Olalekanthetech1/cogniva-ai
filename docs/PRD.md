@@ -29,6 +29,7 @@ Cogniva is an AI-powered university learning companion. It helps students unders
 6. Design for mobile accessibility, readable language, and professional math rendering.
 7. Keep student history and uploaded materials private and access-controlled.
 8. Follow the mandatory ZeroMock policy in `ZERO_MOCK.md`.
+9. Clearly identify Cogniva as AI-powered and disclose that AI-generated explanations, calculations, and feedback can contain mistakes.
 
 ## 4. Student journeys and functional requirements
 

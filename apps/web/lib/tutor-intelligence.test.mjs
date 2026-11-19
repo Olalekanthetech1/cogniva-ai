@@ -138,7 +138,7 @@ test("detects a learner's incorrect arithmetic without rejecting unrelated prose
 
   assert.equal(analysis.learnerNumericMismatches.length, 1);
   assert.equal(analysis.learnerNumericMismatches[0].expectedText, "27525.12");
-  assert.match(buildAdaptiveTutorInstructions(analysis), /learner's submitted working/i);
+  assert.match(buildAdaptiveTutorInstructions(analysis), /only the work the learner actually submitted/i);
 });
 
 test("does not claim independent verification for unsupported expressions", () => {
@@ -657,4 +657,63 @@ test("infers an explicit initial concept or problem task from learner wording", 
 
   assert.equal(problem.requestedLearningMode, "problem_solving");
   assert.equal(concept.requestedLearningMode, "concept_mini_lesson");
+});
+
+
+test("does not mistake numeric prefixes in chained equalities for complete claims", () => {
+  const workedLimit = [
+    "The left-hand limit:",
+    "lim_{x\\to2^-} h(x) = 2^2 + 1 = 5.",
+    "The right-hand limit:",
+    "lim_{x\\to2^+} h(x) = 3(2) - 1 = 6 - 1 = 5.",
+    "The function value is h(2) = 5."
+  ].join("\n");
+
+  assert.deepEqual(findIncorrectNumericClaims(workedLimit), []);
+
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "Show the left-hand and right-hand limits and decide continuity." },
+      { role: "student", content: workedLimit }
+    ]
+  });
+  assert.equal(analysis.learnerErrorAnalysis, null);
+});
+
+test("detects a mismatch by evaluating both complete sides of a chained equality", () => {
+  const claims = findIncorrectNumericClaims("Calculation: 3(2) - 1 = 6 - 2 = 4.");
+
+  assert.equal(claims.length, 1);
+  assert.equal(claims[0].expression, "3(2) - 1");
+  assert.equal(claims[0].claimedText, "6 - 2");
+  assert.equal(claims[0].computedValue, 5);
+  assert.equal(claims[0].claimedValue, 4);
+  assert.equal(claims[0].expectedText, "5");
+
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "Show the arithmetic." },
+      { role: "student", content: "Calculation: 3(2) - 1 = 6 - 2 = 4." }
+    ]
+  });
+  const feedback = buildLearnerArithmeticFeedback(analysis.learnerErrorAnalysis);
+  assert.match(feedback, /left side .* evaluates to 5/i);
+  assert.match(feedback, /right side .* evaluates to 4/i);
+});
+
+test("does not attribute unsubmitted intermediate reasoning in attempt guidance", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "attempt",
+    messages: [
+      { role: "tutor", content: "What is the final value of 3 + 3?" },
+      { role: "student", content: "6" }
+    ]
+  });
+
+  const instructions = buildAdaptiveTutorInstructions(analysis);
+  assert.match(instructions, /only the work the learner actually submitted/i);
+  assert.match(instructions, /Never claim the learner factored/i);
+  assert.match(instructions, /only a final answer/i);
 });
