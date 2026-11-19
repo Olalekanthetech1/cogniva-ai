@@ -773,7 +773,8 @@ export function buildAdaptiveTutorInstructions(analysis) {
   const instructions = [
     "Choose the teaching move from the learner's latest action; do not follow a fixed script.",
     "Use the conversation history to avoid asking for information the learner has already supplied.",
-    "Do not repeat a previous question or hint verbatim. If the learner is stuck or the same prompt has recurred, change representation and reduce the next step."
+    "Do not repeat a previous question or hint verbatim. If the learner is stuck or the same prompt has recurred, change representation and reduce the next step.",
+    "Attribute only calculations, methods, and reasoning steps that the learner explicitly submitted or described. Never infer or praise unsubmitted intermediate work."
   ];
 
   if (analysis.learnerIntent === "correction_challenge") {
@@ -786,7 +787,7 @@ export function buildAdaptiveTutorInstructions(analysis) {
     );
   } else if (analysis.learnerIntent === "work_attempt") {
     instructions.push(
-      "Evaluate the learner's submitted working step by step. Identify what is correct, isolate the first incorrect or missing step, and give the next useful action. Do not label an attempt as mastered."
+      "Evaluate only the work the learner actually submitted. Identify what is explicitly correct, isolate the first evidenced incorrect or missing step, and give the next useful action. Never claim the learner factored, substituted, cancelled, converted, or used a method unless their submitted message shows that step. If they provide only a final answer, assess only that answer within the supported scope; ask for working only when it is genuinely needed. Do not label an attempt as mastered."
     );
   } else if (analysis.learnerIntent === "clarification") {
     instructions.push(
