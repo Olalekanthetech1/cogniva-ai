@@ -184,7 +184,12 @@ function decimalPlaces(value) {
  * arithmetic parser can evaluate. Unsupported notation is deliberately ignored.
  */
 function normalizeExplicitExpression(source) {
-  const expression = String(source ?? "").trim();
+  const expression = String(source ?? "")
+    .trim()
+    .replace(/^\$+|\$+$/g, "")
+    .replace(/^`|`$/g, "")
+    .replace(/[.!?,;]+$/g, "")
+    .trim();
   const separator = expression.indexOf(":");
 
   if (separator > 0 && separator <= 24) {
@@ -197,48 +202,73 @@ function normalizeExplicitExpression(source) {
   return expression;
 }
 
+function expressionDecimalPlaces(expression) {
+  const matches = String(expression ?? "").match(/(?:\d+\.(\d+)|\.(\d+))/g) ?? [];
+  let places = 0;
+
+  for (const match of matches) {
+    const fraction = match.split(".")[1] ?? "";
+    places = Math.max(places, fraction.length);
+  }
+
+  return Math.min(places, 8);
+}
+
 export function findNumericClaims(text) {
   if (typeof text !== "string" || !text.trim()) return [];
 
-  const numberPattern = "[+-]?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+)";
-  const pattern = new RegExp("([^=\\n]{1,140}?)\\s*(≈|≃|=)\\s*(" + numberPattern + ")", "g");
   const findings = [];
   const seen = new Set();
 
-  for (const match of text.matchAll(pattern)) {
-    const expression = normalizeExplicitExpression(match[1]);
-    const operator = match[2];
-    const claimedText = match[3];
-    const computedValue = evaluateNumericExpression(expression);
+  // Parse each statement as a sequence of complete equality/approximation
+  // segments. Never treat the numeric prefix of a longer right-hand
+  // expression (for example, the "6" in "6 - 1") as the claimed result.
+  for (const statement of text.split(/[\r\n;]+/)) {
+    const parts = statement.split(/(≈|≃|=)/);
 
-    // Fail closed: evaluate the complete expression, never a parseable suffix
-    // salvaged from surrounding natural-language prose.
-    if (computedValue === null) continue;
+    for (let index = 1; index < parts.length; index += 2) {
+      const operator = parts[index];
+      const expression = normalizeExplicitExpression(parts[index - 1]);
+      const claimedText = normalizeExplicitExpression(parts[index + 1] ?? "");
+      if (!expression || !claimedText) continue;
 
-    const claimedValue = normalizeNumber(claimedText);
-    if (!Number.isFinite(claimedValue)) continue;
+      const computedValue = evaluateNumericExpression(expression);
+      const claimedValue = evaluateNumericExpression(claimedText);
 
-    const places = decimalPlaces(claimedText);
-    const expectedText = computedValue.toFixed(places);
-    const roundedExpectedValue = Number(expectedText);
-    const difference = Math.abs(computedValue - claimedValue);
-    const isCorrect = roundedExpectedValue === claimedValue;
+      // Both complete sides must fit Cogniva's bounded numeric grammar.
+      // Unsupported symbolic expressions remain unclassified.
+      if (
+        computedValue === null ||
+        claimedValue === null ||
+        !Number.isFinite(computedValue) ||
+        !Number.isFinite(claimedValue)
+      ) {
+        continue;
+      }
 
-    const key = expression + operator + claimedText;
-    if (seen.has(key)) continue;
-    seen.add(key);
+      const places = expressionDecimalPlaces(claimedText);
+      const expectedText = computedValue.toFixed(places);
+      const roundedExpectedValue = Number(expectedText);
+      const roundedClaimedValue = Number(claimedValue.toFixed(places));
+      const difference = Math.abs(computedValue - claimedValue);
+      const isCorrect = roundedExpectedValue === roundedClaimedValue;
 
-    findings.push({
-      expression,
-      operator,
-      claimedText,
-      claimedValue,
-      computedValue,
-      difference,
-      decimalPlaces: places,
-      expectedText,
-      isCorrect
-    });
+      const key = expression + operator + claimedText;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      findings.push({
+        expression,
+        operator,
+        claimedText,
+        claimedValue,
+        computedValue,
+        difference,
+        decimalPlaces: places,
+        expectedText,
+        isCorrect
+      });
+    }
   }
 
   return findings;
@@ -279,14 +309,20 @@ export function buildLearnerArithmeticFeedback(errorAnalysis) {
   }
 
   const mismatch = errorAnalysis.mismatches[0];
-  const evaluationPhrase = mismatch.operator === "="
-    ? "evaluates to"
-    : "rounds to";
+  const scalarClaim = /^[+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)$/.test(
+    mismatch.claimedText
+  );
+  const evaluationPhrase = mismatch.operator === "=" ? "evaluates to" : "rounds to";
+  const discrepancy = scalarClaim
+    ? "The expression " + evaluationPhrase + " " + mismatch.expectedText +
+      ", not " + mismatch.claimedText + "."
+    : "The left side (" + mismatch.expression + ") " + evaluationPhrase + " " +
+      mismatch.expectedText + ", while the right side (" + mismatch.claimedText +
+      ") evaluates to " + mismatch.claimedValue.toFixed(mismatch.decimalPlaces) + ".";
 
   return "I checked the arithmetic statement: " + mismatch.expression + " " +
-    mismatch.operator + " " + mismatch.claimedText + ". The expression " +
-    evaluationPhrase + " " + mismatch.expectedText + ", not " + mismatch.claimedText +
-    ". This confirms an arithmetic-result mismatch only; it does not identify which reasoning step caused it or verify units or the physical model. Re-evaluate this expression one operation at a time, following the normal order of operations. What value do you get?";
+    mismatch.operator + " " + mismatch.claimedText + ". " + discrepancy +
+    " This confirms an arithmetic-result mismatch only; it does not identify which reasoning step caused it or verify units or the physical model. Re-evaluate the discrepant expression one operation at a time. What value do you get?";
 }
 
 function extractLearnerProposedValues(text) {
