@@ -220,8 +220,12 @@ test("rejects a concept mini-lesson that omits its example or exceeds the respon
     finishReason: "stop",
     mode: "concept_mini_lesson"
   }), /missing required sections: Example/);
+  const oversized = validConceptLesson.replace(
+    "For g(x) = x³, what derivative follows from the power rule?",
+    "detail ".repeat(270) + "For g(x) = x³, what derivative follows from the power rule?"
+  );
   assert.match(validateTutorLearningOutput({
-    text: validConceptLesson + " " + "detail ".repeat(270),
+    text: oversized,
     finishReason: "stop",
     mode: "concept_mini_lesson"
   }), /exceeded Cogniva's response limit/);
