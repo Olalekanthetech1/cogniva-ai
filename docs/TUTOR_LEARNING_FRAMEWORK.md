@@ -17,12 +17,13 @@ The classifier uses bounded, high-signal rules rather than claiming perfect sema
 | Structured lesson opening | First response for an approved linked learning-plan unit | Learning objectives, detailed explanation, worked example, practical application, guided practice |
 | Structured lesson continuation | Later turns for that linked unit | Continue from actual context and adapt to the learner's current action |
 | Concept mini-lesson | Initial standalone concept/topic session, explicit complete concept explanation, or a clear mid-session topic switch | Direct answer, deeper explanation, example, understanding checkpoint; application when relevant |
-| Problem-solving | Standalone problem session or a clear mid-session switch to a new problem | Understand the problem, governing principle, strategy, worked reasoning, verification, transfer check |
+| Problem-solving opening | Initial standalone problem session, explicit complete-solution request, or a clear switch to a new problem | Understand the problem, governing principle, strategy, worked reasoning, verification, transfer check |
+| Problem-solving continuation | Later ordinary turns in an existing standalone problem session | Continue from the current reasoning step without repeating the full walkthrough |
 | Attempt feedback | A learner explicitly submits an attempt | Preserve correct work, identify the first evidenced issue, explain it, and give one useful next step |
 | Quick clarification / focused assistance | Clarification, correction challenge, hint, simplification, example, or recap request | Address the exact requested action without restarting or silently advancing the broader task |
 | Adaptive Socratic | Safe fallback when no richer mode is justified | Concise, turn-aware guidance and one focused next step |
 
-Linked-unit sessions retain their approved unit context and use structured continuation after the opening. The continuation instructions still adapt to hints, simplification, examples, recap, attempts, clarification, and correction challenges. Standalone sessions can change mode when the learner clearly starts a different task. A response-mode change is not a stage transition, mastery result, or completion event.
+Linked-unit sessions retain their approved unit context and use structured continuation after the opening. The continuation instructions still adapt to hints, simplification, examples, recap, attempts, clarification, and correction challenges. Standalone sessions can change mode when the learner clearly starts a different task. Ordinary follow-up turns in a problem session use a continuation mode rather than repeating the six-section opening. A response-mode change is not a stage transition, mastery result, or completion event.
 
 ## 3. Dynamic generation versus fixed instructional guardrails
 
@@ -86,7 +87,7 @@ A clear new-task request can override the starting session intent for a standalo
 
 Mode limits and validation contracts are defined centrally in the Tutor mode policy registry. Each registered mode declares its output-token budget, word/character limits, response-length guidance, required sections where appropriate, and whether bounded numeric mismatches block delivery.
 
-The response route consumes this registry instead of maintaining a separate nested token-budget or validation chain. Adding a new mode therefore has one explicit policy entry point, with associated prompt instructions, intent routing where needed, tests, and documentation. Unknown future mode names use the adaptive Socratic policy as a safe configuration fallback; they do not silently acquire a new privileged behavior.
+The response route consumes this registry instead of maintaining a separate nested token-budget or validation chain. The problem-solving opening and continuation have separate registered budgets and instructional contracts. Adding a new mode therefore has one explicit policy entry point, with associated prompt instructions, intent routing where needed, tests, and documentation. Unknown future mode names use the adaptive Socratic policy as a safe configuration fallback; they do not silently acquire a new privileged behavior.
 
 This is an extensible architecture, not a guarantee that future capabilities need no engineering. Every new teaching capability still requires an explicit policy, tests, operational limits, and evidence that the behavior is suitable.
 
