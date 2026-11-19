@@ -34,7 +34,7 @@ test("global academic reference foundation preserves jurisdiction, version, and 
       const sourceRecordRows = await tx.unsafe(
         "INSERT INTO catalogue_source_records (source_id, provider_record_id, source_url, metadata) " +
         "VALUES ($1, $2, $3, $4::jsonb) RETURNING id",
-        [sourceId, suffix, "https://example.invalid/record/" + suffix, JSON.stringify({ fixture: true })]
+        [sourceId, suffix, "https://example.invalid/record/" + suffix, { fixture: true }]
       );
       const sourceRecordId = sourceRecordRows[0].id;
 
@@ -228,7 +228,7 @@ test("global academic reference foundation preserves jurisdiction, version, and 
         "INSERT INTO entity_source_assertions " +
         "(source_record_id, institution_id, claim_key, claim_value, status) " +
         "VALUES ($1, $2, 'official_name', $3::jsonb, 'unreviewed') RETURNING id",
-        [sourceRecordId, institutionId, JSON.stringify({ value: "Isolated Test Institution" })]
+        [sourceRecordId, institutionId, { value: "Isolated Test Institution" }]
       );
       const assertionId = assertionRows[0].id;
 
