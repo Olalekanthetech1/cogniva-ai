@@ -174,7 +174,7 @@ CREATE TABLE "qualification_levels" (
   CONSTRAINT "qualification_levels_sequence_positive_check" CHECK ("sequence" IS NULL OR "sequence" > 0),
   CONSTRAINT "qualification_levels_label_nonempty_check" CHECK (length(btrim("label")) > 0),
   CONSTRAINT "qualification_levels_descriptors_object_check" CHECK (jsonb_typeof("descriptors") = 'object'),
-  CONSTRAINT "qualification_levels_framework_version_id_qualification_framework_versions_id_fk" FOREIGN KEY ("framework_version_id") REFERENCES "public"."qualification_framework_versions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
+  CONSTRAINT "qualification_levels_framework_version_id_qualification_framework_versions_id_fk" FOREIGN KEY ("framework_version_id") REFERENCES "public"."qualification_framework_versions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 --> statement-breakpoint
 CREATE TABLE "classification_schemes" (
@@ -215,7 +215,7 @@ CREATE TABLE "classification_codes" (
   CONSTRAINT "classification_codes_not_self_parent_check" CHECK ("parent_code_id" IS NULL OR "parent_code_id" <> "id"),
   CONSTRAINT "classification_codes_depth_positive_check" CHECK ("depth" IS NULL OR "depth" > 0),
   CONSTRAINT "classification_codes_label_nonempty_check" CHECK (length(btrim("label")) > 0),
-  CONSTRAINT "classification_codes_scheme_version_id_classification_scheme_versions_id_fk" FOREIGN KEY ("scheme_version_id") REFERENCES "public"."classification_scheme_versions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
+  CONSTRAINT "classification_codes_scheme_version_id_classification_scheme_versions_id_fk" FOREIGN KEY ("scheme_version_id") REFERENCES "public"."classification_scheme_versions"("id") ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 --> statement-breakpoint
 CREATE TABLE "qualification_level_classification_mappings" (
