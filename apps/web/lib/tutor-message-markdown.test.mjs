@@ -35,7 +35,7 @@ function renderMarkdown(content) {
 }
 
 function withoutMathSourceAnnotations(html) {
-  return html.replace(/<annotation\\b[^>]*>[\\s\\S]*?<\\/annotation>/g, "");
+  return html.replace(/<annotation\b[^>]*>[\s\S]*?<\/annotation>/g, "");
 }
 
 test("renders inline and display LaTeX as accessible mathematical markup", () => {
@@ -122,7 +122,7 @@ test("normalizes TeX inline and display delimiters used by providers", () => {
 
   assert.match(html, /class="katex"/);
   assert.match(html, /class="katex-display"/);
-  assert.doesNotMatch(html, /\\frac/);
+  assert.doesNotMatch(withoutMathSourceAnnotations(html), /\\frac/);
 });
 
 test("renders square-bracket-wrapped provider TeX and moves sentence punctuation outside", () => {
@@ -134,7 +134,7 @@ test("renders square-bracket-wrapped provider TeX and moves sentence punctuation
   const html = renderMarkdown(markdown);
 
   assert.equal((html.match(/class="katex"/g) ?? []).length >= 2, true);
-  assert.doesNotMatch(html, /\\frac/);
+  assert.doesNotMatch(withoutMathSourceAnnotations(html), /\\frac/);
   assert.match(html, /<\/p>/);
 });
 
