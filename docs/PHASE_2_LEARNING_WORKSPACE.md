@@ -1,6 +1,6 @@
 # Cogniva — Phase 2 Learning Workspace v1
 
-**Status:** Accepted product/engineering contract; implementation is partial. Persistence and the text-first tutor vertical slice exist. This implementation adds the plan-generation/retrieval API foundation. The complete plan review and integrated learner workspace are not yet delivered.
+**Status:** Accepted product/engineering contract; implementation is partial. Persistence and the text-first tutor vertical slice exist. The plan-generation/retrieval APIs now power a personal library and read-only plan overview in Learn. Editing, approval, Home continuation, plan-unit tutoring, and the full integrated learner workspace are not yet delivered.
 
 ## 1. Goal
 
@@ -15,8 +15,9 @@ Phase 2 is one connected vertical slice, not a collection of disconnected dashbo
 ### Current implementation status
 
 - **Already implemented:** student-owned plan/revision/unit/objective/concept persistence; saved tutor sessions/messages and direct text tutor UI; authenticated tutor session APIs; provider-backed Socratic responses when the task route and credential are configured; explicit attempt persistence and bounded numeric evaluation.
-- **Added by this implementation:** authenticated personal plan creation from a learner topic, strict provider-output validation, transactional proposed-revision persistence, owner-scoped plan listing/detail, and retry for failed/unavailable/stale-running generation.
-- **Still outstanding:** plan editing/reordering/removal and approval, choosing a tutor session from a plan unit in the learner UI, dashboard continuation from plans, Learn personal-library integration, explicit Socratic action controls and server-enforced step progression, and end-to-end mobile journey tests.
+- **Added by the API implementation:** authenticated personal plan creation from a learner topic, strict provider-output validation, transactional proposed-revision persistence, owner-scoped plan listing/detail, and retry for failed/unavailable/stale-running generation.
+- **Added by the Learn UI implementation:** a personal learning library that creates topics through the real API, lists owner-scoped saved plans, displays generation/review states, opens a read-only revision overview, and retries failed or unavailable generation without automatic create-request replay.
+- **Still outstanding:** plan editing/reordering/removal and approval, accepting/rejecting proposed relationships, choosing a tutor session from a plan unit in the learner UI, Home dashboard continuation from saved plans, explicit Socratic action controls and server-enforced step progression, and end-to-end mobile journey tests.
 
 The API foundation is not a substitute for these remaining UI and tutoring-state requirements.
 
@@ -97,18 +98,19 @@ Basic text tutoring is not the same as independent answer verification. Until a 
 
 ### Learn
 
-- Become the learner's personal learning library.
-- Show saved plans with truthful states such as draft, approved, active, completed, or failed where those states are implemented.
-- Allow the learner to start a new learning plan.
-- Keep any public/catalogue subject discovery distinct from the learner's personal plans.
-- Show a clear empty state when the learner has not created a plan.
+- Show the learner's owner-scoped personal learning library on the Learn route.
+- List saved plans with their actual generation state and latest revision state; never infer completion or mastery.
+- Allow the learner to start a topic-based plan through the authenticated generation API and retry failed/unavailable generation.
+- Open a read-only revision overview showing units, objectives, plan-scoped concepts, and proposed relationships.
+- Keep catalogue subject discovery distinct from the learner's personal plans and show a truthful empty state when no catalogue records exist.
+- Editing, reordering, removing, relationship decisions, and approval remain unavailable until their mutation APIs and controls are implemented.
 
 ### Plan review and overview
 
-- Show the proposed outline and plan-level concept/skill structure.
+- Show the latest proposed outline and plan-level concept/skill structure in a read-only overview.
 - Clearly distinguish generated proposals from learner-approved content and authoritative external curricula.
-- Support the edits listed in section 2.3.
-- Provide an action to begin a tutoring session from a selected unit.
+- Editing, reordering, removing units/objectives/concepts, and accepting/rejecting relationships remain outstanding.
+- Plan approval and starting a tutoring session from a selected unit remain outstanding.
 
 ### Tutor
 
@@ -183,7 +185,7 @@ Implement and verify one vertical slice at a time:
 3. **Plan generation API** — create a topic-based proposed plan from real learner input; validate strict structured output; preserve failures and generation provenance. This implementation covers this API slice.
 4. **Plan review UI** — still required: edit, reorder, remove, accept/reject proposed relations, and approve plans while preserving older revisions.
 5. **Tutoring integration** — existing direct text sessions can be resumed; still required: start/resume sessions from plan units and enforce explicit Socratic actions and step progression.
-6. **Workspace integration** — still required: connect Home and Learn to owned plans/sessions and replace unavailable/placeholder states only when the end-to-end path is live.
+6. **Workspace integration** — the Learn personal library and read-only plan overview now use owned plan APIs; still required: Home continuation, plan-unit-to-Tutor navigation, and completion of the end-to-end learner journey.
 7. **Release verification** — run CI, ownership/integration and state-machine tests, mobile/desktop checks, provider failure tests, and production migration/deployment verification.
 
 Each implementation change should be a focused pull request. Production migrations must be reviewed and explicitly applied before application code that depends on their columns or tables is deployed.
