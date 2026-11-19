@@ -136,52 +136,65 @@ export function LearningPlanLibrary() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
-  const loadPlans = useCallback(async (signal?: AbortSignal) => {
+  const fetchPlans = useCallback(async (signal?: AbortSignal) => {
+    const response = await fetch("/api/v1/learning-plans", {
+      cache: "no-store",
+      signal
+    });
+    const payload: unknown = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        readApiError(payload, "Your learning plans are unavailable right now.")
+      );
+    }
+
+    if (!isRecord(payload) || !Array.isArray(payload.data)) {
+      throw new Error("Cogniva returned an unexpected learning-plan list.");
+    }
+
+    return payload.data.map(parsePlanSummary);
+  }, []);
+
+  const loadPlans = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
+
     try {
-      const response = await fetch("/api/v1/learning-plans", {
-        cache: "no-store",
-        signal
-      });
-      const payload: unknown = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          readApiError(payload, "Your learning plans are unavailable right now.")
-        );
-      }
-
-      if (!isRecord(payload) || !Array.isArray(payload.data)) {
-        throw new Error("Cogniva returned an unexpected learning-plan list.");
-      }
-
-      const nextPlans = payload.data.map(parsePlanSummary);
-      if (!signal?.aborted) {
-        setPlans(nextPlans);
-        setLoadError("");
-      }
+      setPlans(await fetchPlans());
     } catch (cause) {
-      if (signal?.aborted) return;
       setLoadError(
         cause instanceof Error
           ? cause.message
           : "Your learning plans are unavailable right now."
       );
     } finally {
-      if (!signal?.aborted) setIsLoading(false);
+      setIsLoading(false);
     }
-  }, []);
+  }, [fetchPlans]);
 
   useEffect(() => {
     const controller = new AbortController();
-    void loadPlans(controller.signal);
-    return () => controller.abort();
-  }, [loadPlans]);
+    void fetchPlans(controller.signal)
+      .then((nextPlans) => {
+        if (controller.signal.aborted) return;
+        setPlans(nextPlans);
+        setLoadError("");
+      })
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
+        setLoadError(
+          cause instanceof Error
+            ? cause.message
+            : "Your learning plans are unavailable right now."
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
 
-  function refreshPlans() {
-    setIsLoading(true);
-    setLoadError("");
-    void loadPlans();
-  }
+    return () => controller.abort();
+  }, [fetchPlans]);
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -249,7 +262,7 @@ export function LearningPlanLibrary() {
         <button
           className="learning-plan-refresh"
           type="button"
-          onClick={refreshPlans}
+          onClick={() => void loadPlans()}
           disabled={isLoading}
         >
           {isLoading ? "Refreshing..." : "Refresh"}
@@ -305,7 +318,7 @@ export function LearningPlanLibrary() {
       {loadError && (
         <div className="learning-plan-error" role="alert">
           <p>{loadError}</p>
-          <button type="button" onClick={refreshPlans}>
+          <button type="button" onClick={() => void loadPlans()}>
             Try loading again
           </button>
         </div>
