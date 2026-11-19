@@ -34,6 +34,10 @@ function renderMarkdown(content) {
   ));
 }
 
+function withoutMathSourceAnnotations(html) {
+  return html.replace(/<annotation\\b[^>]*>[\\s\\S]*?<\\/annotation>/g, "");
+}
+
 test("renders inline and display LaTeX as accessible mathematical markup", () => {
   const markdown = [
     "The resultant is $R^2 = F_1^2 + F_2^2 + 2F_1F_2\\cos(\\theta)$.",
