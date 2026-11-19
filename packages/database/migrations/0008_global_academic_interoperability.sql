@@ -487,8 +487,6 @@ CREATE INDEX "course_knowledge_component_mappings_status_idx" ON "course_knowled
 --> statement-breakpoint
 CREATE UNIQUE INDEX "curriculum_versions_id_course_unique" ON "curriculum_versions" USING btree ("id", "course_id");
 --> statement-breakpoint
-ALTER TABLE "course_content_versions" DROP CONSTRAINT "course_content_versions_legacy_curriculum_version_id_curriculum_versions_id_fk";
---> statement-breakpoint
 ALTER TABLE "course_content_versions" ADD CONSTRAINT "course_content_versions_legacy_curriculum_course_fk" FOREIGN KEY ("legacy_curriculum_version_id", "course_id") REFERENCES "public"."curriculum_versions"("id", "course_id") ON DELETE RESTRICT ON UPDATE NO ACTION;
 --> statement-breakpoint
 ALTER TABLE "course_content_versions"
