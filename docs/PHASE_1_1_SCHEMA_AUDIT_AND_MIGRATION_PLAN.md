@@ -1,8 +1,8 @@
 # Cogniva — Phase 1.1 Schema Audit and Migration Plan
 
-**Status:** Design baseline and additive schema slices 1.1a/1.1b merged to `main`; read-only Neon audit completed; production application of migrations 0007/0008 remains unverified and has not been performed in this workflow.  
+**Status:** Design baseline and additive schema slices 1.1a/1.1b merged to `main`; migrations 0007/0008 applied to Neon production and verified by the post-migration read-only audit on 19 November 2026.  
 **Scope:** Global academic interoperability. Migrations 0007 and 0008 define reference/provenance, institution/programme, credit/period, course-content, recognition, and Knowledge Component structures. Runtime adapters, ingestion, and learner-context backfill remain outstanding.  
-**Safety:** The prior Neon audit was read-only. Migrations 0007 and 0008 are merged and CI-tested, but have not been applied to production in this workflow; no catalogue data or production writes have been performed.
+**Safety:** Migrations 0007 and 0008 were applied to Neon only after their SQL was merged and the production workflow received the explicit `APPLY` confirmation. The subsequent verification audit was read-only. The migrations add schema only: no catalogue records were seeded and no learner-context or legacy academic rows were backfilled.
 
 ## 1. Evidence boundary and current-state audit
 
@@ -10,7 +10,7 @@ Three different evidence sources must not be conflated:
 
 1. **Repository schema** describes what the current code expects.
 2. **CI PostgreSQL** proves that committed migrations can be applied to a disposable database. It does not prove what is installed in Neon.
-3. **Production database** was inspected through a dedicated read-only transaction on 19 November 2026 before this implementation slice was designed.
+3. **Production database** was inspected before this implementation slice and again after migrations 0007/0008 were applied, using dedicated PostgreSQL read-only transactions on 19 November 2026.
 
 ### 1.1 Verified repository facts
 
@@ -44,22 +44,21 @@ The repository baseline at the time of the production audit contained Drizzle mi
 
 The read-only production report generated 19 November 2026 at 15:34:20 UTC confirmed all seven migrations were applied to Neon. It reported zero missing migrations, zero missing repository migration files, and zero unexpected applied migrations. The report identifies database `neondb` running PostgreSQL 18.7.
 
-The implementation branch now adds migration 0007, `0007_global_academic_reference_foundation.sql`. This migration is repository code under review and is not included in the production audit's seven applied migrations. It has not been applied to Neon.
+Migrations `0007_global_academic_reference_foundation.sql` and `0008_institutions_programmes_and_kcs.sql` are merged to `main` and applied to Neon production by [migration run #44615863935](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44615863935). The post-migration audit confirms both timestamps in the production ledger, with all nine expected migrations applied and no missing or unexpected ledger entries.
 
 ### 1.3 Production schema observation
 
-The audited production database contained the nine current academic tables: institutions, faculties, departments, subjects, courses, topics, curriculum_versions, course_topics, and student_profiles. All nine were present. The audit also checked the original 27 planned Phase 1.1 target tables and found none present at that time.
+The pre-migration audit found all nine legacy academic tables and none of the then-planned Phase 1.1 target tables. The post-migration audit generated at 21:19:06 UTC on 19 November 2026 found all 31 target tables present and all nine legacy academic tables still present (`missingCurrentTables: []`).
 
-The audit inspected metadata only. It did not inspect catalogue or learner rows, determine data quality, establish academic recognition, or verify the current Render application deployment.
+Both audits inspected schema/migration metadata only. The post-migration audit did not inspect catalogue or learner rows, determine data quality, establish academic recognition, or verify the current Render application deployment.
 
 ### 1.4 Read-only production audit evidence
 
 The manually triggered **Read-only Neon schema audit** workflow was run using the explicit AUDIT_READ_ONLY input and the DATABASE_MIGRATION_URL secret. Its script opened a PostgreSQL transaction and set it READ ONLY before querying the migration ledger and schema metadata. It did not query learner rows, credentials, email addresses, or personal data.
 
-The workflow run and retained JSON artifact are available at:
-https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44556239768
+The pre-migration run and retained artifact are available at [audit run #44610442501, attempt 1](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501). After production migrations were applied, the audit job was rerun as attempt 2 of the same workflow run. The post-migration report is available at [audit run #44610442501, attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501) and [artifact 14575831526](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501/artifacts/14575831526). Its report records `expectedCount: 9`, `appliedCount: 9`, empty missing-migration and missing-file arrays, `unexpectedAppliedMigrationCount: 0`, all 31 target tables present, and no missing legacy academic tables. The workflow uses the audit's observational mode (`assertion: NOT ASSERTED`); these report fields were reviewed directly.
 
-The same audit script runs in CI against disposable PostgreSQL with an assertion that every repository migration is applied. This verifies migration application in CI but is not evidence of production state.
+The same audit script can run in CI against disposable PostgreSQL with `--assert-all-repository-migrations`. CI assertion results verify migration application in the disposable test database; they are separate from the production evidence above.
 
 ## 2. Normative target-domain decisions
 
@@ -194,18 +193,21 @@ No current value should acquire a “verified” state merely because it existed
 
 ## 5. Additive migration and rollback sequence
 
-Migrations 0007 and 0008 are additive implementation slices on stacked review branches. Migration 0007 adds country/jurisdiction, qualification/classification reference, and source-provenance foundations. Migration 0008 adds institution identifiers/aliases/units, scoped recognition, programmes and versions, programme qualification links, credit systems, academic periods, versioned course content and requirements, and the initial canonical KC graph. Neither migration seeds records or rewrites existing academic/learner rows, and neither has been applied to production. The remaining migration sequence is:
+Migrations 0007 and 0008 are additive implementation slices merged to `main` and applied to Neon production. Migration 0007 adds country/jurisdiction, qualification/classification reference, and source-provenance foundations. Migration 0008 adds institution identifiers/aliases/units, scoped recognition, programmes and versions, programme qualification links, credit systems, academic periods, versioned course content and requirements, and the initial canonical KC graph. Neither migration seeds records or rewrites existing academic/learner rows.
 
-1. **Baseline and backup:** save the read-only production audit report; create/confirm a recoverable Neon backup/branch according to the operator's recovery procedure.
-2. **Reference foundations (migration 0007):** add countries and aliases, education jurisdictions and systems, qualification frameworks and versions, qualification levels, versioned classification schemes/codes, reviewed ISCED-P/ISCED-A mapping records, source registry/source records, typed source assertions for the initial entity kinds, and review events. The migration adds no source data.
-3. **Identity and organisation (migration 0008):** add source-backed institution identifiers/aliases, a flexible same-institution unit tree, and scoped recognition authorities/decisions. Keep existing institution/faculty/department tables and IDs intact.
-4. **Programme and curriculum (migration 0008):** add source-backed programmes and versions, qualification links, explicit credit systems, institution-scoped academic periods, versioned course content linked to legacy curriculum versions, and programme-course requirements. Credits are always paired with a named credit system; local stage labels/indices remain local and are not ISCED levels.
-5. **Knowledge Components (migration 0008):** add stable Cogniva KC IDs, versioned definitions/objectives, typed prerequisite/part-of/related/progression/contrast relations, and evidence/review-aware course-content mappings. Accepted prerequisite cycles are rejected by a database trigger.
-6. **Learner context (later migration):** add nullable jurisdiction, programme, qualification, local-stage label/index, and academic-period references. Do not require them at registration.
-7. **Controlled backfill:** copy only values present in legacy records; preserve original values and map source provenance as legacy-Cogniva. Leave unsupported mappings unknown/unreviewed.
-8. **Compatibility release:** dual-read or dual-write only where required; verify routes and student ownership. Keep old fields/tables available during the compatibility window.
-9. **Cutover:** switch reads after reconciliation counts, constraints, and integration tests pass.
-10. **Later cleanup:** remove legacy schema only in a separate reviewed change after evidence that no deployed code or retained data depends on it.
+**Completed schema slices:**
+- [x] **Reference foundations (migration 0007):** countries and aliases, education jurisdictions and systems, qualification frameworks and versions, qualification levels, versioned classification schemes/codes, reviewed ISCED-P/ISCED-A mapping records, source registry/source records, typed source assertions, and review events.
+- [x] **Identity and organisation (migration 0008):** source-backed institution identifiers/aliases, a flexible same-institution unit tree, and scoped recognition authorities/decisions; existing institution/faculty/department tables and IDs remain intact.
+- [x] **Programme and curriculum (migration 0008):** source-backed programmes and versions, qualification links, explicit credit systems, institution-scoped academic periods, versioned course content linked to legacy curriculum versions, and programme-course requirements.
+- [x] **Knowledge Components (migration 0008):** stable Cogniva KC IDs, versioned definitions/objectives, typed prerequisite/part-of/related/progression/contrast relations, and evidence/review-aware course-content mappings. Accepted prerequisite cycles are rejected by a database trigger.
+
+**Remaining migration and rollout sequence:**
+1. **Future production DDL baseline and backup:** before any later production migration, capture a fresh read-only audit and independently verify a recoverable Neon backup/restore point under the operator's recovery procedure. The current audit does not establish backup status.
+2. **Learner context (later migration):** add nullable jurisdiction, programme, qualification, local-stage label/index, and academic-period references. Do not require them at registration.
+3. **Controlled backfill:** copy only values present in legacy records; preserve original values and map source provenance as legacy-Cogniva. Leave unsupported mappings unknown/unreviewed.
+4. **Compatibility release:** dual-read or dual-write only where required; verify routes and student ownership. Keep old fields/tables available during the compatibility window.
+5. **Cutover:** switch reads after reconciliation counts, constraints, and integration tests pass.
+6. **Later cleanup:** remove legacy schema only in a separate reviewed change after evidence that no deployed code or retained data depends on them.
 
 ### Rollback principles
 
@@ -253,4 +255,4 @@ Before the global catalogue is considered ready, integration tests must verify:
 - Nigerian Universities Commission accreditation remit: https://www.nuc.edu.ng/project/accreditation/
 - COREN engineering programme accreditation reference: https://coren.gov.ng/accredited-universities/
 
-**Implementation gate:** the production audit has been reviewed and migrations 0007/0008 are under separate, stacked PR review with isolated PostgreSQL integration coverage. Do not apply either migration to Neon until the PRs are reviewed and merged in order, a recoverable Neon backup/branch is confirmed, and explicit production migration approval is obtained. Do not enable a source adapter or import data until its terms, rights, attribution, rate limits, freshness, and failure semantics are reviewed.
+**Implementation gate:** the production migration gate for 0007/0008 is complete: both PRs are merged, the additive migrations were applied in order through the explicitly confirmed production workflow, and the subsequent read-only audit verified the ledger and table inventory. Do not rerun these migrations. Future production DDL still requires reviewed SQL, a fresh read-only baseline, independently verified recoverable backup/restore point, and explicit approval. Do not enable a source adapter or import data until its terms, rights, attribution, rate limits, freshness, and failure semantics are reviewed.

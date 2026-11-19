@@ -1,6 +1,6 @@
 # Cogniva — Database Design Baseline
 
-**Status (reviewed 19 November 2026):** A read-only Neon audit completed at 15:34:20 UTC against PostgreSQL 18.7 and confirmed migrations 0000–0006 applied at that time. Phase 1.1a migration 0007 and Phase 1.1b migration 0008 are now merged to `main` and tested in CI. They have not been applied to Neon in this workflow. The prior audit read migration/schema metadata only and did not inspect learner rows. Production deployment state is tracked separately from migration state.
+**Status (reviewed 19 November 2026):** Migrations 0000–0008 are applied to Neon `neondb` (PostgreSQL 18.7). The post-migration read-only audit generated at 21:19:06 UTC ([run #44610442501, attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501)) confirmed 9/9 expected migrations applied, zero missing migrations or repository files, zero unexpected applied migrations, all 31 Phase 1.1 target tables present, and all nine legacy academic tables preserved. The audit used a PostgreSQL `READ_ONLY_TRANSACTION` and inspected migration/schema metadata only, not learner rows. Application deployment state is tracked separately.
 
 ## 1. Decisions
 
@@ -55,7 +55,7 @@ The tutor response route uses the provider runtime when its task route and crede
 
 ## 4. Production migration history and workflow
 
-The read-only production audit confirmed the following migration history in Neon at 2026-11-19 15:34:20 UTC:
+The initial read-only production audit confirmed the baseline migration history in Neon at 2026-11-19 15:34:20 UTC. The post-migration audit later verified the complete 0000–0008 ledger as recorded below:
 
 - `0000_dapper_vulture.sql` — initial identity and academic/profile baseline.
 - `0001_student_onboarding_state.sql` — onboarding completion and self-reported institution fields.
@@ -64,8 +64,10 @@ The read-only production audit confirmed the following migration history in Neon
 - `0004_classy_freak.sql` — AI task routes and administrative audit events.
 - `0005_faithful_zodiak.sql` — AI benchmark runs, results, and reviews.
 - `0006_cultured_lila_cheney.sql` — Tutor attempt records and ownership/message constraints.
+- `0007_global_academic_reference_foundation.sql` — global country/jurisdiction, qualification/classification, source-provenance, and review foundations.
+- `0008_institutions_programmes_and_kcs.sql` — institution identity/units, scoped recognition, programmes, credit systems, academic periods, versioned course content, and Knowledge Component structures.
 
-The prior audit reported 7 expected and 7 applied migrations, zero missing migrations, zero missing repository files, and zero unexpected applied migrations (at the time of audit). Migrations `0007_global_academic_reference_foundation.sql` and `0008_institutions_programmes_and_kcs.sql` are merged to `main`; neither has been applied to Neon in this workflow.
+Migrations `0007_global_academic_reference_foundation.sql` and `0008_institutions_programmes_and_kcs.sql` were applied to Neon by [production migration run #44615863935](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44615863935). The subsequent [read-only audit, run #44610442501 attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501), reports 9 expected and 9 applied migrations, zero missing migrations, zero missing repository files, and zero unexpected applied migrations. Its table inventory confirms all 31 Phase 1.1 target tables and all nine existing academic tables are present.
 
 The database package exposes `createDatabase(databaseUrl)`. Importing it does not access process environment variables or create a live connection. The application resolves its pooled `DATABASE_URL` only when a data request needs the database.
 
@@ -103,8 +105,8 @@ Before public launch, define retention and deletion across relational rows, uplo
 
 ## 8. Phase 1.1 production schema audit
 
-The manually triggered **Read-only Neon schema audit** workflow was run on 19 November 2026 at 15:34:20 UTC. It used `DATABASE_MIGRATION_URL`, opened a PostgreSQL read-only transaction, and inspected only the Drizzle migration ledger and academic schema metadata. It did not read learner rows or mutate production data.
+The initial read-only production audit at 15:34 UTC on 19 November 2026 established the pre-Phase-1.1 baseline (migrations 0000–0006 and nine legacy academic tables). After migration run [#44615863935](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44615863935) completed successfully, the same audit workflow was rerun as attempt 2 of [run #44610442501](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501). The resulting report, generated at 21:19:06 UTC, confirms migrations 0000–0008 are applied, all 31 Phase 1.1 target tables are present, and all nine legacy academic tables remain present. It used `DATABASE_MIGRATION_URL` in a PostgreSQL `READ_ONLY_TRANSACTION`; it did not query learner rows or mutate production data. The report artifact is [phase-1.1-production-schema-audit, artifact 14575831526](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501/artifacts/14575831526).
 
-The report recorded database `neondb`, PostgreSQL 18.7, seven expected/applied migrations (0000–0006), all nine baseline academic tables, and zero of the original 27 target tables. The report artifact is retained in GitHub Actions run [44556239768](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44556239768). The audit script now also reports the Phase 1.1a additions and the remaining target-table presence on a subsequent run.
+The report's `assertion` field is `NOT ASSERTED` because the production workflow invokes the audit in observational mode without the optional `--assert-all-repository-migrations` flag. The returned ledger and table-inventory values were reviewed directly against the production acceptance checks.
 
 See [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md) for the detailed schema-gap analysis and [PHASE_1_1A_REFERENCE_FOUNDATION.md](PHASE_1_1A_REFERENCE_FOUNDATION.md) for migration 0007, its constraints, and rollback boundaries.

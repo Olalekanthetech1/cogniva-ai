@@ -2,8 +2,8 @@
 
 **Status:** Merged to `main` via PR #39; post-merge CI verified through the subsequent Phase 1.1b merge.  
 **Migration:** `0007_global_academic_reference_foundation.sql`.  
-**Production:** Migration 0007 has not been applied to Neon in this workflow.  
-**Scope:** Additive reference and provenance schema only. No catalogue seed data, external fetches, source adapters, API routes, or production writes.
+**Production:** Migration 0007 was applied to Neon on 19 November 2026 by [production migration run #44615863935](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44615863935) and verified by the subsequent [read-only audit, run #44610442501 attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501). The audit found all 31 Phase 1.1 target tables, including the 15 added by this migration, present.  
+**Scope:** Additive reference and provenance schema only. No catalogue seed data, external fetches, source adapters, API routes, or learner/catalogue data writes. The additive schema migration itself was applied to production as recorded above.
 
 ## 1. Migration contents
 
