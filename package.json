@@ -20,7 +20,8 @@
     "db:studio": "pnpm --filter @cogniva/database studio",
     "test:tutor-intelligence": "node --test apps/web/lib/tutor-intelligence.test.mjs",
     "test:tutor-markdown": "node --test apps/web/lib/tutor-message-markdown.test.mjs",
-    "test:learning-plan-output": "node --test apps/web/lib/learning-plan-output.test.mjs"
+    "test:learning-plan-output": "node --test apps/web/lib/learning-plan-output.test.mjs",
+    "test:learning-plan-review": "node --test apps/web/lib/learning-plan-review.test.mjs"
   },
   "pnpm": {
     "overrides": {
