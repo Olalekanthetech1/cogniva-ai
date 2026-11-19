@@ -44,6 +44,9 @@ jobs:
       - name: Tutor intelligence regression tests
         run: pnpm test:tutor-intelligence
 
+      - name: Tutor learning framework regression tests
+        run: pnpm test:tutor-learning-framework
+
       - name: Tutor Markdown rendering regression tests
         run: pnpm test:tutor-markdown
 
