@@ -1,4 +1,4 @@
-const MATH_COMMAND = /\\\\[A-Za-z]+/;
+const MATH_COMMAND = /\\[A-Za-z]+/;
 const MATH_RELATION = /(?:=|≈|≃|≠|≤|≥|<|>)/;
 
 function looksLikeMathExpression(value) {
@@ -9,18 +9,18 @@ function looksLikeMathExpression(value) {
   return (
     MATH_RELATION.test(candidate) &&
     /[A-Za-z0-9]/.test(candidate) &&
-    /(?:\\^|_)/.test(candidate)
+    /(?:\^|_)/.test(candidate)
   );
 }
 
 function protectCode(markdown) {
   const protectedBlocks = [];
   let output = "";
-  const lines = markdown.match(/[^\\n]*\\n|[^\\n]+$/g) ?? [];
+  const lines = markdown.match(/[^\n]*\n|[^\n]+$/g) ?? [];
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    const opening = line.match(/^ {0,3}(`{3,}|~{3,})/);
+    const opening = line.match(/^ {0,3}(\`{3,}|~{3,})/);
 
     if (!opening) {
       output += line;
@@ -35,7 +35,7 @@ function protectCode(markdown) {
     for (index += 1; index < lines.length; index += 1) {
       const candidate = lines[index];
       block += candidate;
-      const closing = candidate.match(/^ {0,3}(`+|~+)[ \\t]*(?:\\r?\\n)?$/);
+      const closing = candidate.match(/^ {0,3}(\`+|~+)[ \t]*(?:\r?\n)?$/);
 
       if (
         closing &&
@@ -47,18 +47,18 @@ function protectCode(markdown) {
     }
 
     protectedBlocks.push(block);
-    output += "\\uE000CGFENCE" + (protectedBlocks.length - 1) + "\\uE001";
+    output += "\uE000CGFENCE" + (protectedBlocks.length - 1) + "\uE001";
   }
 
-  output = output.replace(/(`+)([\\s\\S]*?)\\1/g, (match) => {
+  output = output.replace(/(\`+)([\s\S]*?)\1/g, (match) => {
     protectedBlocks.push(match);
-    return "\\uE000CGINLINE" + (protectedBlocks.length - 1) + "\\uE001";
+    return "\uE000CGINLINE" + (protectedBlocks.length - 1) + "\uE001";
   });
 
   return {
     markdown: output,
     restore(value) {
-      return value.replace(/\\uE000CG(?:FENCE|INLINE)(\\d+)\\uE001/g, (_match, index) =>
+      return value.replace(/\uE000CG(?:FENCE|INLINE)(\d+)\uE001/g, (_match, index) =>
         protectedBlocks[Number(index)] ?? _match
       );
     }
@@ -71,7 +71,7 @@ function moveTrailingPunctuationOutsideMath(expression) {
 
   const punctuationStart = expression.length - match[0].length;
   const previousCharacter = expression[punctuationStart - 1];
-  if (previousCharacter === "\\\\") return { expression, punctuation: "" };
+  if (previousCharacter === "\\") return { expression, punctuation: "" };
 
   return {
     expression: expression.slice(0, punctuationStart).trimEnd(),
@@ -91,17 +91,17 @@ export function normalizeTutorMathMarkdown(markdown) {
 
   // TeX's standard inline and display delimiters are not enabled by remark-math.
   normalized = normalized
-    .replace(/\\\\\\[([\\s\\S]*?)\\\\\\]/g, (_match, expression) =>
-      "$$\\n" + expression.trim() + "\\n$$"
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_match, expression) =>
+      "$$\n" + expression.trim() + "\n$$"
     )
-    .replace(/\\\\\\(([^]*?)\\\\\\)/g, (_match, expression) =>
-      "$" + expression.replace(/\\s*\\n\\s*/g, " ").trim() + "$"
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_match, expression) =>
+      "$" + expression.replace(/\s*\n\s*/g, " ").trim() + "$"
     );
 
   // Some model responses use square brackets as informal math delimiters.
   // Convert only un-nested, single-line bracket contents with clear math syntax;
   // ordinary citations, array-like values, and Markdown links remain unchanged.
-  normalized = normalized.replace(/\\[([^\\[\\]\\n]{2,1000})\\](?!\\()/g, (match, content) => {
+  normalized = normalized.replace(/\[([^\[\]\n]{2,1000})\](?!\()/g, (match, content) => {
     const candidate = content.trim();
     if (!looksLikeMathExpression(candidate)) return match;
 
