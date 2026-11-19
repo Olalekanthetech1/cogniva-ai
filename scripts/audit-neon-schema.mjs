@@ -53,6 +53,7 @@ const targetTables = [
   "entity_source_assertions",
   "catalogue_review_events",
   "knowledge_components",
+  "knowledge_component_versions",
   "knowledge_component_relations",
   "course_knowledge_component_mappings"
 ];

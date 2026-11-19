@@ -70,6 +70,9 @@ jobs:
       - name: Global academic reference and provenance integration tests
         run: pnpm test:academic-reference-foundation
 
+      - name: Global academic interoperability integration tests
+        run: pnpm test:academic-interoperability
+
       - name: Tutor intelligence regression tests
         run: pnpm test:tutor-intelligence
 
