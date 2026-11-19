@@ -588,3 +588,54 @@ test("does not classify a supported correct equality as an error", () => {
 
   assert.equal(analysis.learnerErrorAnalysis, null);
 });
+
+
+test("classifies hint, simplification, example, and recap requests from follow-up turns", () => {
+  const cases = [
+    ["Could you give me a hint?", "hint_request"],
+    ["Can you explain that in simpler words?", "simplification_request"],
+    ["Please show me another example.", "example_request"],
+    ["Can you recap the key points so far?", "recap_request"]
+  ];
+
+  for (const [message, expectedIntent] of cases) {
+    const analysis = analyzeTutorTurn({
+      latestSubmissionType: "question",
+      messages: [
+        { role: "tutor", content: "What would you try next?" },
+        { role: "student", content: message }
+      ]
+    });
+    assert.equal(analysis.learnerIntent, expectedIntent, message);
+  }
+});
+
+test("detects an explicit new task and allows the Tutor to change teaching mode", () => {
+  const problem = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "tutor", content: "What would you try next?" },
+      { role: "student", content: "Now let's solve this new problem: 2x + 3 = 7." }
+    ]
+  });
+  const concept = analyzeTutorTurn({
+    latestSubmissionType: "question",
+    messages: [
+      { role: "tutor", content: "What would you try next?" },
+      { role: "student", content: "Let's switch to a new topic and study conservation of mass." }
+    ]
+  });
+
+  assert.equal(problem.requestedLearningMode, "problem_solving");
+  assert.equal(concept.requestedLearningMode, "concept_mini_lesson");
+});
+
+test("does not mistake an initial request for a mid-session task switch", () => {
+  const analysis = analyzeTutorTurn({
+    latestSubmissionType: "initial_prompt",
+    messages: [
+      { role: "student", content: "Solve 2x + 3 = 7." }
+    ]
+  });
+  assert.equal(analysis.requestedLearningMode, null);
+});
