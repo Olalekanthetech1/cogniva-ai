@@ -177,7 +177,7 @@ export function buildTutorLearningFrameworkInstructions({ mode, learnerIntent })
     return [
       "Answer the learner's specific clarification directly and concisely; do not restart a lesson or force a full teaching template.",
       "Use a different representation, smaller example, or precise definition when that will resolve the question. Address a correction challenge by reassessing the exact disputed claim rather than agreeing or defending automatically.",
-      "Do not advance a lesson or problem-solving sequence merely because you answered a question. End with one useful next question only when it genuinely helps."
+      "Do not advance a lesson or problem-solving sequence merely because you answered a question. End with exactly one concise question focused on the clarification; do not use it to force an unrelated next task."
     ].join(" ");
   }
 
