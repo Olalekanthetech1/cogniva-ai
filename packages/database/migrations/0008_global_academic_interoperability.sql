@@ -489,12 +489,6 @@ CREATE UNIQUE INDEX "curriculum_versions_id_course_unique" ON "curriculum_versio
 --> statement-breakpoint
 ALTER TABLE "course_content_versions" ADD CONSTRAINT "course_content_versions_legacy_curriculum_course_fk" FOREIGN KEY ("legacy_curriculum_version_id", "course_id") REFERENCES "public"."curriculum_versions"("id", "course_id") ON DELETE RESTRICT ON UPDATE NO ACTION;
 --> statement-breakpoint
-ALTER TABLE "course_content_versions"
-  ADD CONSTRAINT "course_content_versions_legacy_curriculum_course_fk"
-  FOREIGN KEY ("legacy_curriculum_version_id", "course_id")
-  REFERENCES "public"."curriculum_versions"("id", "course_id")
-  ON DELETE RESTRICT ON UPDATE NO ACTION;
---> statement-breakpoint
 ALTER TABLE "entity_source_assertions"
   ADD COLUMN "institution_unit_id" uuid,
   ADD COLUMN "recognition_authority_id" uuid,
