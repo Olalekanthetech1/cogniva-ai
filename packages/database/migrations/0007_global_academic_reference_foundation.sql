@@ -244,7 +244,7 @@ CREATE TABLE "qualification_level_classification_mappings" (
 CREATE FUNCTION "public"."validate_qualification_level_classification_mapping_kind"()
 RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS '
 DECLARE
   target_kind "public"."classification_scheme_kind";
 BEGIN
@@ -257,17 +257,17 @@ BEGIN
       ON scheme."id" = version."scheme_id"
     WHERE code."id" = NEW."classification_code_id";
 
-  IF (NEW."mapping_kind" = 'isced_p' AND target_kind <> 'programme')
-     OR (NEW."mapping_kind" = 'isced_a' AND target_kind <> 'attainment') THEN
-    RAISE EXCEPTION 'Mapping kind % cannot target a % classification scheme',
+  IF (NEW."mapping_kind" = ''isced_p'' AND target_kind <> ''programme'')
+     OR (NEW."mapping_kind" = ''isced_a'' AND target_kind <> ''attainment'') THEN
+    RAISE EXCEPTION ''Mapping kind % cannot target a % classification scheme'',
       NEW."mapping_kind", target_kind
-      USING ERRCODE = '23514',
-        CONSTRAINT = 'qual_level_map_scheme_kind_chk';
+      USING ERRCODE = ''23514'',
+        CONSTRAINT = ''qual_level_map_scheme_kind_chk'';
   END IF;
 
   RETURN NEW;
 END;
-$;
+';
 --> statement-breakpoint
 CREATE TRIGGER "qualification_level_classification_mapping_kind_guard"
 BEFORE INSERT OR UPDATE OF "classification_code_id", "mapping_kind"
