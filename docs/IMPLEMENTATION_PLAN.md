@@ -21,10 +21,11 @@
 - [x] Require email verification and fail closed when auth infrastructure is not configured.
 - [x] Configure the Neon PostgreSQL database and transactional email sender used by the deployed environment.
 - [x] Generate, review, and apply the initial migration against the production database.
-- [x] Verify registration, email verification, sign-in, and authenticated session retrieval end-to-end.
-- [ ] Verify sign-out and password reset end-to-end.
+- [x] Verify registration, email verification, sign-in, authenticated session retrieval, sign-out, and password-reset completion end-to-end against PostgreSQL with captured transactional email delivery in CI.
 - [x] Implement authenticated student-profile and read-only academic catalogue APIs with account ownership and academic hierarchy checks.
-- [ ] Add automated integration tests for authentication boundaries, profile ownership, and invalid academic hierarchy submissions.
+- [x] Add PostgreSQL-backed integration tests for authentication boundaries, profile ownership, and invalid academic hierarchy submissions.
+
+**Validation boundary:** CI applies the committed migrations to a disposable PostgreSQL service and captures verification/reset emails through a loopback-only test endpoint. The tests verify sign-out invalidation, password reset, existing-session revocation, old-password rejection, protected catalogue/profile routes, session-derived profile ownership, and invalid institution/faculty/department ancestry. This does not validate live Resend domain deliverability or deploy the change to production.
 
 **Exit:** live identity and persistence flows work against a real database; academic metadata is dynamic and optional; CI tests cover access boundaries.
 
