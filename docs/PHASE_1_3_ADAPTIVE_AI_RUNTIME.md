@@ -1,6 +1,6 @@
 # Cogniva — Phase 1.3 Adaptive Multi-Provider, Multi-Model Intelligence
 
-**Status:** Approved architecture. Phase 1.3a registry and administrative foundations are implemented in the current branch; migration 0009 is not yet applied to Neon. Adaptive selection for learner requests is not enabled. Existing per-task routes remain authoritative.
+**Status (20 November 2026):** Phase 1.3a registry and administrative foundations are merged to `main`. Migration 0009 was applied to Neon and its ledger entry was confirmed by audit run [#44695548906](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44695548906). That audit did not yet assert the physical registry objects; a stricter read-only schema audit is being added to verify both registry tables, columns, enum labels, constraints, and indexes. Adaptive selection for learner requests is not enabled. Existing per-task routes remain authoritative.
 
 ## 1. Goal
 
@@ -79,7 +79,8 @@ All provider-specific parameters are emitted only when the exact selected model'
 - [x] Add exact-model connection tests, capability evidence review, model enablement, task eligibility and priority.
 - [x] Add regression tests for capability validation and diagnostic probe policy.
 - [ ] Add end-to-end authorization, PostgreSQL mutation, enablement-gate, and audit event tests.
-- [ ] Apply migration 0009 to Neon after review and verify with a post-migration read-only audit.
+- [x] Apply migration 0009 to Neon and confirm its entry in the production migration ledger.
+- [ ] Run the strict read-only production audit for both registry tables, required columns, enum labels, constraints, and indexes after this audit hardening merges.
 - [ ] Verify deployed Admin UI and provider discovery against configured Render credentials.
 
 ### Phase 1.3b — Adaptive router and runtime policy

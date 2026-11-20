@@ -2,6 +2,10 @@ import { createRequire } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  aiModelRegistrySchemaContract,
+  buildAiModelRegistrySchemaReport
+} from "./audit-neon-schema-contract.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageRequire = createRequire(join(repositoryRoot, "packages/database/package.json"));
@@ -10,6 +14,7 @@ const migrationDirectory = join(repositoryRoot, "packages/database/migrations");
 const journalPath = join(migrationDirectory, "meta/_journal.json");
 const journal = JSON.parse(readFileSync(journalPath, "utf8"));
 const assertAllMigrations = process.argv.includes("--assert-all-repository-migrations");
+const assertAiModelRegistrySchema = process.argv.includes("--assert-ai-model-registry-schema");
 const databaseUrl = process.env.DATABASE_MIGRATION_URL?.trim();
 
 const academicTables = [
@@ -149,6 +154,58 @@ async function runAudit() {
         present: currentTableNames.has(tableName)
       }));
 
+      const registryTableNames = aiModelRegistrySchemaContract.tables;
+      const registryColumns = await transaction.unsafe(
+        "SELECT table_name, column_name, data_type, udt_name, is_nullable, character_maximum_length " +
+        "FROM information_schema.columns " +
+        "WHERE table_schema = 'public' AND table_name = ANY($1) " +
+        "ORDER BY table_name, ordinal_position",
+        [registryTableNames]
+      );
+
+      const registryConstraints = await transaction.unsafe(
+        "SELECT tbl.relname AS table_name, con.conname AS constraint_name, " +
+        "con.contype AS constraint_type, pg_get_constraintdef(con.oid) AS definition " +
+        "FROM pg_constraint AS con " +
+        "JOIN pg_class AS tbl ON tbl.oid = con.conrelid " +
+        "JOIN pg_namespace AS ns ON ns.oid = tbl.relnamespace " +
+        "WHERE ns.nspname = 'public' AND tbl.relname = ANY($1) " +
+        "ORDER BY tbl.relname, con.conname",
+        [registryTableNames]
+      );
+
+      const registryIndexes = await transaction.unsafe(
+        "SELECT tbl.relname AS table_name, idxrel.relname AS index_name, " +
+        "idx.indisunique AS is_unique, pg_get_indexdef(idx.indexrelid) AS definition " +
+        "FROM pg_index AS idx " +
+        "JOIN pg_class AS tbl ON tbl.oid = idx.indrelid " +
+        "JOIN pg_class AS idxrel ON idxrel.oid = idx.indexrelid " +
+        "JOIN pg_namespace AS ns ON ns.oid = tbl.relnamespace " +
+        "WHERE ns.nspname = 'public' AND tbl.relname = ANY($1) " +
+        "ORDER BY tbl.relname, idxrel.relname",
+        [registryTableNames]
+      );
+
+      const registryEnumTypes = await transaction.unsafe(
+        "SELECT typ.typname AS type_name, " +
+        "COALESCE(array_agg(enum_row.enumlabel ORDER BY enum_row.enumsortorder) " +
+        "FILTER (WHERE enum_row.enumlabel IS NOT NULL), ARRAY[]::text[]) AS labels " +
+        "FROM pg_type AS typ " +
+        "JOIN pg_namespace AS ns ON ns.oid = typ.typnamespace " +
+        "LEFT JOIN pg_enum AS enum_row ON enum_row.enumtypid = typ.oid " +
+        "WHERE ns.nspname = 'public' AND typ.typname = ANY($1) " +
+        "GROUP BY typ.typname ORDER BY typ.typname",
+        [aiModelRegistrySchemaContract.enums.map((enumType) => enumType.typeName)]
+      );
+
+      const aiModelRegistrySchema = buildAiModelRegistrySchemaReport({
+        existingTables: [...currentTableNames],
+        columns: registryColumns,
+        constraints: registryConstraints,
+        indexes: registryIndexes,
+        enumTypes: registryEnumTypes
+      });
+
       const migrationLedger = buildMigrationReport(appliedRows);
       const result = {
         auditMode: "READ_ONLY_TRANSACTION",
@@ -165,9 +222,11 @@ async function runAudit() {
           columns,
           constraints
         },
-        targetTablePresence
+        targetTablePresence,
+        aiModelRegistrySchema
       };
 
+      const failedAssertions = [];
       if (
         assertAllMigrations &&
         (
@@ -177,11 +236,22 @@ async function runAudit() {
           migrationLedger.unexpectedAppliedMigrationCount > 0
         )
       ) {
-        result.assertion = "FAILED: repository migration journal and database ledger do not match.";
+        failedAssertions.push("repository migration journal and database ledger do not match");
+      }
+      if (assertAiModelRegistrySchema && !aiModelRegistrySchema.passed) {
+        failedAssertions.push("the Phase 1.3a AI model registry schema does not match its migration contract");
+      }
+
+      if (failedAssertions.length > 0) {
+        result.assertion = "FAILED: " + failedAssertions.join("; ") + ".";
+      } else if (assertAllMigrations && assertAiModelRegistrySchema) {
+        result.assertion = "PASSED: all repository migrations and the Phase 1.3a AI model registry schema match this audit database.";
+      } else if (assertAllMigrations) {
+        result.assertion = "PASSED: all repository migrations are applied to this audit database.";
+      } else if (assertAiModelRegistrySchema) {
+        result.assertion = "PASSED: the Phase 1.3a AI model registry schema matches its migration contract.";
       } else {
-        result.assertion = assertAllMigrations
-          ? "PASSED: all repository migrations are applied to this audit database."
-          : "NOT ASSERTED: review the production migration ledger and table inventory.";
+        result.assertion = "NOT ASSERTED: review the production migration ledger and table inventory.";
       }
 
       return result;
@@ -195,7 +265,7 @@ try {
   const report = await runAudit();
   process.stdout.write(JSON.stringify(report, null, 2) + "\n");
 
-  if (assertAllMigrations && report.assertion.startsWith("FAILED:")) {
+  if (report.assertion.startsWith("FAILED:")) {
     process.exitCode = 2;
   }
 } catch (error) {
