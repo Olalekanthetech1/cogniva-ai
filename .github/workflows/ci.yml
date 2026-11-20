@@ -61,8 +61,11 @@ jobs:
       - name: Apply migrations to isolated integration-test database
         run: pnpm db:migrate
 
+      - name: Neon schema audit contract unit tests
+        run: pnpm test:db-audit-contract
+
       - name: Verify isolated database migration ledger and schema audit
-        run: pnpm db:audit -- --assert-all-repository-migrations
+        run: pnpm db:audit -- --assert-all-repository-migrations --assert-ai-model-registry-schema
 
       - name: Authentication and student-profile integration tests
         run: pnpm test:auth-lifecycle
