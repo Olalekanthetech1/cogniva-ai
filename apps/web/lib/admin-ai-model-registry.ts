@@ -285,7 +285,7 @@ export async function recordAdminAiModelTest(
   });
 }
 
-export async function getAdminAiModelForTest(modelId: string) {
+export async function getAdminAiModelForTest(modelId: string): Promise<typeof aiModels.$inferSelect | null> {
   const db = getStudentDatabase();
   const [model] = await db.select().from(aiModels).where(eq(aiModels.id, modelId)).limit(1);
   return model ?? null;
@@ -481,7 +481,7 @@ export async function discoverAdminAiProviderModels(provider: AiProviderId): Pro
   };
 }
 
-export async function getAdminAiModelByRoute(provider: AiProviderId, modelId: string) {
+export async function getAdminAiModelByRoute(provider: AiProviderId, modelId: string): Promise<typeof aiModels.$inferSelect | null> {
   const db = getStudentDatabase();
   const [model] = await db.select().from(aiModels)
     .where(and(eq(aiModels.provider, provider), eq(aiModels.modelId, modelId)))

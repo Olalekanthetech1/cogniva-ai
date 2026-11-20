@@ -150,7 +150,7 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    let registryModel: Awaited<ReturnType<typeof getAdminAiModelByRoute>> = null;
+    let registryModel: Awaited<ReturnType<typeof getAdminAiModelByRoute>> | null = null;
     try {
       registryModel = await getAdminAiModelByRoute(
         taskConfiguration.route.provider,
