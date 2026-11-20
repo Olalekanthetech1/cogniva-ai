@@ -18,6 +18,7 @@ export type AiTextGenerationInput = {
     parameter: "thinking_level" | "reasoning_effort";
     level: string;
   };
+  structuredOutput?: "json_object";
 };
 
 export type AiTextGenerationResult = {
@@ -298,7 +299,8 @@ function validateInput(input: AiTextGenerationInput): void {
     (input.temperature !== undefined &&
       (!Number.isFinite(input.temperature) ||
         input.temperature < 0 ||
-        input.temperature > 1))
+        input.temperature > 1)) ||
+    (input.structuredOutput !== undefined && input.structuredOutput !== "json_object")
   ) {
     throw new AiProviderRuntimeError(
       "UPSTREAM_REJECTED",
@@ -358,6 +360,9 @@ export async function generateTextWithProvider(
               ...(input.temperature !== undefined ? { temperature: input.temperature } : {}),
               ...(input.reasoningControl?.parameter === "thinking_level"
                 ? { thinkingConfig: { thinkingLevel: input.reasoningControl.level } }
+                : {}),
+              ...(input.structuredOutput === "json_object"
+                ? { responseMimeType: "application/json" }
                 : {})
             }
           }
@@ -373,6 +378,9 @@ export async function generateTextWithProvider(
             ...(input.temperature !== undefined ? { temperature: input.temperature } : {}),
             ...(input.reasoningControl?.parameter === "reasoning_effort"
               ? { reasoning_effort: input.reasoningControl.level }
+              : {}),
+            ...(input.structuredOutput === "json_object"
+              ? { response_format: { type: "json_object" } }
               : {}),
             stream: false
           };

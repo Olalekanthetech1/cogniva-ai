@@ -151,23 +151,26 @@ See [PHASE_1_3_ADAPTIVE_AI_RUNTIME.md](PHASE_1_3_ADAPTIVE_AI_RUNTIME.md) for the
 - [x] Add pure regression tests for capability validation and diagnostic policy selection.
 - [ ] Add end-to-end PostgreSQL/API tests for administrator authorization, duplicate registration, evidence invalidation, enablement guards, candidate ownership, and audit events.
 - [x] Review migration 0009 SQL/snapshot/journal and apply it to Neon after explicit approval; production migration run #44694889998 succeeded and audit #44695548906 confirmed its ledger entry.
-- [ ] Run the strict read-only production audit for both registry tables, required columns, enum labels, constraints, and indexes after audit hardening merges.
+- [x] Run the strict read-only production audit for both registry tables, required columns, enum labels, constraints, and indexes; production run [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed.
 - [ ] Verify the deployed Admin model registry and exact-model tests against credentials configured in Render.
 
-**Current status (20 November 2026):** Phase 1.3a introduces `ai_models` and `ai_task_model_candidates`; migration 0009 has been applied to Neon and its migration-ledger entry is confirmed by audit run [#44695548906](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44695548906). That audit did not yet assert the physical registry tables and their supporting objects, so a stricter read-only object-level audit is being added before the registry schema is declared fully verified. Existing task routes are copied as pending, unverified model records with task eligibility disabled; learner traffic continues to use the original `ai_task_routes`. Provider discovery is an inventory hint, not a capability or quality verdict. Gemini discovery filters to models listing `generateContent`; Groq discovery returns provider-listed model identifiers but does not assume every entry is chat-completion compatible; Mistral discovery filters to entries declaring chat-completion capability. In all cases an administrator must inspect the exact model documentation, test the model, and review capability claims before enabling it. Capability edits invalidate prior review and connection-test evidence. No provider is ranked as best, and no adaptive student request selection is enabled.
+**Current status (20 November 2026):** Phase 1.3a introduces `ai_models` and `ai_task_model_candidates`; migration 0009 is applied to Neon. The strict read-only production audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed on merge commit `7701f8b`: 10/10 repository migrations, both registry tables, all 26 expected columns, exact enum labels, required named constraints, and indexes match. The audit used a PostgreSQL read-only transaction and did not inspect model rows, credentials, or learner records. Existing `ai_task_routes` remain intact. Phase 1.3b adds a shared adaptive runtime for Tutor and learning-plan generation; each task's rollout mode defaults to pinned until an operator explicitly enables adaptive mode after model readiness checks.
 
 ### Phase 1.3b — Adaptive router and centralized runtime policy
 
-- [ ] Build a provider-neutral request analyser and deterministic task-complexity classification.
-- [ ] Select only models that are enabled, credential-ready, connection-tested, capability-reviewed, and assigned to the requested task.
-- [ ] Add task-level pinned/adaptive policy modes and administrator objectives for quality, latency, and cost.
-- [ ] Resolve output budgets, reasoning settings, structured-output configuration, and request deadlines in one central policy service.
-- [ ] Remove route-local output-token and timeout constants from Tutor, learning-plan generation, and administrator diagnostics.
-- [ ] Apply provider-specific request fields only when the exact model's verified capability record supports them.
-- [ ] Record selection explanations, safe request outcomes, finish reasons, usage, and latency without storing student prompts, completions, credentials, or private reasoning traces.
-- [ ] Keep provider switching disabled by default; make any future failover an explicit, separately audited administrator policy.
-- [ ] Add multi-model routing, provider adapter, ownership, concurrency, budget, and failure regression tests before enabling adaptive learner traffic.
+- [x] Build a provider-neutral request analyser and deterministic task-complexity classification with conservative prompt/context estimates.
+- [x] Select only models that are enabled, credential-ready, connection-tested, capability-reviewed, and assigned to the requested task.
+- [x] Add independent per-task pinned/adaptive mode settings, defaulting to pinned.
+- [ ] Add administrator UI controls for task routing mode and explicit quality/cost objectives; task mode currently uses server-side environment settings.
+- [x] Centralize output budgets, reasoning settings, JSON-object mode, temperature capability gating, context fit, and bounded deadlines.
+- [x] Integrate adaptive model selection into Tutor and learning-plan generation.
+- [x] Return and retain safe selection explanations without writing routing prompts, completions, credentials, or private reasoning traces to routing metadata.
+- [x] Keep provider switching disabled; no silent fallback occurs after a selected provider fails.
+- [x] Add routing policy regression tests to CI.
+- [ ] Use cost and teaching-quality evidence in selection only after current provider pricing and blinded benchmark evidence exist.
+- [ ] Explicitly opt in a production task only after its candidate pool is fully reviewed, tested, enabled, assigned, and validated in the deployed runtime.
 
+**Boundary:** The adaptive path is implemented but remains off by default (`pinned`). Administrator candidate priority is used before exact-model test latency; no unverified cost or quality score is invented.
 ### Phase 1.3c — Evidence-informed model improvement
 
 - [ ] Run the comparative provider benchmark across eligible models and tasks.

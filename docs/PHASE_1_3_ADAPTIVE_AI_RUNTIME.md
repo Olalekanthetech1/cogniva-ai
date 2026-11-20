@@ -1,6 +1,6 @@
 # Cogniva — Phase 1.3 Adaptive Multi-Provider, Multi-Model Intelligence
 
-**Status (20 November 2026):** Phase 1.3a registry and administrative foundations are merged to `main`. Migration 0009 was applied to Neon and its ledger entry was confirmed by audit run [#44695548906](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44695548906). That audit did not yet assert the physical registry objects; a stricter read-only schema audit is being added to verify both registry tables, columns, enum labels, constraints, and indexes. Adaptive selection for learner requests is not enabled. Existing per-task routes remain authoritative.
+**Status (20 November 2026):** Phase 1.3a is merged to `main`; migration 0009 and the physical registry schema are verified in Neon by strict read-only audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) (10/10 migrations, both registry tables, all required columns, enums, constraints and indexes). Phase 1.3b adds a shared adaptive runtime for Tutor and learning-plan generation. Both tasks remain `pinned` by default. Adaptive mode requires an explicit per-task server setting and a non-empty pool of administrator-enabled, exact-tested, evidence-reviewed candidates; this change does not switch live learner traffic by default.
 
 ## 1. Goal
 
@@ -44,31 +44,41 @@ This is a diagnostic policy only; it does not yet replace learner-facing generat
 
 ## 6. Adaptive routing contract (Phase 1.3b)
 
-For each learner request, the router will evaluate:
-1. task and required output contract;
-2. prompt size, conversation context, and deterministic complexity features;
-3. model status, credential presence, and connection evidence;
-4. explicit task-candidate eligibility and administrator priority;
-5. verified context/output limits, modality, reasoning and structured-output compatibility;
-6. task-specific quality evidence and current pricing/latency evidence where available.
+For each learner request, the shared router evaluates the task, prompt size, deterministic complexity signals, candidate state, provider credential, successful exact-model test, administrator-reviewed capability evidence, task eligibility, priority, and verified context/output constraints.
 
-The router returns the selected provider/model, policy version, complexity band, eligible-candidate count, and a human-readable selection reason. If no candidate satisfies the requirements, return an explicit unavailable state. Do not fabricate output or silently substitute another provider.
+The character-based input estimate is `ceil(promptCharacters / 3.5)`. It is a conservative heuristic, not a provider tokenizer. Selection requires explicit text input/output support, sufficient verified context and output limits, and compatible structured-output capability for learning-plan generation. A learning-plan candidate must declare JSON-object or JSON-schema output support. A Tutor candidate must satisfy the current CTL mode's requested output budget.
+
+Only models that are globally `enabled`, have an enabled task-candidate row, have a successful exact-model test and a reviewed HTTPS capability reference, have a configured provider credential, and satisfy request capability limits are eligible. The lowest numeric administrator priority is selected first; successful connection-test latency breaks ties. No cost or teaching-quality score is inferred. If no candidate satisfies the contract, the request returns an explicit unavailable error.
+
+Task modes are configured independently:
+- `AI_ROUTING_MODE_LEARNING_PLAN_GENERATION=pinned|adaptive`
+- `AI_ROUTING_MODE_SOCRATIC_TUTOR_RESPONSE=pinned|adaptive`
+
+An unset variable defaults to `pinned`. Invalid values fail closed with a configuration error. `pinned` continues to use the existing `ai_task_routes` record. `adaptive` uses only eligible registry candidates and does not fall back to the pinned route if no candidate is eligible or the selected provider fails.
+
+The router returns the selected provider/model, policy version, complexity band, estimated input size, eligible and total candidate counts, administrator priority, and a human-readable reason. Routing metadata contains no prompt, completion, credential, or private reasoning trace.
 
 ## 7. Centralized learner runtime policy (Phase 1.3b)
 
-One central resolver—not individual task routes—will derive reasoning controls, output-token budgets, structured-output settings and deadlines from task requirements, request complexity, verified model limits, administrator ceilings, and retained performance evidence.
+One resolver sets budgets and provider parameters for both learner tasks; route handlers no longer choose provider-specific generation settings.
 
-All provider-specific parameters are emitted only when the exact selected model's verified capability record supports them. Unknown capability values are not treated as supported. Hard ceilings are platform/cost guardrails, not the default settings for every request.
+- Tutor output budgets are 256, 640, or 1,024 tokens for low, medium, or high complexity, capped by the CTL mode's requested maximum. Learning-plan generation retains its 2,048-token platform budget because its strict output contract requires a complete structured plan.
+- The estimated prompt size plus a 15% margin (minimum 512 tokens) and the output budget must fit inside the model's reviewed context-window limit.
+- The request deadline starts at 12 seconds for low-complexity Tutor, 18 seconds for medium, 25 seconds for high, and 25 seconds for learning-plan generation. A successful exact-model connection-test latency can raise the deadline using a bounded `3 × test latency + 2 seconds` rule; every request remains capped at 30 seconds.
+- Temperature is sent only when the exact model's reviewed capability declares it supported (0.25 for Tutor, 0.2 for learning plans). Unknown or unsupported temperature capability means the parameter is omitted.
+- Reasoning controls are sent only for `configurable` reasoning with a provider-matching parameter (`thinking_level` for Gemini, `reasoning_effort` for Groq/Mistral) and non-empty reviewed levels. The stored level order is treated as provider-documented low-to-high order.
+- Adaptive learning-plan requests use JSON-object mode only when the model's reviewed structured-output capability is `json_object`; otherwise the candidate is ineligible. The existing strict parser remains the final schema validator.
+
+All budgets remain within the provider adapter's 2,048-token output ceiling and 30-second deadline ceiling. The resolver does not claim exact token counts; estimates are routing guards, not usage metering.
 
 ## 8. Cost, quality, reliability and security
 
-- Cost-aware selection requires current retained prices and reliable token usage; otherwise estimated cost remains unavailable.
-- Quality-aware selection requires task-specific benchmark outputs and blinded human review; a successful connection test is not teaching-quality evidence.
-- Latency-aware selection requires measured results, not assumptions based on model name or size.
-- Failover/provider switching is disabled by default and requires an explicit, separately audited policy.
-- Do not persist learner prompts, full completions, credentials, or private reasoning traces in routing telemetry.
-- Provider credentials remain in Render environment variables and are never stored in PostgreSQL.
-- The model registry and routing mutations are administrator-only and same-origin protected.
+- Cost-aware selection is not implemented because current model pricing and a reliable cost ledger are not retained in the registry.
+- Teaching-quality scoring is not implemented because comparative benchmark outputs and blinded human review are not yet available. A connection test is not quality evidence.
+- Latency selection currently uses the most recent successful exact-model connection-test measurement only; it is a tie-breaker after administrator priority, not a live latency forecast.
+- Silent failover/provider switching is disabled. After one model is selected, any upstream error is returned through the task's existing safe failure path; no second model or pinned route is tried.
+- Tutor turn metadata stores safe routing fields with existing provider/model provenance. Learning-plan generation returns safe selection metadata with the generation result; the persisted revision retains its existing provider/model provenance fields.
+- Provider credentials remain in server environment variables. Routing metadata excludes learner prompts, full completions, credentials, and private reasoning traces.
 
 ## 9. Delivery order
 
@@ -80,18 +90,21 @@ All provider-specific parameters are emitted only when the exact selected model'
 - [x] Add regression tests for capability validation and diagnostic probe policy.
 - [ ] Add end-to-end authorization, PostgreSQL mutation, enablement-gate, and audit event tests.
 - [x] Apply migration 0009 to Neon and confirm its entry in the production migration ledger.
-- [ ] Run the strict read-only production audit for both registry tables, required columns, enum labels, constraints, and indexes after this audit hardening merges.
+- [x] Run the strict read-only production audit for both registry tables, required columns, enum labels, constraints, and indexes; production run [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed.
 - [ ] Verify deployed Admin UI and provider discovery against configured Render credentials.
 
 ### Phase 1.3b — Adaptive router and runtime policy
-- [ ] Add deterministic task complexity assessment.
-- [ ] Select only enabled, credential-ready, tested, evidence-reviewed models assigned to that task.
-- [ ] Add task-specific pinned/adaptive mode, cost/latency/quality objectives and hard administrator ceilings.
-- [ ] Move all output-token, reasoning and timeout decisions to one central resolver and remove route-local constants.
-- [ ] Integrate capability-aware model selection into Tutor and learning-plan generation.
-- [ ] Add safe routing decision telemetry and clear selection explanations.
-- [ ] Keep silent provider switching disabled; add explicit failover only if separately approved and tested.
-- [ ] Complete provider adapter, multi-model, budget, security and regression tests before activating learner routing.
+- [x] Add deterministic task complexity assessment and conservative prompt-size/context estimates.
+- [x] Select only enabled, credential-ready, exact-tested, evidence-reviewed models assigned to the requested task.
+- [x] Add independent per-task pinned/adaptive rollout settings; both default to pinned.
+- [x] Centralize output budgets, context fit, reasoning controls, structured JSON mode, temperature gating, and bounded deadlines.
+- [x] Integrate the shared policy into Tutor and learning-plan generation.
+- [x] Persist safe Tutor routing metadata and return safe learning-plan selection metadata; do not store routing prompts or private reasoning traces.
+- [x] Keep silent provider switching disabled; provider failure is surfaced without trying a second candidate.
+- [x] Add unit regression coverage for request assessment, eligibility exclusions, priorities, latency tie-breaks, reasoning parameters, temperature gating, and JSON-mode requirements.
+- [ ] Add administrator UI controls for task routing mode and explicit quality/cost objectives; rollout mode is currently a server-side task setting, while candidate assignments and priorities remain administrator-managed.
+- [ ] Add price-aware/quality-aware selection only after current pricing evidence and blinded task-quality benchmarks exist.
+- [ ] Run production candidate readiness checks and explicitly activate one task only after its models have been reviewed, tested, enabled, and assigned.
 
 ### Phase 1.3c — Evidence-informed model improvement
 - [ ] Run the comparative model benchmark and complete blinded human evaluation.

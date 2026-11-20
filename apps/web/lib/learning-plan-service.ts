@@ -1,6 +1,5 @@
 import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import {
-  aiTaskRoutes,
   learningPlanConceptRelations,
   learningPlanConcepts,
   learningPlanObjectives,
@@ -9,10 +8,12 @@ import {
   learningPlanUnitConcepts,
   learningPlanUnits
 } from "@cogniva/database";
+import { AiProviderRuntimeError } from "@/lib/ai-provider-runtime";
 import {
-  AiProviderRuntimeError,
-  generateTextWithProvider
-} from "@/lib/ai-provider-runtime";
+  AiTaskRoutingError,
+  generateTextForTask
+} from "@/lib/ai-task-runtime";
+import type { AiTaskRoutingMetadata } from "@/lib/ai-task-runtime";
 import { getStudentDatabase } from "@/lib/student-data";
 import {
   buildLearningPlanSystemPrompt,
@@ -24,7 +25,6 @@ import {
 } from "@/lib/learning-plan-output";
 
 const GENERATION_LEASE_MS = 120_000;
-const MAX_OUTPUT_TOKENS = 2048;
 
 type LearningDatabase = ReturnType<typeof getStudentDatabase>;
 
@@ -38,6 +38,7 @@ type GenerationResult =
         revisionNumber: number;
         title: string;
         summary: string;
+        routing: AiTaskRoutingMetadata;
       };
     }
   | {
@@ -203,42 +204,30 @@ export async function generateOwnedLearningPlan(input: {
   }
 
   try {
-    const [taskRoute] = await db
-      .select({
-        provider: aiTaskRoutes.provider,
-        model: aiTaskRoutes.model
-      })
-      .from(aiTaskRoutes)
-      .where(eq(aiTaskRoutes.task, "learning_plan_generation"))
-      .limit(1);
-
-    if (!taskRoute) {
-      await setGenerationFailure(db, {
-        planId,
-        studentId,
-        generationStatus: "unavailable",
-        errorCode: "AI_ROUTE_NOT_CONFIGURED"
-      });
-      return failure(
-        503,
-        "AI_ROUTE_NOT_CONFIGURED",
-        "Learning-plan generation is not configured by a Cogniva administrator. Your topic has been saved and can be retried later.",
-        { id: planId, generationStatus: "unavailable" }
-      );
-    }
-
-    let providerResult: Awaited<ReturnType<typeof generateTextWithProvider>>;
+    let providerResult: Awaited<ReturnType<typeof generateTextForTask>>;
     try {
-      providerResult = await generateTextWithProvider({
-        provider: taskRoute.provider,
-        model: taskRoute.model,
+      providerResult = await generateTextForTask({
+        db,
+        task: "learning_plan_generation",
         systemPrompt: buildLearningPlanSystemPrompt(),
-        userPrompt: buildLearningPlanUserPrompt(claimed.initialInput),
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-        ...(taskRoute.provider !== "gemini" ? { temperature: 0.2 } : {}),
-        timeoutMs: 30_000
+        userPrompt: buildLearningPlanUserPrompt(claimed.initialInput)
       });
     } catch (error) {
+      if (error instanceof AiTaskRoutingError) {
+        await setGenerationFailure(db, {
+          planId,
+          studentId,
+          generationStatus: "unavailable",
+          errorCode: error.code
+        });
+        return failure(
+          503,
+          error.code,
+          error.message + " Your topic is saved and can be retried after administrator configuration.",
+          { id: planId, generationStatus: "unavailable" }
+        );
+      }
+
       if (error instanceof AiProviderRuntimeError) {
         const mapped = providerFailure(error);
         await setGenerationFailure(db, {
@@ -460,7 +449,8 @@ export async function generateOwnedLearningPlan(input: {
         revisionId: persisted.revisionId,
         revisionNumber: persisted.revisionNumber,
         title: planOutput.title,
-        summary: planOutput.summary
+        summary: planOutput.summary,
+        routing: providerResult.routing
       }
     };
   } catch {
