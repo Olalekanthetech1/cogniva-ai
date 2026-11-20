@@ -27,7 +27,8 @@
     "test:auth-lifecycle": "node --test tests/integration/auth-lifecycle.test.mjs",
     "test:academic-reference-foundation": "node --test tests/integration/academic-reference-foundation.test.mjs",
     "test:academic-interoperability": "node --test tests/integration/academic-interoperability.test.mjs",
-    "db:audit": "node scripts/audit-neon-schema.mjs"
+    "db:audit": "node scripts/audit-neon-schema.mjs",
+    "test:db-audit-contract": "node --test scripts/audit-neon-schema-contract.test.mjs"
   },
   "pnpm": {
     "overrides": {
