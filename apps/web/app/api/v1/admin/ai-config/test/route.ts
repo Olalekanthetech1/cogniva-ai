@@ -150,10 +150,16 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    const registryModel = await getAdminAiModelByRoute(
-      taskConfiguration.route.provider,
-      taskConfiguration.route.model
-    );
+    let registryModel = null;
+    try {
+      registryModel = await getAdminAiModelByRoute(
+        taskConfiguration.route.provider,
+        taskConfiguration.route.model
+      );
+    } catch {
+      // Keep the legacy saved-route test available while additive migration 0009 is not yet deployed.
+      registryModel = null;
+    }
     testedModelId = registryModel?.id ?? null;
     const policy = resolveAiModelProbePolicy({
       provider: taskConfiguration.route.provider,
