@@ -267,7 +267,7 @@ export function AiModelRegistryEditor({ initialRegistry }: { initialRegistry: Re
           <label className="admin-model-field">
             <span>Capability declaration (JSON)</span>
             <textarea value={capabilitiesText} onChange={(event) => setCapabilitiesText(event.target.value)} rows={8} spellCheck={false}/>
-            <small>Unknown capability values are safe defaults. Do not declare a capability unless the exact model's documentation supports it.</small>
+            <small>Unknown capability values are safe defaults. Do not declare a capability unless the exact model&apos;s documentation supports it.</small>
           </label>
           <fieldset className="admin-model-task-options">
             <legend>Initial task assignments (disabled until explicitly enabled)</legend>

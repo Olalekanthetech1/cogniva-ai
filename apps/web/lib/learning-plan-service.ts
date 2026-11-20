@@ -235,7 +235,7 @@ export async function generateOwnedLearningPlan(input: {
         systemPrompt: buildLearningPlanSystemPrompt(),
         userPrompt: buildLearningPlanUserPrompt(claimed.initialInput),
         maxOutputTokens: MAX_OUTPUT_TOKENS,
-        temperature: 0.2,
+        ...(taskRoute.provider !== "gemini" ? { temperature: 0.2 } : {}),,
         timeoutMs: 30_000
       });
     } catch (error) {
