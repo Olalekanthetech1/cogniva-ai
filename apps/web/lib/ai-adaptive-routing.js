@@ -107,7 +107,7 @@ function candidateExclusionReason(candidate, assessment) {
   }
   if (
     assessment.structuredOutputRequired &&
-    !capabilities.structuredOutput === "json_object"
+    capabilities.structuredOutput !== "json_object"
   ) {
     return "json_output_not_verified";
   }
