@@ -648,7 +648,7 @@ export async function POST(
           messages: claim.messages
         }),
         maxOutputTokens: learningModeConfig.maxOutputTokens,
-        ...(route.provider !== "gemini" ? { temperature: 0.25 } : {}),,
+        ...(route.provider !== "gemini" ? { temperature: 0.25 } : {}),
         timeoutMs: 25_000
       });
     } catch (error) {
