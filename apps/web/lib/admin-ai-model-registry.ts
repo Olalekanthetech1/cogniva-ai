@@ -6,16 +6,13 @@ import {
   aiTaskKeyValues,
   aiTaskModelCandidates
 } from "@cogniva/database";
-import type {
-  AiModelCapabilities,
-  AiTaskKey
-} from "@cogniva/database";
+import type { AiModelCapabilities } from "@cogniva/database";
 import {
   validateCapabilityEvidenceUrl,
   validateModelCapabilities
 } from "@/lib/ai-model-capabilities";
 import { getStudentDatabase } from "@/lib/student-data";
-import type { AiProviderId } from "@/lib/admin-ai-config";
+import type { AiProviderId, AiTaskKey } from "@/lib/admin-ai-config";
 
 const providerDetails: Record<AiProviderId, { label: string; credentialVariable: string }> = {
   gemini: { label: "Google Gemini", credentialVariable: "GEMINI_API_KEY" },
