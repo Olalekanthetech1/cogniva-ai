@@ -1,6 +1,6 @@
 # Cogniva — Phase 1.3 Adaptive Multi-Provider, Multi-Model Intelligence
 
-**Status (20 November 2026):** Phase 1.3a is merged to `main`; migration 0009 and the physical registry schema are verified in Neon by strict read-only audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) (10/10 migrations, both registry tables, all required columns, enums, constraints and indexes). Phase 1.3b adds a shared adaptive runtime for Tutor and learning-plan generation. Both tasks remain `pinned` by default. Adaptive mode requires an explicit per-task server setting and a non-empty pool of administrator-enabled, exact-tested, evidence-reviewed candidates; this change does not switch live learner traffic by default.
+**Status (20 November 2026):** Phase 1.3a is merged to `main`; migration 0009 and the physical registry schema are verified in Neon by strict read-only audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) (10/10 migrations, both registry tables, all required columns, enums, constraints and indexes). Phase 1.3b includes a shared adaptive runtime and administrator rollout controls. Migration 0010 adds persisted per-task mode settings, seeded as `pinned`; it must be applied to Neon before this revision is deployed. The Admin UI will only enable adaptive mode when at least one task candidate passes the rollout-readiness gate, and actual learner requests are rechecked against their full prompt. `AI_ROUTING_FORCE_PINNED=true` is the emergency server-side rollback switch.
 
 ## 1. Goal
 
@@ -27,7 +27,7 @@ Discovery never registers or enables a model automatically. The administrator se
 
 ## 4. Backwards-compatible migration and rollout
 
-Migration 0009 adds `ai_models` and `ai_task_model_candidates`. Existing `ai_task_routes` entries are copied into the registry as pending model records with unknown capabilities and disabled task assignments. The existing `ai_task_routes` table is neither changed nor removed and continues to drive learner traffic.
+Migration 0009 adds `ai_models` and `ai_task_model_candidates`. Existing `ai_task_routes` entries are copied into the registry as pending model records with unknown capabilities and disabled task assignments. Migration 0010 adds `ai_task_routing_settings` and seeds both learner tasks as `pinned`. The existing `ai_task_routes` table is neither changed nor removed: a task in `pinned` mode continues to use its saved route, while a task in `adaptive` mode uses only the eligible registry candidates.
 
 A capability or evidence edit invalidates prior capability review and connection-test metadata and returns the model to pending. A failed exact-model test also returns it to pending and disables all task assignments. A model can become enabled only when its exact-token connection test succeeds and an administrator explicitly marks its capability evidence as reviewed. Model enablement is separate from task candidate enablement.
 
@@ -40,7 +40,7 @@ The two administrator test actions use one shared diagnostic policy. It:
 - uses a bounded first-test deadline and adjusts subsequent deadlines using observed latency;
 - treats a non-empty response that does not return the exact test token as a failed instruction check.
 
-This is a diagnostic policy only; it does not yet replace learner-facing generation settings.
+This remains the exact-model diagnostic policy for administrator tests. Learner-facing generation uses the separate centralized adaptive runtime policy described below.
 
 ## 6. Adaptive routing contract (Phase 1.3b)
 
@@ -50,11 +50,9 @@ The character-based input estimate is `ceil(promptCharacters / 3.5)`. It is a co
 
 Only models that are globally `enabled`, have an enabled task-candidate row, have a successful exact-model test and a reviewed HTTPS capability reference, have a configured provider credential, and satisfy request capability limits are eligible. The lowest numeric administrator priority is selected first; successful connection-test latency breaks ties. No cost or teaching-quality score is inferred. If no candidate satisfies the contract, the request returns an explicit unavailable error.
 
-Task modes are configured independently:
-- `AI_ROUTING_MODE_LEARNING_PLAN_GENERATION=pinned|adaptive`
-- `AI_ROUTING_MODE_SOCRATIC_TUTOR_RESPONSE=pinned|adaptive`
+Task modes are persisted independently in `ai_task_routing_settings`, keyed by the existing task enum. Migration 0010 creates one row for each supported learner task and initializes both rows to `pinned`. The Admin AI Configuration page reads and changes these settings through the administrator-only `/api/v1/admin/ai-routing` API. Mode changes are recorded in `admin_audit_events`.
 
-An unset variable defaults to `pinned`. Invalid values fail closed with a configuration error. `pinned` continues to use the existing `ai_task_routes` record. `adaptive` uses only eligible registry candidates and does not fall back to the pinned route if no candidate is eligible or the selected provider fails.
+An administrator can change a task to `adaptive` only when the readiness check identifies at least one eligible candidate for a representative high-complexity Tutor request or a full 2,048-token JSON learning-plan request. Readiness includes model enablement, enabled task assignment, matching provider credential, successful exact-model test, reviewed HTTPS capability evidence, text modalities, context-window fit, task-specific output limit, and JSON-object capability for learning plans. The check is repeated for every learner request against its actual prompt. An emergency `AI_ROUTING_FORCE_PINNED=true` server setting forces all tasks back to their existing `ai_task_routes` entries without changing the stored administrator modes. If no adaptive candidate is eligible at request time, the request fails explicitly; there is no silent fallback to the pinned route or another provider.
 
 The router returns the selected provider/model, policy version, complexity band, estimated input size, eligible and total candidate counts, administrator priority, and a human-readable reason. Routing metadata contains no prompt, completion, credential, or private reasoning trace.
 
@@ -102,8 +100,9 @@ All budgets remain within the provider adapter's 2,048-token output ceiling and 
 - [x] Persist safe Tutor routing metadata and return safe learning-plan selection metadata; do not store routing prompts or private reasoning traces.
 - [x] Keep silent provider switching disabled; provider failure is surfaced without trying a second candidate.
 - [x] Add unit regression coverage for request assessment, eligibility exclusions, priorities, latency tie-breaks, reasoning parameters, temperature gating, and JSON-mode requirements.
-- [ ] Add administrator UI controls for task routing mode and explicit quality/cost objectives; rollout mode is currently a server-side task setting, while candidate assignments and priorities remain administrator-managed.
-- [ ] Add price-aware/quality-aware selection only after current pricing evidence and blinded task-quality benchmarks exist.
+- [x] Add persisted per-task rollout settings, administrator-only API/UI controls, audit events, and a readiness gate that requires at least one currently eligible candidate before adaptive mode can be enabled.
+- [x] Add an emergency `AI_ROUTING_FORCE_PINNED=true` server override; both stored task modes start as `pinned`.
+- [ ] Add price-aware/quality-aware objectives only after current provider pricing evidence and blinded teaching-quality benchmarks exist.
 - [ ] Run production candidate readiness checks and explicitly activate one task only after its models have been reviewed, tested, enabled, and assigned.
 
 ### Phase 1.3c — Evidence-informed model improvement

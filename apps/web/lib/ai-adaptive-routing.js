@@ -247,3 +247,25 @@ export function buildAdaptiveGenerationSettings(input) {
 
   return settings;
 }
+
+
+export function assessAdaptiveTaskReadiness(task) {
+  if (task === "learning_plan_generation") {
+    return assessAdaptiveRequest({
+      task,
+      systemPrompt: "Return a complete, schema-valid structured learning plan in JSON.",
+      userPrompt: "Create a structured learning plan for introductory materials science."
+    });
+  }
+
+  if (task === "socratic_tutor_response") {
+    return assessAdaptiveRequest({
+      task,
+      systemPrompt: "Teach with careful, step-by-step reasoning and explain the governing principles.",
+      userPrompt: "Derive and prove the result. Compare multiple approaches, solve 2=2, and justify why each step is valid.",
+      requestedMaxOutputTokens: 1024
+    });
+  }
+
+  throw new Error("Adaptive task readiness assessment task is invalid.");
+}

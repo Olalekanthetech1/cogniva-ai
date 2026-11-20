@@ -1072,3 +1072,79 @@
   font: inherit;
   font-size: 10px;
 }
+
+
+.admin-routing-boundary {
+  margin-bottom: 14px;
+  border-color: #eadfc8;
+  background: #fffcf5;
+}
+
+.admin-routing-task-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-routing-task-card {
+  gap: 15px;
+}
+
+.admin-routing-state {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border-radius: 99px;
+  background: #e9f2ed;
+  color: #235d43;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.admin-routing-readiness {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid #e7ece8;
+  border-radius: 9px;
+  background: #fafcfa;
+}
+
+.admin-routing-readiness > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-routing-readiness > div span {
+  color: #68766e;
+  font-size: 11px;
+}
+
+.admin-routing-readiness > div strong {
+  color: #26372e;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-routing-readiness p {
+  margin: 0;
+  color: #77847b;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.admin-routing-readiness .admin-routing-candidate {
+  color: #52665a;
+}
+
+.admin-routing-candidate strong {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .admin-routing-readiness > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}

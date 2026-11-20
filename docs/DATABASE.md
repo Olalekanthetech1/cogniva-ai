@@ -1,6 +1,6 @@
 # Cogniva — Database Design Baseline
 
-**Status (reviewed 20 November 2026):** Migrations 0000–0009 are applied to Neon `neondb` (PostgreSQL 18.7). Migration run [#44694889998](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44694889998) applied 0009. The strict read-only audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed: 10/10 migrations, zero missing or unexpected migration entries, both Phase 1.3a registry tables, 26/26 expected columns, enum labels, required named constraints, and indexes matched. The audit used a PostgreSQL `READ_ONLY_TRANSACTION`; it did not inspect model rows, credentials, or learner records. Application deployment state is tracked separately.
+**Status (reviewed 20 November 2026):** Migrations 0000–0009 are applied to Neon `neondb` (PostgreSQL 18.7). Migration run [#44694889998](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44694889998) applied 0009. The strict read-only audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed: 10/10 migrations, zero missing or unexpected migration entries, both Phase 1.3a registry tables, 26/26 expected columns, enum labels, required named constraints, and indexes matched. The audit used a PostgreSQL `READ_ONLY_TRANSACTION`; it did not inspect model rows, credentials, or learner records. Application deployment state is tracked separately. Migration 0010, which adds persisted per-task adaptive routing modes, is currently in this source change and is not yet applied to Neon. Apply it and run the expanded strict schema audit before deploying the matching application revision.
 
 ## 1. Decisions
 
@@ -67,6 +67,7 @@ The initial read-only production audit confirmed the baseline migration history 
 - `0007_global_academic_reference_foundation.sql` — global country/jurisdiction, qualification/classification, source-provenance, and review foundations.
 - `0008_global_academic_interoperability.sql` — institution identity/units, scoped recognition, programmes, credit systems, academic periods, versioned course content, and Knowledge Component structures.
 - `0009_adaptive_model_registry.sql` — additive migration applied to Neon on 20 November 2026, introducing administrator-managed `ai_models` and `ai_task_model_candidates`; it backfills current task routes as pending registry entries with task eligibility disabled.
+- `0010_admin_ai_task_routing_settings.sql` — additive source migration for administrator-controlled per-task rollout mode; creates `ai_task_routing_settings` and seeds both supported tasks as `pinned`. Pending production application and audit.
 
 Migrations `0007_global_academic_reference_foundation.sql` and `0008_institutions_programmes_and_kcs.sql` were applied to Neon by [production migration run #44615863935](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44615863935). Migration `0009_adaptive_model_registry.sql` was applied by [production migration run #44694889998](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44694889998). The subsequent [read-only audit, run #44695548906](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44695548906), reports 10 expected and 10 applied migrations, zero missing migrations, zero missing repository files, and zero unexpected applied migrations. Its current report confirms the migration ledger and the previously inventoried Phase 1.1 tables; the registry-specific object checks are introduced by this audit-hardening change and must be exercised in a new production audit after merge.
 
@@ -84,12 +85,13 @@ With `DATABASE_URL` and optionally `DATABASE_MIGRATION_URL` configured:
 
 ## 5. AI administration schema
 
-Migration `0004_classy_freak.sql` and the current `admin.ts` schema define:
+Migrations `0004_classy_freak.sql` and `0010_admin_ai_task_routing_settings.sql` plus `admin.ts` define:
 
-- `ai_task_routes`: one persisted provider/model preference per supported task, with the administrator who last changed it and timestamps. Current task keys are `learning_plan_generation` and `socratic_tutor_response`; provider values are `gemini`, `groq`, and `mistral`.
+- `ai_task_routes`: the legacy pinned provider/model preference per supported task.
+- `ai_task_routing_settings`: one persisted `pinned`/`adaptive` mode per supported task, last administrator actor, and update time. Migration 0010 seeds both learner tasks as `pinned`.
 - `admin_audit_events`: administrative change records with actor, action, resource, non-secret metadata, and timestamp. The application exposes inserts only; it does not provide update/delete operations.
 
-Provider credentials are not stored in either table. The admin API checks only whether the corresponding server environment variable is non-empty and returns a boolean plus the variable name. The raw value is never selected, returned, or stored. When a task's server-side routing mode is unset or `pinned`, learner-facing tutoring and topic-based plan generation consume the matching `ai_task_routes` entry and credential. When its mode is explicitly `adaptive`, the shared runtime selects only from enabled, tested, evidence-reviewed and task-assigned registry candidates. Both task modes default to `pinned`; no database migration was needed for this rollout gate. Comparative model benchmarking remains incomplete, so the runtime does not claim a cost or teaching-quality winner.
+Provider credentials are not stored in these tables. The admin API checks only whether the corresponding server environment variable is non-empty and returns a boolean plus the variable name. The raw value is never selected, returned, or stored. `AI_ROUTING_FORCE_PINNED=true` is an emergency server-only kill switch; it overrides stored adaptive modes without mutating them. When a task's server-side routing mode is unset or `pinned`, learner-facing tutoring and topic-based plan generation consume the matching `ai_task_routes` entry and credential. When its mode is explicitly `adaptive`, the shared runtime selects only from enabled, tested, evidence-reviewed and task-assigned registry candidates. Both task modes default to `pinned`; no database migration was needed for this rollout gate. Comparative model benchmarking remains incomplete, so the runtime does not claim a cost or teaching-quality winner.
 
 ## 6. Authentication configuration
 
@@ -112,7 +114,6 @@ The report's `assertion` field is `NOT ASSERTED` because the production workflow
 
 See [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md) for the detailed schema-gap analysis and [PHASE_1_1A_REFERENCE_FOUNDATION.md](PHASE_1_1A_REFERENCE_FOUNDATION.md) for migration 0007, its constraints, and rollback boundaries.
 
-
 ## 9. Phase 1.3a AI model registry schema
 
 Migration `0009_adaptive_model_registry.sql` adds:
@@ -122,7 +123,7 @@ Migration `0009_adaptive_model_registry.sql` adds:
 
 A model is globally `pending`, `enabled`, or `disabled`. Enabling it requires a successful exact-model instruction test and administrator-reviewed capability evidence. A capability/evidence edit clears the previous review and connection-test result and moves the model back to pending. A failed test removes the model from all task candidate pools.
 
-Task eligibility defaults to disabled. Multiple providers/models may be assigned to the same task, with a separate priority for each assignment. This table is an inventory and eligibility foundation only: application inference continues to read `ai_task_routes` until Phase 1.3b is implemented and explicitly enabled.
+Task eligibility defaults to disabled. Multiple providers/models may be assigned to the same task, with a separate priority for each assignment. When a task's persisted `ai_task_routing_settings.mode` is `pinned`, inference uses the matching legacy `ai_task_routes` row. When the setting is `adaptive`, the Phase 1.3b runtime selects only from eligible registry candidates for that task.
 
 Migration 0009 copies each existing `ai_task_routes` provider/model pair into `ai_models` as pending with unknown capabilities and copies each route into `ai_task_model_candidates` as disabled. It does not update or delete `ai_task_routes`, does not change which model serves a student, and inserts no provider credentials or sample model catalogue entries.
 
@@ -132,3 +133,16 @@ Provider model discovery uses provider endpoints and their actual response field
 - Mistral: [List Models API](https://docs.mistral.ai/api/endpoint/models); discovery filters to records with `completion_chat` support and retains vision capability/context length when returned.
 
 Provider model discovery is not capability verification. Unknown values remain unknown. The exact model must pass a connection test and the administrator must review the evidence source before enabling it. Migration 0009 is applied in Neon and the strict object-level schema audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed. It checks required columns and PostgreSQL types/nullability, enum labels, named primary/foreign/check constraints, and required unique/non-unique indexes; it does not inspect model rows, credentials, or learner data.
+
+## 10. Phase 1.3b administrator-controlled routing modes
+
+Migration `0010_admin_ai_task_routing_settings.sql` adds:
+
+- `ai_task_routing_mode`: enum values `pinned` and `adaptive`.
+- `ai_task_routing_settings`: one row per supported task, storing the current mode, last administrator actor, and update time. Migration 0010 inserts both `learning_plan_generation` and `socratic_tutor_response` as `pinned`.
+
+The learner runtime reads this table on each generation request. A missing row is treated fail-safe as `pinned`. The Admin AI Configuration UI exposes per-task mode changes through an administrator-only API; changing a mode is recorded in `admin_audit_events`. Enabling adaptive mode requires at least one currently eligible task candidate that satisfies the readiness budget (high-complexity Tutor output or full JSON learning-plan output). Every actual learner prompt is checked again before a model is selected. A selected provider failure never switches silently to another model or the legacy pinned route.
+
+`AI_ROUTING_FORCE_PINNED=true` is an emergency server-side kill switch. It forces every task to the existing `ai_task_routes` value without modifying the administrator's saved mode. This override is absent by default.
+
+Migration 0010 has not yet been applied to Neon in this implementation revision. Production deployment must follow this order: review and apply migration 0010, run the expanded strict read-only schema audit, then deploy the application. The strict audit now includes the new settings table, its four columns, enum labels, primary key, and administrator foreign key.

@@ -94,6 +94,9 @@ jobs:
       - name: AI model registry unit and database integration tests
         run: pnpm test:ai-model-registry
 
+      - name: AI task routing settings integration tests
+        run: pnpm test:ai-task-routing-settings
+
       - name: Adaptive AI routing policy regression tests
         run: pnpm test:ai-adaptive-routing
 

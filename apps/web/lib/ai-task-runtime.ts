@@ -2,7 +2,8 @@ import { asc, eq } from "drizzle-orm";
 import {
   aiModels,
   aiTaskModelCandidates,
-  aiTaskRoutes
+  aiTaskRoutes,
+  aiTaskRoutingSettings
 } from "@cogniva/database";
 import type { AiProviderId, AiTaskKey } from "@/lib/admin-ai-config";
 import type { getStudentDatabase } from "@/lib/student-data";
@@ -29,11 +30,6 @@ const credentialVariables: Record<AiProviderId, string> = {
   gemini: "GEMINI_API_KEY",
   groq: "GROQ_API_KEY",
   mistral: "MISTRAL_API_KEY"
-};
-
-const routingModeVariables: Record<AiTaskKey, string> = {
-  learning_plan_generation: "AI_ROUTING_MODE_LEARNING_PLAN_GENERATION",
-  socratic_tutor_response: "AI_ROUTING_MODE_SOCRATIC_TUTOR_RESPONSE"
 };
 
 export type AiTaskRoutingMode = "pinned" | "adaptive";
@@ -69,18 +65,31 @@ export class AiTaskRoutingError extends Error {
       AI_ADAPTIVE_MODEL_UNAVAILABLE:
         "No administrator-enabled model currently satisfies this task's verified capabilities, provider credential, and output requirements. No alternative provider was selected.",
       AI_ROUTING_CONFIGURATION_INVALID:
-        "The AI routing mode is invalid. Set this task's server-side routing mode to pinned or adaptive."
+        "The stored task routing mode or emergency pinned override is invalid. Review the administrator routing settings and AI_ROUTING_FORCE_PINNED value."
     };
     super(messages[code]);
     this.name = "AiTaskRoutingError";
   }
 }
 
-function readRoutingMode(task: AiTaskKey): AiTaskRoutingMode {
-  const configured = process.env[routingModeVariables[task]]?.trim().toLowerCase();
-  if (!configured) return "pinned";
-  if (configured === "pinned" || configured === "adaptive") return configured;
-  throw new AiTaskRoutingError("AI_ROUTING_CONFIGURATION_INVALID");
+async function readRoutingMode(
+  db: AiDatabase,
+  task: AiTaskKey
+): Promise<AiTaskRoutingMode> {
+  const emergencyOverride = process.env.AI_ROUTING_FORCE_PINNED?.trim().toLowerCase();
+  if (emergencyOverride === "true") return "pinned";
+  if (emergencyOverride && emergencyOverride !== "false") {
+    throw new AiTaskRoutingError("AI_ROUTING_CONFIGURATION_INVALID");
+  }
+
+  const [setting] = await db
+    .select({ mode: aiTaskRoutingSettings.mode })
+    .from(aiTaskRoutingSettings)
+    .where(eq(aiTaskRoutingSettings.task, task))
+    .limit(1);
+
+  // Missing settings are fail-safe: the legacy pinned route remains in control.
+  return setting?.mode ?? "pinned";
 }
 
 function getPinnedTaskSettings(task: AiTaskKey, provider: AiProviderId) {
@@ -98,7 +107,7 @@ export async function generateTextForTask(input: {
   userPrompt: string;
   requestedMaxOutputTokens?: number;
 }): Promise<AiTaskTextGenerationResult> {
-  const mode = readRoutingMode(input.task);
+  const mode = await readRoutingMode(input.db, input.task);
   const requestedMaxOutputTokens = input.task === "learning_plan_generation"
     ? 2048
     : input.requestedMaxOutputTokens;

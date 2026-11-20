@@ -24,6 +24,9 @@ export const aiTaskKeyValues = [
 export const aiProvider = pgEnum("ai_provider", aiProviderValues);
 export const aiTaskKey = pgEnum("ai_task_key", aiTaskKeyValues);
 
+export const aiTaskRoutingModeValues = ["pinned", "adaptive"] as const;
+export const aiTaskRoutingMode = pgEnum("ai_task_routing_mode", aiTaskRoutingModeValues);
+
 /**
  * Stores administrator-selected routing preferences. These preferences do
  * not activate inference; provider adapters must consume them in a later,
@@ -50,6 +53,23 @@ export const aiTaskRoutes = pgTable(
       sql`length(trim(${table.model})) between 1 and 160`
     )
   ]
+);
+
+/**
+ * Per-task rollout mode for the adaptive model selector.
+ * Every task starts pinned. Adaptive mode is changed only by an administrator
+ * after the server confirms that at least one candidate is currently eligible.
+ */
+export const aiTaskRoutingSettings = pgTable(
+  "ai_task_routing_settings",
+  {
+    task: aiTaskKey("task").primaryKey(),
+    mode: aiTaskRoutingMode("mode").notNull().default("pinned"),
+    updatedBy: text("updated_by").references(() => user.id, {
+      onDelete: "set null"
+    }),
+    updatedAt: timestampWithTimezone("updated_at").notNull().defaultNow()
+  }
 );
 
 /**

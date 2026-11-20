@@ -71,6 +71,13 @@
       "when": 1795128335801,
       "tag": "0009_adaptive_model_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795160000000,
+      "tag": "0010_admin_ai_task_routing_settings",
+      "breakpoints": true
     }
   ]
 }
