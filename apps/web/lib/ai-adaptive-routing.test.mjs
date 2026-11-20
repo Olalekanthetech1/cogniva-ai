@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   assessAdaptiveRequest,
+  assessAdaptiveTaskReadiness,
   buildAdaptiveGenerationSettings,
   selectAdaptiveCandidate
 } from "./ai-adaptive-routing.js";
@@ -197,4 +198,16 @@ test("learning-plan settings request JSON mode without exceeding the reviewed mo
   assert.equal(settings.maxOutputTokens, 2048);
   assert.equal(settings.structuredOutput, "json_object");
   assert.equal(settings.temperature, 0.2);
+});
+
+
+test("activation readiness assessment requires high-complexity Tutor capacity and full JSON learning-plan output", () => {
+  const tutor = assessAdaptiveTaskReadiness("socratic_tutor_response");
+  const plan = assessAdaptiveTaskReadiness("learning_plan_generation");
+
+  assert.equal(tutor.complexityBand, "high");
+  assert.equal(tutor.outputTokenBudget, 1024);
+  assert.equal(tutor.structuredOutputRequired, false);
+  assert.equal(plan.outputTokenBudget, 2048);
+  assert.equal(plan.structuredOutputRequired, true);
 });

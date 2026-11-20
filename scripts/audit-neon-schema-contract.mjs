@@ -1,5 +1,5 @@
 export const aiModelRegistrySchemaContract = {
-  tables: ["ai_models", "ai_task_model_candidates"],
+  tables: ["ai_models", "ai_task_model_candidates", "ai_task_routing_settings"],
   columns: [
     { tableName: "ai_models", columnName: "id", dataType: "uuid", udtName: "uuid", isNullable: "NO" },
     { tableName: "ai_models", columnName: "provider", dataType: "USER-DEFINED", udtName: "ai_provider", isNullable: "NO" },
@@ -26,11 +26,16 @@ export const aiModelRegistrySchemaContract = {
     { tableName: "ai_task_model_candidates", columnName: "created_by", dataType: "text", udtName: "text", isNullable: "YES" },
     { tableName: "ai_task_model_candidates", columnName: "updated_by", dataType: "text", udtName: "text", isNullable: "YES" },
     { tableName: "ai_task_model_candidates", columnName: "created_at", dataType: "timestamp with time zone", udtName: "timestamptz", isNullable: "NO" },
-    { tableName: "ai_task_model_candidates", columnName: "updated_at", dataType: "timestamp with time zone", udtName: "timestamptz", isNullable: "NO" }
+    { tableName: "ai_task_model_candidates", columnName: "updated_at", dataType: "timestamp with time zone", udtName: "timestamptz", isNullable: "NO" },
+    { tableName: "ai_task_routing_settings", columnName: "task", dataType: "USER-DEFINED", udtName: "ai_task_key", isNullable: "NO" },
+    { tableName: "ai_task_routing_settings", columnName: "mode", dataType: "USER-DEFINED", udtName: "ai_task_routing_mode", isNullable: "NO" },
+    { tableName: "ai_task_routing_settings", columnName: "updated_by", dataType: "text", udtName: "text", isNullable: "YES" },
+    { tableName: "ai_task_routing_settings", columnName: "updated_at", dataType: "timestamp with time zone", udtName: "timestamptz", isNullable: "NO" }
   ],
   enums: [
     { typeName: "ai_model_status", labels: ["pending", "enabled", "disabled"] },
-    { typeName: "ai_model_connection_status", labels: ["connected", "failed"] }
+    { typeName: "ai_model_connection_status", labels: ["connected", "failed"] },
+    { typeName: "ai_task_routing_mode", labels: ["pinned", "adaptive"] }
   ],
   constraints: [
     { tableName: "ai_models", constraintName: "ai_models_pkey", constraintType: "p" },
@@ -46,7 +51,9 @@ export const aiModelRegistrySchemaContract = {
     { tableName: "ai_task_model_candidates", constraintName: "ai_task_model_candidates_model_id_ai_models_id_fk", constraintType: "f" },
     { tableName: "ai_task_model_candidates", constraintName: "ai_task_model_candidates_created_by_user_id_fk", constraintType: "f" },
     { tableName: "ai_task_model_candidates", constraintName: "ai_task_model_candidates_updated_by_user_id_fk", constraintType: "f" },
-    { tableName: "ai_task_model_candidates", constraintName: "ai_task_model_candidates_priority_range_check", constraintType: "c" }
+    { tableName: "ai_task_model_candidates", constraintName: "ai_task_model_candidates_priority_range_check", constraintType: "c" },
+    { tableName: "ai_task_routing_settings", constraintName: "ai_task_routing_settings_pkey", constraintType: "p" },
+    { tableName: "ai_task_routing_settings", constraintName: "ai_task_routing_settings_updated_by_user_id_fk", constraintType: "f" }
   ],
   indexes: [
     { tableName: "ai_models", indexName: "ai_models_provider_model_id_unique", isUnique: true },

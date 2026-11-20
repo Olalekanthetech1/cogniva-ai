@@ -133,7 +133,7 @@ This area now includes persisted task/provider/model preferences, audit events, 
 - [ ] Run the comparative provider benchmark and complete blinded human rubric review; preserve failed and incomplete evidence.
 - [ ] Verify production migration state, configured task routes/credentials, and the deployed learner-facing runtime.
 
-**Exit:** administrators can save per-task provider/model preferences and see actual server-side credential presence; raw keys are never returned or stored in the application database. Learner requests use only the saved route for their task and require the matching server credential, with no silent fallback. No provider is declared best or comparatively validated until a real benchmark and blinded review are complete.
+**Exit:** administrators can save per-task pinned provider/model preferences, see actual server-side credential presence, and manage adaptive task rollout through the dedicated model registry/readiness controls. Raw keys are never returned or stored in the application database. Pinned tasks use the saved route; adaptive tasks select only eligible registry candidates. No provider is declared best or comparatively validated until a real benchmark and blinded review are complete.
 
 ## Phase 1.3 — Adaptive multi-provider, multi-model intelligence
 
@@ -154,20 +154,23 @@ See [PHASE_1_3_ADAPTIVE_AI_RUNTIME.md](PHASE_1_3_ADAPTIVE_AI_RUNTIME.md) for the
 - [x] Run the strict read-only production audit for both registry tables, required columns, enum labels, constraints, and indexes; production run [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed.
 - [ ] Verify the deployed Admin model registry and exact-model tests against credentials configured in Render.
 
-**Current status (20 November 2026):** Phase 1.3a introduces `ai_models` and `ai_task_model_candidates`; migration 0009 is applied to Neon. The strict read-only production audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed on merge commit `7701f8b`: 10/10 repository migrations, both registry tables, all 26 expected columns, exact enum labels, required named constraints, and indexes match. The audit used a PostgreSQL read-only transaction and did not inspect model rows, credentials, or learner records. Existing `ai_task_routes` remain intact. Phase 1.3b adds a shared adaptive runtime for Tutor and learning-plan generation; each task's rollout mode defaults to pinned until an operator explicitly enables adaptive mode after model readiness checks.
+**Current status (20 November 2026):** Phase 1.3a introduces `ai_models` and `ai_task_model_candidates`; migration 0009 is applied to Neon. The strict read-only production audit [#44707763879](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44707763879) passed on merge commit `7701f8b`: 10/10 repository migrations, both registry tables, all 26 expected columns, exact enum labels, required named constraints, and indexes match. The audit used a PostgreSQL read-only transaction and did not inspect model rows, credentials, or learner records. Existing `ai_task_routes` remain intact. Phase 1.3b adds a shared adaptive runtime for Tutor and learning-plan generation; each task's rollout mode defaults to pinned until an operator explicitly enables adaptive mode after model readiness checks. The next additive migration, 0010, adds persisted `ai_task_routing_settings` for the two learner tasks and seeds them as `pinned`; it is not yet applied to Neon. The new Admin UI/API checks current candidate readiness before allowing adaptive mode and records changes in `admin_audit_events`.
 
 ### Phase 1.3b — Adaptive router and centralized runtime policy
 
 - [x] Build a provider-neutral request analyser and deterministic task-complexity classification with conservative prompt/context estimates.
 - [x] Select only models that are enabled, credential-ready, connection-tested, capability-reviewed, and assigned to the requested task.
 - [x] Add independent per-task pinned/adaptive mode settings, defaulting to pinned.
-- [ ] Add administrator UI controls for task routing mode and explicit quality/cost objectives; task mode currently uses server-side environment settings.
+- [x] Add migration 0010 and persist one `pinned`/`adaptive` rollout setting per learner task.
+- [x] Add administrator-only UI/API mode controls and audit-log every mode change.
+- [x] Gate activation on at least one eligible candidate for the task-specific readiness budget; recheck actual request eligibility at runtime.
+- [x] Add the emergency `AI_ROUTING_FORCE_PINNED=true` override.
+- [ ] Add cost/quality ranking only after current pricing evidence and blinded pedagogical benchmarks exist.
 - [x] Centralize output budgets, reasoning settings, JSON-object mode, temperature capability gating, context fit, and bounded deadlines.
 - [x] Integrate adaptive model selection into Tutor and learning-plan generation.
 - [x] Return and retain safe selection explanations without writing routing prompts, completions, credentials, or private reasoning traces to routing metadata.
 - [x] Keep provider switching disabled; no silent fallback occurs after a selected provider fails.
 - [x] Add routing policy regression tests to CI.
-- [ ] Use cost and teaching-quality evidence in selection only after current provider pricing and blinded benchmark evidence exist.
 - [ ] Explicitly opt in a production task only after its candidate pool is fully reviewed, tested, enabled, assigned, and validated in the deployed runtime.
 
 **Boundary:** The adaptive path is implemented but remains off by default (`pinned`). Administrator candidate priority is used before exact-model test latency; no unverified cost or quality score is invented.

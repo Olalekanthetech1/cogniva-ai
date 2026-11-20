@@ -66,3 +66,7 @@ export function buildAdaptiveGenerationSettings(input: {
   };
   structuredOutput?: "json_object";
 };
+
+export function assessAdaptiveTaskReadiness(
+  task: AiTaskKey
+): AdaptiveRequestAssessment;

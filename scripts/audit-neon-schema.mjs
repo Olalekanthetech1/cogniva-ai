@@ -239,17 +239,17 @@ async function runAudit() {
         failedAssertions.push("repository migration journal and database ledger do not match");
       }
       if (assertAiModelRegistrySchema && !aiModelRegistrySchema.passed) {
-        failedAssertions.push("the Phase 1.3a AI model registry schema does not match its migration contract");
+        failedAssertions.push("the Phase 1.3 adaptive AI registry/routing-settings schema does not match its migration contract");
       }
 
       if (failedAssertions.length > 0) {
         result.assertion = "FAILED: " + failedAssertions.join("; ") + ".";
       } else if (assertAllMigrations && assertAiModelRegistrySchema) {
-        result.assertion = "PASSED: all repository migrations and the Phase 1.3a AI model registry schema match this audit database.";
+        result.assertion = "PASSED: all repository migrations and the Phase 1.3 adaptive AI registry/routing-settings schema match this audit database.";
       } else if (assertAllMigrations) {
         result.assertion = "PASSED: all repository migrations are applied to this audit database.";
       } else if (assertAiModelRegistrySchema) {
-        result.assertion = "PASSED: the Phase 1.3a AI model registry schema matches its migration contract.";
+        result.assertion = "PASSED: the Phase 1.3 adaptive AI registry/routing-settings schema matches its migration contract.";
       } else {
         result.assertion = "NOT ASSERTED: review the production migration ledger and table inventory.";
       }

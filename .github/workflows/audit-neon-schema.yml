@@ -67,7 +67,7 @@ jobs:
       - name: Run strict read-only schema and migration audit
         env:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
-        run: pnpm db:audit -- --assert-all-repository-migrations --assert-ai-model-registry-schema > "$RUNNER_TEMP/phase-1.3a-production-schema-audit.json"
+        run: pnpm db:audit -- --assert-all-repository-migrations --assert-ai-model-registry-schema > "$RUNNER_TEMP/phase-1.3-adaptive-ai-production-schema-audit.json"
 
       - name: Add audit report to workflow summary
         shell: bash
@@ -78,13 +78,13 @@ jobs:
             echo "The report was generated in a PostgreSQL READ ONLY transaction. No application table or migration state was changed."
             echo
             echo "Audit JSON follows:"
-            cat "$RUNNER_TEMP/phase-1.3a-production-schema-audit.json"
+            cat "$RUNNER_TEMP/phase-1.3-adaptive-ai-production-schema-audit.json"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Preserve the schema audit report
         uses: actions/upload-artifact@v4
         with:
-          name: phase-1.3a-production-schema-audit
-          path: ${{ runner.temp }}/phase-1.3a-production-schema-audit.json
+          name: phase-1.3-adaptive-ai-production-schema-audit
+          path: ${{ runner.temp }}/phase-1.3-adaptive-ai-production-schema-audit.json
           if-no-files-found: error
           retention-days: 14

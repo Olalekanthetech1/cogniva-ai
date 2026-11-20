@@ -29,7 +29,8 @@
     "test:academic-interoperability": "node --test tests/integration/academic-interoperability.test.mjs",
     "db:audit": "node scripts/audit-neon-schema.mjs",
     "test:db-audit-contract": "node --test scripts/audit-neon-schema-contract.test.mjs",
-    "test:ai-adaptive-routing": "node --test apps/web/lib/ai-adaptive-routing.test.mjs"
+    "test:ai-adaptive-routing": "node --test apps/web/lib/ai-adaptive-routing.test.mjs",
+    "test:ai-task-routing-settings": "node --test tests/integration/ai-task-routing-settings.test.mjs"
   },
   "pnpm": {
     "overrides": {

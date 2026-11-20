@@ -5,6 +5,8 @@ import { AdminNavigation } from "@/lib/admin-navigation";
 import { getAdminAiConfiguration } from "@/lib/admin-ai-config";
 import { getAdminAiModelRegistry } from "@/lib/admin-ai-model-registry";
 import { AiModelRegistryEditor } from "./model-registry-editor";
+import { AiTaskRoutingSettingsEditor } from "./routing-settings-editor";
+import { getAdminAiTaskRoutingSettings } from "@/lib/admin-ai-task-routing";
 import { getAdminAccess } from "@/lib/admin-data";
 import { AiConfigurationEditor } from "./configuration-editor";
 import "../admin.css";
@@ -50,6 +52,7 @@ export default async function AdminAiConfigurationPage() {
 
   let configuration: Awaited<ReturnType<typeof getAdminAiConfiguration>> | null = null;
   let modelRegistry: Awaited<ReturnType<typeof getAdminAiModelRegistry>> | null = null;
+  let routingSettings: Awaited<ReturnType<typeof getAdminAiTaskRoutingSettings>> | null = null;
   try {
     configuration = await getAdminAiConfiguration();
   } catch {
@@ -59,6 +62,12 @@ export default async function AdminAiConfigurationPage() {
     modelRegistry = await getAdminAiModelRegistry();
   } catch {
     // Keep provider configuration visible without inventing registry state.
+  }
+
+  try {
+    routingSettings = await getAdminAiTaskRoutingSettings();
+  } catch {
+    // Do not render invented task modes or readiness counts if storage is unavailable.
   }
 
   return (
@@ -94,6 +103,18 @@ export default async function AdminAiConfigurationPage() {
             <span>
               Cogniva could not load the saved routing preferences. No defaults or sample
               provider statuses are being displayed. Refresh after database connectivity is restored.
+            </span>
+          </div>
+        )}
+
+        {routingSettings ? (
+          <AiTaskRoutingSettingsEditor initialSettings={routingSettings} />
+        ) : (
+          <div className="admin-notice is-warning" role="status">
+            <strong>Adaptive routing controls unavailable</strong>
+            <span>
+              Cogniva could not load the persisted rollout settings and candidate readiness.
+              No task mode or eligibility state is being assumed.
             </span>
           </div>
         )}

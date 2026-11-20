@@ -102,3 +102,21 @@ test("rejects missing indexes and unique/non-unique definition mismatches", () =
   assert.equal(report.missingIndexes.length, 1);
   assert.equal(report.mismatchedIndexes.length, 1);
 });
+
+
+test("strictly requires the persisted per-task routing settings table, columns, and mode enum", () => {
+  const snapshot = createCompleteSnapshot();
+  const settings = snapshot.columns.filter((column) => column.table_name === "ai_task_routing_settings");
+
+  assert.equal(settings.length, 4);
+  assert.equal(settings.find((column) => column.column_name === "mode").udt_name, "ai_task_routing_mode");
+  assert.deepEqual(
+    snapshot.enumTypes.find((enumType) => enumType.type_name === "ai_task_routing_mode").labels,
+    ["pinned", "adaptive"]
+  );
+
+  snapshot.existingTables = snapshot.existingTables.filter((name) => name !== "ai_task_routing_settings");
+  const report = buildAiModelRegistrySchemaReport(snapshot);
+  assert.equal(report.passed, false);
+  assert.deepEqual(report.missingTables, ["ai_task_routing_settings"]);
+});
