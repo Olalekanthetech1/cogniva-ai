@@ -1,6 +1,6 @@
 # Cogniva — Admin Dashboard Foundation
 
-**Status:** The Admin Foundation and AI Configuration are deployed. The configuration UI exposes protected credential-presence visibility, saved task routes, administrator connection tests, and audit events. The provider runtime is integrated into the learner-facing Socratic tutor and personal learning-plan generation paths; each task still requires a saved route and a matching server credential.
+**Status:** The existing Admin Foundation and AI Configuration are deployed. Phase 1.3a adds the administrator multi-model registry in the current implementation branch; its additive migration must be applied and the application deployed before the new registry UI is available. Existing learner task routes remain unchanged.
 
 ## 1. Purpose
 
@@ -42,7 +42,7 @@ Implemented in this slice:
 
 **Capability boundary:** Gemini, Groq, and Mistral adapters are implemented. The learner tutor response route uses the saved `socratic_tutor_response` task route; the personal learning-plan generation API uses the saved `learning_plan_generation` task route. Each learner-facing task requires both a saved provider/model preference and its matching server credential. The runtime does not silently switch providers or return canned output. The admin connection test reports provider response, exact-token adherence, latency, and provider-reported token usage; it does not return or persist the generated test text.
 
-Personal learning-plan generation is text-topic only and writes a proposed revision only after strict structural validation. Plan editing/approval UI, Home/Learn integration, explicit Socratic controls, and comparative provider evaluation remain separate work. No provider has been selected as a universal winner. See [AI_PROVIDER_RUNTIME.md](AI_PROVIDER_RUNTIME.md) for adapter limits, structured-output requirements, and benchmark gates.
+Personal learning-plan generation is text-topic only and writes a proposed revision only after strict structural validation. Learner review/approval and approved-plan-unit Tutor launch are implemented; editing/reordering plan content and persisted Socratic stage controls remain outstanding. Home now shows real resumable Tutor sessions and learner-approved active plans. Comparative provider evaluation remains outstanding, and no provider has been selected as a universal winner. See [AI_PROVIDER_RUNTIME.md](AI_PROVIDER_RUNTIME.md) for adapter limits, structured-output requirements, and benchmark gates.
 
 To provide credentials, add the appropriate variable in the Render web service's Environment settings. Never paste API keys into the admin page, GitHub, source code, screenshots, or chat. After changing an environment variable, restart/redeploy the service so the running process receives it.
 
@@ -70,3 +70,20 @@ Each module needs a defined data model, server-side permission checks, audit eve
 8. Implement provider adapters and benchmark them before activating task routes.
 
 Do not mark any AI task as active until it has a real configured provider adapter, validated model ID, bounded execution, truthful failure handling, and repeatable evaluation evidence.
+
+
+## 4.1 Phase 1.3a — Multi-model registry
+
+The AI Configuration page adds a separate **Model registry** beneath the existing provider credential and legacy task-route controls.
+
+Administrators can:
+- discover model IDs from the provider's own model-list endpoint;
+- manually register an exact provider model ID when discovery is unavailable or incomplete;
+- review and edit capability JSON and its HTTPS documentation reference;
+- test the exact model with a model-aware, bounded diagnostic profile;
+- explicitly mark capability claims as reviewed and enable/disable the model;
+- assign an enabled model to one or more tasks and set task-specific priority.
+
+Provider discovery is intentionally conservative. It uses only fields actually returned by the provider. Gemini entries are filtered by the `generateContent` method; Groq's active model list may include models whose chat compatibility still needs an exact connection test; Mistral entries are filtered to records with `completion_chat` capability. Missing fields remain unknown. A discovered model is never auto-registered or auto-enabled.
+
+**Rollout boundary:** migration 0009 backfills existing `ai_task_routes` into the registry as pending models with all task assignments disabled. The original task-route UI remains active and continues to drive student traffic. The model registry is not yet an adaptive router. Phase 1.3b must implement the capability-aware router and centralized inference policy and pass its regression gates before any task is switched from pinned mode.

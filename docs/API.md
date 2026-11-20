@@ -155,3 +155,18 @@ Prefer direct-to-private-storage signed uploads with strict expiry, file size, a
 ## 10. Implementation gate
 
 This document distinguishes implemented endpoints from proposed future routes; proposed routes are not evidence of implementation.
+
+
+## 11. Administrator multi-model registry (Phase 1.3a)
+
+All model-registry endpoints require an authenticated, verified administrator. Mutating and exact-model test endpoints additionally require a trusted Cogniva `Origin`. Provider credentials remain server-side; API responses return only credential-presence booleans.
+
+- `GET /api/v1/admin/ai-models` — list registered models, capability claims/evidence review state, last connection-test outcome, provider credential-presence status, and task candidate assignments.
+- `GET /api/v1/admin/ai-models/discover?provider=gemini|groq|mistral` — discover exact model IDs from the selected provider's model-list endpoint. Returned fields are inventory hints only; missing metadata is not inferred.
+- `POST /api/v1/admin/ai-models` — register an exact provider/model ID, display name, capability declaration, HTTPS evidence URL, and optional initially-disabled task assignments.
+- `PUT /api/v1/admin/ai-models/:modelId` — edit capability claims/evidence, mark capability claims as administrator-reviewed, enable/disable the model, and update task eligibility and priority.
+- `POST /api/v1/admin/ai-models/:modelId/test` — test the exact model using the shared model-aware bounded diagnostic policy and save safe connection-test metadata.
+
+A model can be enabled only after an exact-token connection test succeeds and the administrator records that capability documentation has been reviewed. Editing capability declarations or the evidence URL invalidates the old review and connection-test result, returns the model to pending, and disables all task assignments. Failed connection tests also disable task assignments. New models and task assignments default to pending/disabled.
+
+These endpoints do not select models for student requests. The existing `ai_task_routes` table remains authoritative until Phase 1.3b's adaptive router is implemented, tested, and explicitly enabled.

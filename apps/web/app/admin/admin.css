@@ -1001,3 +1001,74 @@
 .benchmark-summary-footnote {
   margin: 9px 0 0;
 }
+
+.admin-model-capability-editor {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e3e9e4;
+  border-radius: 8px;
+  background: #fbfcfb;
+}
+
+.admin-model-capability-editor summary {
+  color: #315642;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-model-capability-editor label {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-model-capability-editor label > span {
+  color: #56645d;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.admin-model-capability-editor input,
+.admin-model-capability-editor textarea {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid #dce4de;
+  border-radius: 7px;
+  background: #fff;
+  color: #24352c;
+  font: inherit;
+  font-size: 11px;
+}
+
+.admin-model-capability-editor textarea {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  resize: vertical;
+}
+
+.admin-model-capability-editor button {
+  width: fit-content;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #dce5de;
+  border-radius: 7px;
+  background: #f1f5f2;
+  color: #315642;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-model-priority {
+  width: 72px;
+  min-height: 28px;
+  margin-left: auto;
+  padding: 4px 6px;
+  border: 1px solid #dce4de;
+  border-radius: 6px;
+  background: #fff;
+  color: #56645d;
+  font: inherit;
+  font-size: 10px;
+}

@@ -2,6 +2,21 @@
 
 **Status:** Sequenced roadmap; completion is based on tested behaviour, not document presence.
 
+## Approved delivery dependency order (20 November 2026)
+
+The sections below retain the existing technical workstream IDs. Execution follows this dependency order so the learner experience, academic data, and adaptive engine are built on verified foundations:
+
+1. **Phase 1.3 — Adaptive AI intelligence:** complete the administrator model registry, then the capability-aware router and centralized runtime policy, then benchmark-backed model improvement.
+2. **Phase 2 — Learning Workspace completion:** plan editing/version preservation, persisted Tutor stages/checkpoints, explicit step progression, and end-to-end learner journeys.
+3. **Phase 2.5 — Academic course and skill organisation:** operationalise the existing global academic schema with governed source adapters, verified programme/course/syllabus data, canonical Knowledge Components, reviewed course-to-KC mappings, and learner-facing course/skill organisation.
+4. **Evidence-based learning intelligence:** complete the remaining guided feedback and subject-verification workstreams (existing Phases 4 and 5), then use Phase 2.5 Knowledge Components plus learner attempts/assessments to build evidence-backed Progress, mastery estimates and explainable recommendations (existing Phase 6).
+5. **Multimodal learning:** add image input and document/PDF processing after text learning, course organisation and evidence contracts are stable (existing Phases 3 and 7).
+6. **Product readiness:** accessibility, security, privacy, reliability, evaluation and closed beta (existing Phase 8).
+
+No phase is considered delivered because its documentation exists; each exit still requires tested behaviour and its own production verification.
+
+
+
 ## Phase 0 — Repository and engineering foundation
 
 - [x] Establish monorepo layout, documentation, and ZeroMock policy.
@@ -82,12 +97,28 @@ See [PHASE_2_LEARNING_WORKSPACE.md](PHASE_2_LEARNING_WORKSPACE.md) for the accep
 - [ ] Add persisted lesson-stage transitions, explicit teaching controls, and evidence-backed checkpoint records.
 - [x] Implement persisted text-first Tutor sessions, history, and resume for plan-unit and direct text starts.
 - [ ] Enforce one-step tutoring, clarification-without-advancement, progressive hints, and explicit continuation.
-- [ ] Connect Home, Learn, plan review, and Tutor to real persisted student-owned records.
+- [x] Connect Home, Learn, plan review, and Tutor to real persisted student-owned records (Home continuation and adaptive activity cards delivered in PR #44; the full mobile journey test remains open).
 - [ ] Test provider/database failures, schema validation, idempotency, concurrency, ownership, and responsive behaviour.
 
-**Current boundary:** authenticated Tutor session creation, message persistence, history, resume, and provider-backed responses exist for direct text prompts. Learn now includes a persisted personal learning library, saved plan generation/review states, revision overview, learner decisions on proposed concept relationships, and plan approval. Editing/reordering/removal of plan titles, units, objectives, and concepts remains open. Approved unit cards launch Tutor with revision/unit linkage and server-side ownership plus active/approved checks. CTL v1.2 supplies validated structured openings and adaptive continuations for linked-unit sessions, plus standalone concept mini-lessons, problem-solving walkthroughs, attempt feedback, focused assistance for hints/simplifications/examples/recaps, explicit standalone task switching, and an adaptive fallback. Persisted lesson-stage transitions, explicit Tutor action controls, Home continuation, and end-to-end mobile journey tests remain open. Plan-scoped generated relationships remain proposals and structural validation does not establish academic correctness.
+**Current boundary:** authenticated Tutor session creation, message persistence, history, resume, and provider-backed responses exist for direct text prompts. Learn now includes a persisted personal learning library, saved plan generation/review states, revision overview, learner decisions on proposed concept relationships, and plan approval. Editing/reordering/removal of plan titles, units, objectives, and concepts remains open. Approved unit cards launch Tutor with revision/unit linkage and server-side ownership plus active/approved checks. CTL v1.2 supplies validated structured openings and adaptive continuations for linked-unit sessions, plus standalone concept mini-lessons, problem-solving walkthroughs, attempt feedback, focused assistance for hints/simplifications/examples/recaps, explicit standalone task switching, and an adaptive fallback. Persisted lesson-stage transitions and server-enforced Tutor action controls remain open. Home continuation from real owner-scoped Tutor sessions and learner-approved active plans was delivered in PR #44; end-to-end mobile journey tests remain open. Plan-scoped generated relationships remain proposals and structural validation does not establish academic correctness.
 
 **Exit:** a learner can start without an institution, generate, review, and approve a personal learning plan, begin a Tutor session from an approved unit, and resume genuine saved work; approved-unit Tutor sessions follow CTL v1 without fabricated stage progress; all AI outputs and failure states are truthful; no official curricula, canonical global KCs, mastery scores, or recommendations are fabricated.
+
+## Phase 2.5 — Academic course and skill organisation
+
+This phase operationalises the global academic foundation in [GLOBAL_ACADEMIC_ARCHITECTURE.md](GLOBAL_ACADEMIC_ARCHITECTURE.md). It is distinct from learner-generated personal plans: official catalogue content must have source provenance and a verification state, while plan-scoped learner concepts remain proposals.
+
+- [ ] Approve and implement governed source adapters for official institution, regulator, programme, course and syllabus sources; record usage/licensing terms and source freshness.
+- [ ] Populate institution, programme, academic-period, course and versioned syllabus records from verified source evidence; do not seed illustrative or inferred catalogue entries.
+- [ ] Add source assertion and review workflows so catalogue claims retain source URL, observation time, effective dates, rights status, verification status and reviewer provenance.
+- [ ] Expose verified course and programme discovery in Learn, including local course codes, credit-system identity, curriculum version and academic period without cross-system credit conversion assumptions.
+- [ ] Operationalise the canonical Cogniva Knowledge Component graph with versioned concepts/skills, reviewed relations and acyclic prerequisite constraints.
+- [ ] Map course/syllabus versions to Knowledge Components with mapping provenance, confidence, reviewer status and version validity.
+- [ ] Add learner-facing course/skill organisation using only verified catalogue records and clearly labelled learner-owned records; keep personal generated learning plans distinct from official curricula.
+- [ ] Add integration tests for source rights, provenance, review lifecycle, version validity, mapping confidence, institution/programme scope and course-to-KC consistency.
+- [ ] Update mobile and desktop Learn/Home journeys to use real course and skill data with honest empty/unavailable states.
+
+**Exit:** learners can organise and explore real courses and skills across different education systems; catalogue claims are traceable and reviewable; course-to-KC mappings are versioned and evidence-backed; no model-generated outline is presented as an official syllabus or canonical skill.
 
 ## Admin Foundation — AI Configuration
 
@@ -103,6 +134,47 @@ This area now includes persisted task/provider/model preferences, audit events, 
 - [ ] Verify production migration state, configured task routes/credentials, and the deployed learner-facing runtime.
 
 **Exit:** administrators can save per-task provider/model preferences and see actual server-side credential presence; raw keys are never returned or stored in the application database. Learner requests use only the saved route for their task and require the matching server credential, with no silent fallback. No provider is declared best or comparatively validated until a real benchmark and blinded review are complete.
+
+## Phase 1.3 — Adaptive multi-provider, multi-model intelligence
+
+See [PHASE_1_3_ADAPTIVE_AI_RUNTIME.md](PHASE_1_3_ADAPTIVE_AI_RUNTIME.md) for the accepted architecture, provider discovery contracts, model approval lifecycle, and adaptive-routing gates.
+
+### Phase 1.3a — Administrator-managed model registry
+
+- [x] Add an additive model registry for multiple exact model IDs under each supported provider.
+- [x] Preserve legacy `ai_task_routes`; backfill its provider/model identities as pending registry records and disabled task candidates.
+- [x] Record capability declarations separately from exact-model connection-test outcomes and teaching-quality benchmark evidence.
+- [x] Add provider-native model discovery for Gemini, Groq, and Mistral; import only provider-returned identifiers and metadata, leaving unavailable capabilities unknown.
+- [x] Add administrator APIs/UI to register, inspect, test, review, enable/disable models, and set task eligibility/priority.
+- [x] Require HTTPS capability evidence and a successful exact-model instruction check before a model can be enabled.
+- [x] Reuse one bounded, model-aware diagnostic probe policy in both the saved-task-route test and exact-model test.
+- [x] Add pure regression tests for capability validation and diagnostic policy selection.
+- [ ] Add end-to-end PostgreSQL/API tests for administrator authorization, duplicate registration, evidence invalidation, enablement guards, candidate ownership, and audit events.
+- [ ] Review migration 0009 SQL/snapshot/journal, apply it to Neon after merge and explicit approval, then run a read-only production audit.
+- [ ] Verify the deployed Admin model registry and exact-model tests against credentials configured in Render.
+
+**Current status (20 November 2026):** Phase 1.3a introduces `ai_models` and `ai_task_model_candidates`. Existing task routes are copied as pending, unverified model records with task eligibility disabled; learner traffic continues to use the original `ai_task_routes`. Provider discovery is an inventory hint, not a capability or quality verdict. Gemini discovery filters to models listing `generateContent`; Groq discovery returns provider-listed model identifiers but does not assume every entry is chat-completion compatible; Mistral discovery filters to entries declaring chat-completion capability. In all cases an administrator must inspect the exact model documentation, test the model, and review capability claims before enabling it. Capability edits invalidate prior review and connection-test evidence. No provider is ranked as best, and no adaptive student request selection is enabled.
+
+### Phase 1.3b — Adaptive router and centralized runtime policy
+
+- [ ] Build a provider-neutral request analyser and deterministic task-complexity classification.
+- [ ] Select only models that are enabled, credential-ready, connection-tested, capability-reviewed, and assigned to the requested task.
+- [ ] Add task-level pinned/adaptive policy modes and administrator objectives for quality, latency, and cost.
+- [ ] Resolve output budgets, reasoning settings, structured-output configuration, and request deadlines in one central policy service.
+- [ ] Remove route-local output-token and timeout constants from Tutor, learning-plan generation, and administrator diagnostics.
+- [ ] Apply provider-specific request fields only when the exact model's verified capability record supports them.
+- [ ] Record selection explanations, safe request outcomes, finish reasons, usage, and latency without storing student prompts, completions, credentials, or private reasoning traces.
+- [ ] Keep provider switching disabled by default; make any future failover an explicit, separately audited administrator policy.
+- [ ] Add multi-model routing, provider adapter, ownership, concurrency, budget, and failure regression tests before enabling adaptive learner traffic.
+
+### Phase 1.3c — Evidence-informed model improvement
+
+- [ ] Run the comparative provider benchmark across eligible models and tasks.
+- [ ] Complete blinded human review for teaching quality, structured-plan validity, correctness, and pedagogical fit.
+- [ ] Use retained benchmark and production evidence to refine task-specific model priorities.
+- [ ] Preserve uncertainty when cost/usage/latency/quality evidence is missing; never auto-promote a model from an unreviewed score.
+
+**Exit:** administrators can manage multiple exact models per provider and task; Cogniva can select an eligible model from verified capability and evidence; generation policies adapt to task/model characteristics within administrator and platform ceilings; decisions are explainable and auditable; the previous pinned route remains available as an explicit rollback mode.
 
 ## Phase 3 — Multimodal problem input
 
@@ -138,10 +210,9 @@ This area now includes persisted task/provider/model preferences, audit events, 
 
 ## Phase 6 — Learning intelligence and adaptive practice
 
-This is Cogniva's native CampusLearn/Sizzle-inspired learning capability; it is not an integration dependency on CampusLearn.
+This is Cogniva's native adaptive learning capability. The canonical Knowledge Component graph and verified course mappings are prerequisites delivered in Phase 2.5.
 
-- [ ] Implement the canonical Cogniva Knowledge Component graph and prerequisite relationships.
-- [ ] Map course/syllabus versions and reviewed learning-plan concepts to Knowledge Components with provenance, mapping confidence, and review status.
+- [ ] Map reviewed learner-plan concepts to canonical Knowledge Components with provenance, mapping confidence, and review status, reusing the course/syllabus mappings delivered in Phase 2.5.
 - [ ] Record diagnostic assessment, practice attempts, and evaluation evidence.
 - [ ] Select targeted practice based on the student's demonstrated gaps and prerequisite readiness.
 - [ ] Implement mastery estimates with uncertainty, evidence windows, and model/version provenance.
