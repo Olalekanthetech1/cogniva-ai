@@ -1,6 +1,6 @@
 # Cogniva — Database Design Baseline
 
-**Status (reviewed 19 November 2026):** Migrations 0000–0008 are applied to Neon `neondb` (PostgreSQL 18.7). The post-migration read-only audit generated at 21:19:06 UTC ([run #44610442501, attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501)) confirmed 9/9 expected migrations applied, zero missing migrations or repository files, zero unexpected applied migrations, all 31 Phase 1.1 target tables present, and all nine legacy academic tables preserved. The audit used a PostgreSQL `READ_ONLY_TRANSACTION` and inspected migration/schema metadata only, not learner rows. Application deployment state is tracked separately.
+**Status (reviewed 20 November 2026):** Migrations 0000–0008 are applied to Neon `neondb` (PostgreSQL 18.7). The post-migration read-only audit generated at 21:19:06 UTC ([run #44610442501, attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501)) confirmed 9/9 expected migrations applied, zero missing migrations or repository files, zero unexpected applied migrations, all 31 Phase 1.1 target tables present, and all nine legacy academic tables preserved. The audit used a PostgreSQL `READ_ONLY_TRANSACTION` and inspected migration/schema metadata only, not learner rows. Phase 1.3a adds migration 0009 on the feature branch; it is not included in the 0000–0008 production audit and has not been applied to Neon. Application deployment state is tracked separately.
 
 ## 1. Decisions
 
@@ -65,7 +65,8 @@ The initial read-only production audit confirmed the baseline migration history 
 - `0005_faithful_zodiak.sql` — AI benchmark runs, results, and reviews.
 - `0006_cultured_lila_cheney.sql` — Tutor attempt records and ownership/message constraints.
 - `0007_global_academic_reference_foundation.sql` — global country/jurisdiction, qualification/classification, source-provenance, and review foundations.
-- `0008_institutions_programmes_and_kcs.sql` — institution identity/units, scoped recognition, programmes, credit systems, academic periods, versioned course content, and Knowledge Component structures.
+- `0008_global_academic_interoperability.sql` — institution identity/units, scoped recognition, programmes, credit systems, academic periods, versioned course content, and Knowledge Component structures.
+- `0009_adaptive_model_registry.sql` — pending additive migration introducing administrator-managed `ai_models` and `ai_task_model_candidates`; it backfills current task routes as pending registry entries with task eligibility disabled. Do not treat file presence as production application.
 
 Migrations `0007_global_academic_reference_foundation.sql` and `0008_institutions_programmes_and_kcs.sql` were applied to Neon by [production migration run #44615863935](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44615863935). The subsequent [read-only audit, run #44610442501 attempt 2](https://github.com/Olalekanthetech1/cogniva-ai/actions/runs/44610442501), reports 9 expected and 9 applied migrations, zero missing migrations, zero missing repository files, and zero unexpected applied migrations. Its table inventory confirms all 31 Phase 1.1 target tables and all nine existing academic tables are present.
 
@@ -110,3 +111,24 @@ The initial read-only production audit at 15:34 UTC on 19 November 2026 establis
 The report's `assertion` field is `NOT ASSERTED` because the production workflow invokes the audit in observational mode without the optional `--assert-all-repository-migrations` flag. The returned ledger and table-inventory values were reviewed directly against the production acceptance checks.
 
 See [PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md](PHASE_1_1_SCHEMA_AUDIT_AND_MIGRATION_PLAN.md) for the detailed schema-gap analysis and [PHASE_1_1A_REFERENCE_FOUNDATION.md](PHASE_1_1A_REFERENCE_FOUNDATION.md) for migration 0007, its constraints, and rollback boundaries.
+
+
+## 9. Phase 1.3a AI model registry schema
+
+Migration `0009_adaptive_model_registry.sql` adds:
+
+- `ai_models`: provider-scoped exact model ID, administrator display name, lifecycle status, typed capability declaration JSON, HTTPS capability evidence reference, capability review actor/time, most recent exact-model connection result, latency, safe error code, and administrative authorship timestamps.
+- `ai_task_model_candidates`: the task-to-model eligibility relation with explicit enablement and administrator priority.
+
+A model is globally `pending`, `enabled`, or `disabled`. Enabling it requires a successful exact-model instruction test and administrator-reviewed capability evidence. A capability/evidence edit clears the previous review and connection-test result and moves the model back to pending. A failed test removes the model from all task candidate pools.
+
+Task eligibility defaults to disabled. Multiple providers/models may be assigned to the same task, with a separate priority for each assignment. This table is an inventory and eligibility foundation only: application inference continues to read `ai_task_routes` until Phase 1.3b is implemented and explicitly enabled.
+
+Migration 0009 copies each existing `ai_task_routes` provider/model pair into `ai_models` as pending with unknown capabilities and copies each route into `ai_task_model_candidates` as disabled. It does not update or delete `ai_task_routes`, does not change which model serves a student, and inserts no provider credentials or sample model catalogue entries.
+
+Provider model discovery uses provider endpoints and their actual response fields:
+- Gemini: [Models API](https://ai.google.dev/api/models), filtered to models advertising `generateContent`; token limits and other fields are retained only when returned.
+- Groq: [Models API and supported-model documentation](https://console.groq.com/docs/api-reference); returned model identifiers are inventory hints, not proof that every model supports chat completions or the same reasoning parameters.
+- Mistral: [List Models API](https://docs.mistral.ai/api/endpoint/models); discovery filters to records with `completion_chat` support and retains vision capability/context length when returned.
+
+Provider model discovery is not capability verification. Unknown values remain unknown. The exact model must pass a connection test and the administrator must review the evidence source before enabling it.

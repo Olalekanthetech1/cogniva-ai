@@ -1,6 +1,6 @@
 # Cogniva AI provider runtime foundation
 
-**Status:** Provider-neutral text-generation adapters, administrator connection tests, and the persisted benchmark workspace are implemented. The provider runtime is integrated into the learner-facing Socratic tutor response path; this implementation also integrates topic-based learning-plan generation. Task execution still requires a saved administrator provider/model route and the matching server credential. No comparative provider benchmark has been completed and no provider has been selected as a universal winner.
+**Status:** Provider-neutral text-generation adapters and administrator connection tests are implemented. Phase 1.3a adds the administrator-managed multi-model registry, provider-native inventory discovery, model-specific connection tests, and task-candidate eligibility. The provider runtime is integrated into the learner-facing Socratic tutor response path; this implementation also integrates topic-based learning-plan generation. Task execution still requires a saved administrator provider/model route and the matching server credential. No comparative provider benchmark has been completed and no provider has been selected as a universal winner.
 
 ## Supported providers
 
@@ -64,7 +64,7 @@ Each request reads the exact saved task route from `ai_task_routes` and uses its
 
 All currently supported Tutor providers (Gemini, Groq, and Mistral) persist their response text into the same Tutor message contract and render through the shared `TutorMessageMarkdown` component. That renderer supports Markdown math and KaTeX, and normalizes common provider conventions (`\\(...\\)`, `\\[...\\]`, clearly mathematical legacy `[...TeX...]` wrappers, and short unwrapped equations after numbered/bulleted rule labels) to the renderer's supported delimiters. Code spans and fenced code blocks are preserved. Normalization is display-only: the original provider response remains the saved record, raw HTML is not trusted, and no provider-specific rendering branch is used.
 
-Learning-plan generation is limited to text topics. It validates exact JSON structure, bounded counts/lengths, unique concept names, unit mappings, and proposed relation consistency before a single transaction saves the complete revision tree. It does not establish that the suggested content is factually correct or complete. Learners cannot yet edit/approve plans or start a tutor session from a plan unit through the UI.
+Learning-plan generation is limited to text topics. It validates exact JSON structure, bounded counts/lengths, unique concept names, unit mappings, and proposed relation consistency before a single transaction saves the complete revision tree. It does not establish that the suggested content is factually correct or complete. Learners can review/approve proposals and start Tutor sessions from approved plan units. Editing/reordering plan content and persisted Socratic stage transitions remain outstanding.
 
 The Admin UI reports the task runtime as integrated, separately from whether a route is saved and its server credential is present. A successful connection test means only that the selected provider/model responded; it does not establish pedagogical quality. The benchmark workspace remains administrator-only, and no benchmark result exists until a real comparative run and blinded review are completed.
 
@@ -77,3 +77,27 @@ Learning-plan generation is reviewed for output validity, required structure, to
 Record latency and provider-reported token usage for every attempt. Cost comparisons require the run's retained pricing snapshot. Pedagogical quality must include blinded human rubric review; a model judging its own output is not sufficient evidence.
 
 A benchmark report must show failed, timed-out, rate-limited, and invalid outputs rather than dropping them from the results. No provider is activated automatically from a score.
+
+
+## Phase 1.3a model registry and provider discovery
+
+The administrator registry stores multiple exact model IDs per provider and keeps three independent gates distinct:
+
+1. **Discovery:** a provider's list endpoint returns a model identifier and only the metadata that endpoint exposes.
+2. **Connection test:** Cogniva sends a minimal exact-model generation request and records latency, test outcome, and a safe error code.
+3. **Capability review:** an administrator reviews the exact model's documentation, records capability claims and an HTTPS evidence URL, and explicitly marks those claims as reviewed.
+
+Only a model with a successful exact-token test and reviewed capability evidence can move to the enabled state. An administrator must then enable its assignment for the specific task. A model may be enabled globally but remain unavailable for every learner task.
+
+Discovery is provider-specific:
+- Gemini's model list includes generation-method support and token limits where available; Cogniva filters to `generateContent` models. See [Gemini Models API](https://ai.google.dev/api/models). A returned thinking flag is retained as a support signal, not an invented list of controllable levels.
+- Groq's [models endpoint](https://console.groq.com/docs/api-reference) returns hosted model identifiers. The supported-model catalogue documents chat compatibility and limits, but the inventory response is not treated as proof that every returned model supports chat completions.
+- Mistral's [List Models endpoint](https://docs.mistral.ai/api/endpoint/models) returns capability flags and context length; Cogniva filters to records with `completion_chat` and uses the vision flag where present.
+
+The Admin diagnostic probe is resolved by one shared policy function. It respects the registered model's reported maximum output tokens, chooses the lowest explicitly declared reasoning level only when its provider adapter supports that parameter, omits temperature when capability is unknown or unsupported, and derives a bounded follow-up deadline from the previous measured test latency. The first diagnostic uses a conservative bounded deadline. This connection-test policy is not the learner inference policy.
+
+Legacy `ai_task_routes` remain the sole source of learner-facing provider/model routing until Phase 1.3b is implemented, tested, and explicitly activated. Migration 0009 copies their identities into the registry as pending/unknown and creates disabled task assignments; it does not change live traffic.
+
+## Phase 1.3b centralized learner runtime (not yet implemented)
+
+Tutor and learning-plan generation still contain task-specific output-token and timeout values. Phase 1.3b will replace these with one provider-neutral policy resolver using task requirements, prompt/context size, deterministic complexity features, registered model limits, verified reasoning/structured-output capabilities, administrator ceilings, and retained latency/cost evidence. The resolver will emit provider-specific parameters only when supported by the selected exact model. No silent provider switching is permitted.

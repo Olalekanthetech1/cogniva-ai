@@ -88,6 +88,9 @@ jobs:
       - name: Learning plan review input tests
         run: pnpm test:learning-plan-review
 
+      - name: AI model registry unit and database integration tests
+        run: pnpm test:ai-model-registry
+
       - name: Lint
         run: pnpm lint
 

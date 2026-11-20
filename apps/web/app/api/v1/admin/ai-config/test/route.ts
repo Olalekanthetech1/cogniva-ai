@@ -9,6 +9,11 @@ import {
   AiProviderRuntimeError,
   generateTextWithProvider
 } from "@/lib/ai-provider-runtime";
+import {
+  getAdminAiModelByRoute,
+  recordAdminAiModelTest
+} from "@/lib/admin-ai-model-registry";
+import { resolveAiModelProbePolicy } from "@/lib/ai-model-test-policy";
 import { getAdminAccess } from "@/lib/admin-data";
 
 export const runtime = "nodejs";
@@ -51,6 +56,9 @@ function hasTrustedOrigin(request: Request): boolean {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  let testedModelId: string | null = null;
+  let testStartedAt: number | null = null;
+  let administratorId: string | null = null;
   if (!hasTrustedOrigin(request)) {
     return errorResponse(
       "ORIGIN_NOT_ALLOWED",
@@ -77,6 +85,8 @@ export async function POST(request: Request): Promise<Response> {
         403
       );
     }
+
+    administratorId = access.admin.id;
 
     let body: unknown;
     try {
@@ -140,6 +150,17 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
+    const registryModel = await getAdminAiModelByRoute(
+      taskConfiguration.route.provider,
+      taskConfiguration.route.model
+    );
+    testedModelId = registryModel?.id ?? null;
+    const policy = resolveAiModelProbePolicy({
+      provider: taskConfiguration.route.provider,
+      capabilities: registryModel?.capabilities ?? {},
+      lastTestLatencyMs: registryModel?.lastTestLatencyMs ?? null
+    });
+    testStartedAt = Date.now();
     const result = await generateTextWithProvider({
       provider: taskConfiguration.route.provider,
       model: taskConfiguration.route.model,
@@ -147,15 +168,23 @@ export async function POST(request: Request): Promise<Response> {
         "You are checking a text-generation provider connection for Cogniva. Follow the user's instruction exactly and return no explanation.",
       userPrompt:
         "Reply with exactly this token and nothing else: COGNIVA_PROVIDER_CONNECTION_OK",
-      maxOutputTokens: 24,
-      temperature: 0,
-      timeoutMs: 20000
+      maxOutputTokens: policy.maxOutputTokens,
+      ...(policy.temperature !== undefined ? { temperature: policy.temperature } : {}),
+      timeoutMs: policy.timeoutMs,
+      ...(policy.reasoningControl ? { reasoningControl: policy.reasoningControl } : {})
     });
-
     const instructionCheck =
       result.text.trim() === "COGNIVA_PROVIDER_CONNECTION_OK"
         ? "passed"
         : "not_exact";
+
+    if (registryModel) {
+      await recordAdminAiModelTest(registryModel.id, {
+        status: instructionCheck === "passed" ? "connected" : "failed",
+        latencyMs: result.latencyMs,
+        errorCode: instructionCheck === "passed" ? null : "TEST_INSTRUCTION_NOT_EXACT"
+      }, access.admin.id);
+    }
 
     return Response.json(
       {
@@ -167,12 +196,24 @@ export async function POST(request: Request): Promise<Response> {
           status: "connected",
           instructionCheck,
           latencyMs: result.latencyMs,
-          usage: result.usage
+          usage: result.usage,
+          finishReason: result.finishReason,
+          reasoningControlApplied: Boolean(policy.reasoningControl)
         }
       },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
+    if (testedModelId) {
+      const failureCode = error instanceof AiProviderRuntimeError
+        ? error.code
+        : "PROVIDER_TEST_UNAVAILABLE";
+      await recordAdminAiModelTest(testedModelId, {
+        status: "failed",
+        latencyMs: testStartedAt === null ? null : Date.now() - testStartedAt,
+        errorCode: failureCode
+      }, administratorId ?? "").catch(() => undefined);
+    }
     if (error instanceof AiProviderRuntimeError) {
       return errorResponse(
         error.code,

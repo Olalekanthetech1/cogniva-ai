@@ -3,6 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminNavigation } from "@/lib/admin-navigation";
 import { getAdminAiConfiguration } from "@/lib/admin-ai-config";
+import { getAdminAiModelRegistry } from "@/lib/admin-ai-model-registry";
+import { AiModelRegistryEditor } from "./model-registry-editor";
 import { getAdminAccess } from "@/lib/admin-data";
 import { AiConfigurationEditor } from "./configuration-editor";
 import "../admin.css";
@@ -47,10 +49,16 @@ export default async function AdminAiConfigurationPage() {
   }
 
   let configuration: Awaited<ReturnType<typeof getAdminAiConfiguration>> | null = null;
+  let modelRegistry: Awaited<ReturnType<typeof getAdminAiModelRegistry>> | null = null;
   try {
     configuration = await getAdminAiConfiguration();
   } catch {
     // The editor is not rendered with invented defaults when storage is down.
+  }
+  try {
+    modelRegistry = await getAdminAiModelRegistry();
+  } catch {
+    // Keep provider configuration visible without inventing registry state.
   }
 
   return (
@@ -73,7 +81,7 @@ export default async function AdminAiConfigurationPage() {
           <div>
             <p className="admin-eyebrow">PLATFORM CONTROL CENTRE</p>
             <h1>AI configuration</h1>
-            <p>Manage provider credentials status and saved task-routing preferences.</p>
+            <p>Manage provider credentials, the model registry and saved task-routing preferences.</p>
           </div>
           <span className="admin-role-pill">Administrator</span>
         </header>
@@ -87,6 +95,15 @@ export default async function AdminAiConfigurationPage() {
               Cogniva could not load the saved routing preferences. No defaults or sample
               provider statuses are being displayed. Refresh after database connectivity is restored.
             </span>
+          </div>
+        )}
+
+        {modelRegistry ? (
+          <AiModelRegistryEditor initialRegistry={modelRegistry} />
+        ) : (
+          <div className="admin-notice is-warning" role="status">
+            <strong>Model registry unavailable</strong>
+            <span>Registry data could not be loaded. No sample models or eligibility states are displayed.</span>
           </div>
         )}
 

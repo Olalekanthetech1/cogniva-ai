@@ -12,8 +12,12 @@ export type AiTextGenerationInput = {
   systemPrompt: string;
   userPrompt: string;
   maxOutputTokens: number;
-  temperature: number;
+  temperature?: number;
   timeoutMs?: number;
+  reasoningControl?: {
+    parameter: "thinking_level" | "reasoning_effort";
+    level: string;
+  };
 };
 
 export type AiTextGenerationResult = {
@@ -269,6 +273,20 @@ async function readProviderError(response: Response): Promise<never> {
 
 function validateInput(input: AiTextGenerationInput): void {
   if (
+    input.reasoningControl !== undefined &&
+    (!["thinking_level", "reasoning_effort"].includes(input.reasoningControl.parameter) ||
+      !/^[A-Za-z0-9_-]{1,40}$/.test(input.reasoningControl.level) ||
+      (input.provider === "gemini" && input.reasoningControl.parameter !== "thinking_level") ||
+      (input.provider !== "gemini" && input.reasoningControl.parameter !== "reasoning_effort"))
+  ) {
+    throw new AiProviderRuntimeError(
+      "UPSTREAM_REJECTED",
+      422,
+      "The selected model reasoning control is not valid for this provider adapter."
+    );
+  }
+
+  if (
     !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/.test(input.model) ||
     input.systemPrompt.length > 8000 ||
     input.userPrompt.length < 1 ||
@@ -277,9 +295,10 @@ function validateInput(input: AiTextGenerationInput): void {
     !Number.isInteger(input.maxOutputTokens) ||
     input.maxOutputTokens < 1 ||
     input.maxOutputTokens > 2048 ||
-    !Number.isFinite(input.temperature) ||
-    input.temperature < 0 ||
-    input.temperature > 1
+    (input.temperature !== undefined &&
+      (!Number.isFinite(input.temperature) ||
+        input.temperature < 0 ||
+        input.temperature > 1))
   ) {
     throw new AiProviderRuntimeError(
       "UPSTREAM_REJECTED",
@@ -336,8 +355,10 @@ export async function generateTextWithProvider(
             ],
             generationConfig: {
               maxOutputTokens: input.maxOutputTokens,
-              // Gemini 3.x uses its model default; provider guidance warns
-              // against overriding sampling settings for these reasoning models.
+              ...(input.temperature !== undefined ? { temperature: input.temperature } : {}),
+              ...(input.reasoningControl?.parameter === "thinking_level"
+                ? { thinkingConfig: { thinkingLevel: input.reasoningControl.level } }
+                : {})
             }
           }
         : {
@@ -346,8 +367,13 @@ export async function generateTextWithProvider(
               { role: "system", content: input.systemPrompt },
               { role: "user", content: input.userPrompt }
             ],
-            max_tokens: input.maxOutputTokens,
-            temperature: input.temperature,
+            ...(input.provider === "groq"
+              ? { max_completion_tokens: input.maxOutputTokens }
+              : { max_tokens: input.maxOutputTokens }),
+            ...(input.temperature !== undefined ? { temperature: input.temperature } : {}),
+            ...(input.reasoningControl?.parameter === "reasoning_effort"
+              ? { reasoning_effort: input.reasoningControl.level }
+              : {}),
             stream: false
           };
 

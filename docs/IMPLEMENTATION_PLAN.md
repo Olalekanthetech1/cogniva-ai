@@ -104,6 +104,47 @@ This area now includes persisted task/provider/model preferences, audit events, 
 
 **Exit:** administrators can save per-task provider/model preferences and see actual server-side credential presence; raw keys are never returned or stored in the application database. Learner requests use only the saved route for their task and require the matching server credential, with no silent fallback. No provider is declared best or comparatively validated until a real benchmark and blinded review are complete.
 
+## Phase 1.3 — Adaptive multi-provider, multi-model intelligence
+
+See [PHASE_1_3_ADAPTIVE_AI_RUNTIME.md](PHASE_1_3_ADAPTIVE_AI_RUNTIME.md) for the accepted architecture, provider discovery contracts, model approval lifecycle, and adaptive-routing gates.
+
+### Phase 1.3a — Administrator-managed model registry
+
+- [x] Add an additive model registry for multiple exact model IDs under each supported provider.
+- [x] Preserve legacy `ai_task_routes`; backfill its provider/model identities as pending registry records and disabled task candidates.
+- [x] Record capability declarations separately from exact-model connection-test outcomes and teaching-quality benchmark evidence.
+- [x] Add provider-native model discovery for Gemini, Groq, and Mistral; import only provider-returned identifiers and metadata, leaving unavailable capabilities unknown.
+- [x] Add administrator APIs/UI to register, inspect, test, review, enable/disable models, and set task eligibility/priority.
+- [x] Require HTTPS capability evidence and a successful exact-model instruction check before a model can be enabled.
+- [x] Reuse one bounded, model-aware diagnostic probe policy in both the saved-task-route test and exact-model test.
+- [x] Add pure regression tests for capability validation and diagnostic policy selection.
+- [ ] Add end-to-end PostgreSQL/API tests for administrator authorization, duplicate registration, evidence invalidation, enablement guards, candidate ownership, and audit events.
+- [ ] Review migration 0009 SQL/snapshot/journal, apply it to Neon after merge and explicit approval, then run a read-only production audit.
+- [ ] Verify the deployed Admin model registry and exact-model tests against credentials configured in Render.
+
+**Current status (20 November 2026):** Phase 1.3a introduces `ai_models` and `ai_task_model_candidates`. Existing task routes are copied as pending, unverified model records with task eligibility disabled; learner traffic continues to use the original `ai_task_routes`. Provider discovery is an inventory hint, not a capability or quality verdict. Gemini discovery filters to models listing `generateContent`; Groq discovery returns provider-listed model identifiers but does not assume every entry is chat-completion compatible; Mistral discovery filters to entries declaring chat-completion capability. In all cases an administrator must inspect the exact model documentation, test the model, and review capability claims before enabling it. Capability edits invalidate prior review and connection-test evidence. No provider is ranked as best, and no adaptive student request selection is enabled.
+
+### Phase 1.3b — Adaptive router and centralized runtime policy
+
+- [ ] Build a provider-neutral request analyser and deterministic task-complexity classification.
+- [ ] Select only models that are enabled, credential-ready, connection-tested, capability-reviewed, and assigned to the requested task.
+- [ ] Add task-level pinned/adaptive policy modes and administrator objectives for quality, latency, and cost.
+- [ ] Resolve output budgets, reasoning settings, structured-output configuration, and request deadlines in one central policy service.
+- [ ] Remove route-local output-token and timeout constants from Tutor, learning-plan generation, and administrator diagnostics.
+- [ ] Apply provider-specific request fields only when the exact model's verified capability record supports them.
+- [ ] Record selection explanations, safe request outcomes, finish reasons, usage, and latency without storing student prompts, completions, credentials, or private reasoning traces.
+- [ ] Keep provider switching disabled by default; make any future failover an explicit, separately audited administrator policy.
+- [ ] Add multi-model routing, provider adapter, ownership, concurrency, budget, and failure regression tests before enabling adaptive learner traffic.
+
+### Phase 1.3c — Evidence-informed model improvement
+
+- [ ] Run the comparative provider benchmark across eligible models and tasks.
+- [ ] Complete blinded human review for teaching quality, structured-plan validity, correctness, and pedagogical fit.
+- [ ] Use retained benchmark and production evidence to refine task-specific model priorities.
+- [ ] Preserve uncertainty when cost/usage/latency/quality evidence is missing; never auto-promote a model from an unreviewed score.
+
+**Exit:** administrators can manage multiple exact models per provider and task; Cogniva can select an eligible model from verified capability and evidence; generation policies adapt to task/model characteristics within administrator and platform ceilings; decisions are explainable and auditable; the previous pinned route remains available as an explicit rollback mode.
+
 ## Phase 3 — Multimodal problem input
 
 - [ ] Add private image upload and structured extraction.

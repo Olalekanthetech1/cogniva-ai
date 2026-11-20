@@ -23,6 +23,7 @@
     "test:tutor-markdown": "node --test apps/web/lib/tutor-message-markdown.test.mjs",
     "test:learning-plan-output": "node --test apps/web/lib/learning-plan-output.test.mjs",
     "test:learning-plan-review": "node --test apps/web/lib/learning-plan-review.test.mjs",
+    "test:ai-model-registry": "node --test apps/web/lib/ai-model-capabilities.test.mjs apps/web/lib/ai-model-test-policy.test.mjs tests/integration/ai-model-registry.test.mjs",
     "test:auth-lifecycle": "node --test tests/integration/auth-lifecycle.test.mjs",
     "test:academic-reference-foundation": "node --test tests/integration/academic-reference-foundation.test.mjs",
     "test:academic-interoperability": "node --test tests/integration/academic-interoperability.test.mjs",
