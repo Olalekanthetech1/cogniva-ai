@@ -1,12 +1,10 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
-  aiTaskRoutes,
   tutorAttempts,
   tutorMessages,
   tutorSessions
 } from "@cogniva/database";
 import { getSignedInStudent, getStudentDatabase, isUuid } from "@/lib/student-data";
-import type { AiProviderId } from "@/lib/admin-ai-config";
 import { shouldPersistDeterministicAttemptEvaluation } from "@/lib/tutor-attempt-evaluation";
 import {
   analyzeTutorTurn,
@@ -18,10 +16,11 @@ import {
   buildVerifiedCorrectionResponse,
   findIncorrectNumericClaims
 } from "@/lib/tutor-intelligence";
+import { AiProviderRuntimeError } from "@/lib/ai-provider-runtime";
 import {
-  AiProviderRuntimeError,
-  generateTextWithProvider
-} from "@/lib/ai-provider-runtime";
+  AiTaskRoutingError,
+  generateTextForTask
+} from "@/lib/ai-task-runtime";
 import {
   TUTOR_LEARNING_FRAMEWORK_VERSION,
   getTutorLearningModeConfig,
@@ -179,7 +178,6 @@ export async function POST(
 ): Promise<Response> {
   let student: NonNullable<Awaited<ReturnType<typeof getSignedInStudent>>>;
   let db: ReturnType<typeof getStudentDatabase>;
-  let route: { provider: AiProviderId; model: string } | undefined;
 
   try {
     const signedInStudent = await getSignedInStudent();
@@ -189,27 +187,10 @@ export async function POST(
     student = signedInStudent;
     db = getStudentDatabase();
 
-    const [configuredRoute] = await db
-      .select({
-        provider: aiTaskRoutes.provider,
-        model: aiTaskRoutes.model
-      })
-      .from(aiTaskRoutes)
-      .where(eq(aiTaskRoutes.task, "socratic_tutor_response"))
-      .limit(1);
-    route = configuredRoute;
   } catch {
     return errorResponse(
       "TUTOR_DATA_UNAVAILABLE",
       "Tutor sessions are temporarily unavailable. Please try again.",
-      503
-    );
-  }
-
-  if (!route) {
-    return errorResponse(
-      "AI_ROUTE_NOT_CONFIGURED",
-      "The AI tutor has not been configured by a Cogniva administrator yet.",
       503
     );
   }
@@ -516,6 +497,7 @@ export async function POST(
     upstreamProvider: string | null;
     upstreamModel: string | null;
     verification: Record<string, unknown> | null;
+    routing?: Awaited<ReturnType<typeof generateTextForTask>>["routing"];
   };
 
   const pairConsistencyIsRelevant = turnAnalysis.realPairFeasibility &&
@@ -633,9 +615,9 @@ export async function POST(
   } else {
     let providerGenerated;
     try {
-      providerGenerated = await generateTextWithProvider({
-        provider: route.provider,
-        model: route.model,
+      providerGenerated = await generateTextForTask({
+        db,
+        task: "socratic_tutor_response",
         systemPrompt: [
           buildSystemPrompt(tutorLearningMode),
           buildAdaptiveTutorInstructions(turnAnalysis),
@@ -647,9 +629,7 @@ export async function POST(
           latestSubmissionType: claim.latestSubmissionType,
           messages: claim.messages
         }),
-        maxOutputTokens: learningModeConfig.maxOutputTokens,
-        ...(route.provider !== "gemini" ? { temperature: 0.25 } : {}),
-        timeoutMs: 25_000
+        requestedMaxOutputTokens: learningModeConfig.maxOutputTokens
       });
     } catch (error) {
       await restoreSessionState({
@@ -658,6 +638,10 @@ export async function POST(
         claimedVersion: claim.claimedVersion,
         previousState: claim.previousState
       }).catch(() => undefined);
+
+      if (error instanceof AiTaskRoutingError) {
+        return errorResponse(error.code, error.message, 503);
+      }
 
       if (error instanceof AiProviderRuntimeError) {
         return providerErrorResponse(error);
@@ -695,6 +679,7 @@ export async function POST(
     } else {
       generated = {
         ...providerGenerated,
+        routing: providerGenerated.routing,
         responseSource: "provider",
         upstreamProvider: providerGenerated.provider,
         upstreamModel: providerGenerated.resolvedModel,
@@ -777,6 +762,7 @@ export async function POST(
             upstreamProvider: generated.upstreamProvider,
             upstreamModel: generated.upstreamModel,
             verification: generated.verification,
+            routing: generated.routing ?? null,
             learningFramework: {
               name: "Cogniva Tutor Learning Framework",
               version: TUTOR_LEARNING_FRAMEWORK_VERSION,

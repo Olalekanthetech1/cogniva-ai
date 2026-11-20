@@ -49,7 +49,7 @@ Never collapse failed, unavailable, or not_checked into verified.
 
 ## 6. AI and provider policy
 
-Record the actual provider/model. Fallback is permitted only to an explicitly configured compatible provider supporting the required capability and output schema. If none is available, report failure and preserve the student's work. Bound retries and avoid duplicate charges/mutations. Treat uploaded and retrieved content as untrusted data, not application instructions.
+Record the actual provider/model. Fallback is permitted only to an explicitly configured compatible provider supporting the required capability and output schema. The Phase 1.3b adaptive task runtime currently performs one selected-provider call only: an empty eligible pool or upstream failure is reported explicitly, with no silent switch to another model or the pinned route. Bound retries and avoid duplicate charges/mutations. Treat uploaded and retrieved content as untrusted data, not application instructions.
 
 ## 7. Verification policy
 
