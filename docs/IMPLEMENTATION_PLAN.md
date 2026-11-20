@@ -2,6 +2,21 @@
 
 **Status:** Sequenced roadmap; completion is based on tested behaviour, not document presence.
 
+## Approved delivery dependency order (20 November 2026)
+
+The sections below retain the existing technical workstream IDs. Execution follows this dependency order so the learner experience, academic data, and adaptive engine are built on verified foundations:
+
+1. **Phase 1.3 — Adaptive AI intelligence:** complete the administrator model registry, then the capability-aware router and centralized runtime policy, then benchmark-backed model improvement.
+2. **Phase 2 — Learning Workspace completion:** plan editing/version preservation, persisted Tutor stages/checkpoints, explicit step progression, and end-to-end learner journeys.
+3. **Phase 2.5 — Academic course and skill organisation:** operationalise the existing global academic schema with governed source adapters, verified programme/course/syllabus data, canonical Knowledge Components, reviewed course-to-KC mappings, and learner-facing course/skill organisation.
+4. **Evidence-based learning intelligence:** complete the remaining guided feedback and subject-verification workstreams (existing Phases 4 and 5), then use Phase 2.5 Knowledge Components plus learner attempts/assessments to build evidence-backed Progress, mastery estimates and explainable recommendations (existing Phase 6).
+5. **Multimodal learning:** add image input and document/PDF processing after text learning, course organisation and evidence contracts are stable (existing Phases 3 and 7).
+6. **Product readiness:** accessibility, security, privacy, reliability, evaluation and closed beta (existing Phase 8).
+
+No phase is considered delivered because its documentation exists; each exit still requires tested behaviour and its own production verification.
+
+
+
 ## Phase 0 — Repository and engineering foundation
 
 - [x] Establish monorepo layout, documentation, and ZeroMock policy.
@@ -82,12 +97,28 @@ See [PHASE_2_LEARNING_WORKSPACE.md](PHASE_2_LEARNING_WORKSPACE.md) for the accep
 - [ ] Add persisted lesson-stage transitions, explicit teaching controls, and evidence-backed checkpoint records.
 - [x] Implement persisted text-first Tutor sessions, history, and resume for plan-unit and direct text starts.
 - [ ] Enforce one-step tutoring, clarification-without-advancement, progressive hints, and explicit continuation.
-- [ ] Connect Home, Learn, plan review, and Tutor to real persisted student-owned records.
+- [x] Connect Home, Learn, plan review, and Tutor to real persisted student-owned records (Home continuation and adaptive activity cards delivered in PR #44; the full mobile journey test remains open).
 - [ ] Test provider/database failures, schema validation, idempotency, concurrency, ownership, and responsive behaviour.
 
-**Current boundary:** authenticated Tutor session creation, message persistence, history, resume, and provider-backed responses exist for direct text prompts. Learn now includes a persisted personal learning library, saved plan generation/review states, revision overview, learner decisions on proposed concept relationships, and plan approval. Editing/reordering/removal of plan titles, units, objectives, and concepts remains open. Approved unit cards launch Tutor with revision/unit linkage and server-side ownership plus active/approved checks. CTL v1.2 supplies validated structured openings and adaptive continuations for linked-unit sessions, plus standalone concept mini-lessons, problem-solving walkthroughs, attempt feedback, focused assistance for hints/simplifications/examples/recaps, explicit standalone task switching, and an adaptive fallback. Persisted lesson-stage transitions, explicit Tutor action controls, Home continuation, and end-to-end mobile journey tests remain open. Plan-scoped generated relationships remain proposals and structural validation does not establish academic correctness.
+**Current boundary:** authenticated Tutor session creation, message persistence, history, resume, and provider-backed responses exist for direct text prompts. Learn now includes a persisted personal learning library, saved plan generation/review states, revision overview, learner decisions on proposed concept relationships, and plan approval. Editing/reordering/removal of plan titles, units, objectives, and concepts remains open. Approved unit cards launch Tutor with revision/unit linkage and server-side ownership plus active/approved checks. CTL v1.2 supplies validated structured openings and adaptive continuations for linked-unit sessions, plus standalone concept mini-lessons, problem-solving walkthroughs, attempt feedback, focused assistance for hints/simplifications/examples/recaps, explicit standalone task switching, and an adaptive fallback. Persisted lesson-stage transitions and server-enforced Tutor action controls remain open. Home continuation from real owner-scoped Tutor sessions and learner-approved active plans was delivered in PR #44; end-to-end mobile journey tests remain open. Plan-scoped generated relationships remain proposals and structural validation does not establish academic correctness.
 
 **Exit:** a learner can start without an institution, generate, review, and approve a personal learning plan, begin a Tutor session from an approved unit, and resume genuine saved work; approved-unit Tutor sessions follow CTL v1 without fabricated stage progress; all AI outputs and failure states are truthful; no official curricula, canonical global KCs, mastery scores, or recommendations are fabricated.
+
+## Phase 2.5 — Academic course and skill organisation
+
+This phase operationalises the global academic foundation in [GLOBAL_ACADEMIC_ARCHITECTURE.md](GLOBAL_ACADEMIC_ARCHITECTURE.md). It is distinct from learner-generated personal plans: official catalogue content must have source provenance and a verification state, while plan-scoped learner concepts remain proposals.
+
+- [ ] Approve and implement governed source adapters for official institution, regulator, programme, course and syllabus sources; record usage/licensing terms and source freshness.
+- [ ] Populate institution, programme, academic-period, course and versioned syllabus records from verified source evidence; do not seed illustrative or inferred catalogue entries.
+- [ ] Add source assertion and review workflows so catalogue claims retain source URL, observation time, effective dates, rights status, verification status and reviewer provenance.
+- [ ] Expose verified course and programme discovery in Learn, including local course codes, credit-system identity, curriculum version and academic period without cross-system credit conversion assumptions.
+- [ ] Operationalise the canonical Cogniva Knowledge Component graph with versioned concepts/skills, reviewed relations and acyclic prerequisite constraints.
+- [ ] Map course/syllabus versions to Knowledge Components with mapping provenance, confidence, reviewer status and version validity.
+- [ ] Add learner-facing course/skill organisation using only verified catalogue records and clearly labelled learner-owned records; keep personal generated learning plans distinct from official curricula.
+- [ ] Add integration tests for source rights, provenance, review lifecycle, version validity, mapping confidence, institution/programme scope and course-to-KC consistency.
+- [ ] Update mobile and desktop Learn/Home journeys to use real course and skill data with honest empty/unavailable states.
+
+**Exit:** learners can organise and explore real courses and skills across different education systems; catalogue claims are traceable and reviewable; course-to-KC mappings are versioned and evidence-backed; no model-generated outline is presented as an official syllabus or canonical skill.
 
 ## Admin Foundation — AI Configuration
 
@@ -179,10 +210,9 @@ See [PHASE_1_3_ADAPTIVE_AI_RUNTIME.md](PHASE_1_3_ADAPTIVE_AI_RUNTIME.md) for the
 
 ## Phase 6 — Learning intelligence and adaptive practice
 
-This is Cogniva's native CampusLearn/Sizzle-inspired learning capability; it is not an integration dependency on CampusLearn.
+This is Cogniva's native adaptive learning capability. The canonical Knowledge Component graph and verified course mappings are prerequisites delivered in Phase 2.5.
 
-- [ ] Implement the canonical Cogniva Knowledge Component graph and prerequisite relationships.
-- [ ] Map course/syllabus versions and reviewed learning-plan concepts to Knowledge Components with provenance, mapping confidence, and review status.
+- [ ] Map reviewed learner-plan concepts to canonical Knowledge Components with provenance, mapping confidence, and review status, reusing the course/syllabus mappings delivered in Phase 2.5.
 - [ ] Record diagnostic assessment, practice attempts, and evaluation evidence.
 - [ ] Select targeted practice based on the student's demonstrated gaps and prerequisite readiness.
 - [ ] Implement mastery estimates with uncertainty, evidence windows, and model/version provenance.
