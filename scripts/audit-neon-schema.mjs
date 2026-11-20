@@ -164,37 +164,37 @@ async function runAudit() {
       );
 
       const registryConstraints = await transaction.unsafe(
-        "SELECT table.relname AS table_name, constraint_row.conname AS constraint_name, " +
-        "constraint_row.contype AS constraint_type, pg_get_constraintdef(constraint_row.oid) AS definition " +
-        "FROM pg_constraint AS constraint_row " +
-        "JOIN pg_class AS table ON table.oid = constraint_row.conrelid " +
-        "JOIN pg_namespace AS namespace ON namespace.oid = table.relnamespace " +
-        "WHERE namespace.nspname = 'public' AND table.relname = ANY($1) " +
-        "ORDER BY table.relname, constraint_row.conname",
+        "SELECT tbl.relname AS table_name, con.conname AS constraint_name, " +
+        "con.contype AS constraint_type, pg_get_constraintdef(con.oid) AS definition " +
+        "FROM pg_constraint AS con " +
+        "JOIN pg_class AS tbl ON tbl.oid = con.conrelid " +
+        "JOIN pg_namespace AS ns ON ns.oid = tbl.relnamespace " +
+        "WHERE ns.nspname = 'public' AND tbl.relname = ANY($1) " +
+        "ORDER BY tbl.relname, con.conname",
         [registryTableNames]
       );
 
       const registryIndexes = await transaction.unsafe(
-        "SELECT table.relname AS table_name, index_relation.relname AS index_name, " +
-        "index_row.indisunique AS is_unique, pg_get_indexdef(index_row.indexrelid) AS definition " +
-        "FROM pg_index AS index_row " +
-        "JOIN pg_class AS table ON table.oid = index_row.indrelid " +
-        "JOIN pg_class AS index_relation ON index_relation.oid = index_row.indexrelid " +
-        "JOIN pg_namespace AS namespace ON namespace.oid = table.relnamespace " +
-        "WHERE namespace.nspname = 'public' AND table.relname = ANY($1) " +
-        "ORDER BY table.relname, index_relation.relname",
+        "SELECT tbl.relname AS table_name, idxrel.relname AS index_name, " +
+        "idx.indisunique AS is_unique, pg_get_indexdef(idx.indexrelid) AS definition " +
+        "FROM pg_index AS idx " +
+        "JOIN pg_class AS tbl ON tbl.oid = idx.indrelid " +
+        "JOIN pg_class AS idxrel ON idxrel.oid = idx.indexrelid " +
+        "JOIN pg_namespace AS ns ON ns.oid = tbl.relnamespace " +
+        "WHERE ns.nspname = 'public' AND tbl.relname = ANY($1) " +
+        "ORDER BY tbl.relname, idxrel.relname",
         [registryTableNames]
       );
 
       const registryEnumTypes = await transaction.unsafe(
-        "SELECT type.typname AS type_name, " +
-        "COALESCE(array_agg(enum_value.enumlabel ORDER BY enum_value.enumsortorder) " +
-        "FILTER (WHERE enum_value.enumlabel IS NOT NULL), ARRAY[]::text[]) AS labels " +
-        "FROM pg_type AS type " +
-        "JOIN pg_namespace AS namespace ON namespace.oid = type.typnamespace " +
-        "LEFT JOIN pg_enum AS enum_value ON enum_value.enumtypid = type.oid " +
-        "WHERE namespace.nspname = 'public' AND type.typname = ANY($1) " +
-        "GROUP BY type.typname ORDER BY type.typname",
+        "SELECT typ.typname AS type_name, " +
+        "COALESCE(array_agg(enum_row.enumlabel ORDER BY enum_row.enumsortorder) " +
+        "FILTER (WHERE enum_row.enumlabel IS NOT NULL), ARRAY[]::text[]) AS labels " +
+        "FROM pg_type AS typ " +
+        "JOIN pg_namespace AS ns ON ns.oid = typ.typnamespace " +
+        "LEFT JOIN pg_enum AS enum_row ON enum_row.enumtypid = typ.oid " +
+        "WHERE ns.nspname = 'public' AND typ.typname = ANY($1) " +
+        "GROUP BY typ.typname ORDER BY typ.typname",
         [aiModelRegistrySchemaContract.enums.map((enumType) => enumType.typeName)]
       );
 
