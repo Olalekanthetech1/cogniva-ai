@@ -67,7 +67,7 @@ ALTER TABLE "ai_task_model_candidates" ADD CONSTRAINT "ai_task_model_candidates_
 ALTER TABLE "ai_task_model_candidates" ADD CONSTRAINT "ai_task_model_candidates_priority_range_check" CHECK ("priority" between 0 and 10000);
 --> statement-breakpoint
 INSERT INTO "ai_models" ("provider", "model_id", "display_name", "status", "capabilities")
-SELECT DISTINCT "provider", "model", "model", 'pending', '{}'::jsonb
+SELECT DISTINCT "provider", "model", "model", 'pending'::"public"."ai_model_status", '{}'::jsonb
 FROM "ai_task_routes"
 ON CONFLICT ("provider", "model_id") DO NOTHING;
 --> statement-breakpoint
