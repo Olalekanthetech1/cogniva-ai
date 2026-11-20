@@ -163,9 +163,10 @@ export async function updateAdminAiModel(modelId: string, input: unknown, adminU
     const capabilityClaimsChanged = value.capabilities !== undefined || value.capabilityEvidenceUrl !== undefined;
     const verifiedAt = verifyCapabilities ? now : capabilityClaimsChanged ? null : model.capabilitiesVerifiedAt;
     const verifiedBy = verifyCapabilities ? adminUserId : capabilityClaimsChanged ? null : model.capabilitiesVerifiedBy;
-    const status = capabilityClaimsChanged && !verifyCapabilities ? "pending" : requestedStatus;
+    const status = capabilityClaimsChanged ? "pending" : requestedStatus;
 
     if (status === "enabled" && (
+      capabilityClaimsChanged ||
       model.lastTestStatus !== "connected" ||
       !evidenceUrl ||
       !verifiedAt
